@@ -1,6 +1,7 @@
+// src/pages/Shop.jsx
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { fetchProducts } from "../services/api"; // Only fetchProducts is needed now
+import { fetchProducts } from "../services/api";
 
 export default function Shop() {
   const [products, setProducts] = useState([]);
@@ -8,29 +9,27 @@ export default function Shop() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // --- Pagination States ---
+  // Pagination States
   const [currentPage, setCurrentPage] = useState(1);
-  const [productsPerPage] = useState(20); // Show 20 products per page
-  // --- End Pagination States ---
+  const productsPerPage = 20;
 
   useEffect(() => {
     const loadProducts = async () => {
       try {
         setLoading(true);
         setError("");
-        const productsData = await fetchProducts();
-        setProducts(productsData);
+        const data = await fetchProducts();
+        setProducts(data);
       } catch (err) {
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
-
     loadProducts();
   }, []);
 
-  // Reset to first page when search term changes
+  // Reset to first page when search changes
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
@@ -51,114 +50,100 @@ export default function Shop() {
     );
   }
 
-  // Filter products based on search term only
-  const filteredProducts = products.filter((p) =>
+  // 1) Filter by search
+  const filtered = products.filter((p) =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // --- Pagination Logic ---
-  const indexOfLastProduct = currentPage * productsPerPage;
-  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-  const currentProducts = filteredProducts.slice(
-    indexOfFirstProduct,
-    indexOfLastProduct
-  );
-  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+  // 2) Pagination calculations
+  const totalPages = Math.ceil(filtered.length / productsPerPage);
+  const idxLastProduct = currentPage * productsPerPage;
+  const idxFirstProduct = idxLastProduct - productsPerPage;
+  const currentProducts = filtered.slice(idxFirstProduct, idxLastProduct);
 
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const paginate = (page) => setCurrentPage(page);
 
-  const renderPaginationButtons = () => {
-    const pageNumbers = [];
-    for (let i = 1; i <= totalPages; i++) {
-      pageNumbers.push(i);
-    }
+  // 3) Render pagination controls
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
 
-    // Limit visible page numbers for better UX
-    const maxPageButtons = 5;
-    let startPage, endPage;
+    const pages = [];
+    const maxButtons = 5;
+    let start = 1,
+      end = totalPages;
 
-    if (totalPages <= maxPageButtons) {
-      startPage = 1;
-      endPage = totalPages;
-    } else {
-      if (currentPage <= Math.ceil(maxPageButtons / 2)) {
-        startPage = 1;
-        endPage = maxPageButtons;
-      } else if (currentPage + Math.floor(maxPageButtons / 2) >= totalPages) {
-        startPage = totalPages - maxPageButtons + 1;
-        endPage = totalPages;
+    if (totalPages > maxButtons) {
+      const half = Math.floor(maxButtons / 2);
+      if (currentPage <= half) {
+        end = maxButtons;
+      } else if (currentPage + half >= totalPages) {
+        start = totalPages - maxButtons + 1;
       } else {
-        startPage = currentPage - Math.floor(maxPageButtons / 2);
-        endPage = currentPage + Math.floor(maxPageButtons / 2);
+        start = currentPage - half;
+        end = currentPage + half;
       }
     }
 
+    for (let i = start; i <= end; i++) pages.push(i);
+
     return (
-      <nav
-        className="flex justify-center items-center space-x-2 mt-8"
-        aria-label="Pagination"
-      >
-        {/* Previous Button */}
+      <nav className="flex justify-center items-center space-x-2 mt-8">
         <button
           onClick={() => paginate(currentPage - 1)}
           disabled={currentPage === 1}
-          className="relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 text-sm rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
         >
           Previous
         </button>
 
-        {startPage > 1 && (
+        {start > 1 && (
           <>
             <button
               onClick={() => paginate(1)}
-              className="relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500"
+              className="px-4 py-2 text-sm rounded-md bg-white border text-gray-700"
             >
               1
             </button>
-            {startPage > 2 && <span className="text-gray-700">...</span>}
+            {start > 2 && <span className="text-gray-700">…</span>}
           </>
         )}
 
-        {pageNumbers.slice(startPage - 1, endPage).map((number) => (
+        {pages.map((num) => (
           <button
-            key={number}
-            onClick={() => paginate(number)}
-            className={`relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
-              currentPage === number
+            key={num}
+            onClick={() => paginate(num)}
+            className={`px-4 py-2 text-sm rounded-md ${
+              num === currentPage
                 ? "bg-lime-600 text-white"
-                : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
-            } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500`}
+                : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+            }`}
           >
-            {number}
+            {num}
           </button>
         ))}
 
-        {endPage < totalPages && (
+        {end < totalPages && (
           <>
-            {endPage < totalPages - 1 && (
-              <span className="text-gray-700">...</span>
-            )}
+            {end < totalPages - 1 && <span className="text-gray-700">…</span>}
             <button
               onClick={() => paginate(totalPages)}
-              className="relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500"
+              className="px-4 py-2 text-sm rounded-md bg-white border text-gray-700"
             >
               {totalPages}
             </button>
           </>
         )}
 
-        {/* Next Button */}
         <button
           onClick={() => paginate(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 text-sm rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
         >
           Next
         </button>
       </nav>
     );
   };
-  // --- End Pagination Logic ---
 
   return (
     <div className="min-h-screen bg-white text-gray-900 py-12 px-4 sm:px-6 lg:px-8 font-inter antialiased">
@@ -166,25 +151,16 @@ export default function Shop() {
         Explore Our <span className="text-lime-700">Products</span>
       </h2>
 
-      {/* Search Bar (now centered and wider as it's the only control) */}
+      {/* Search */}
       <div className="max-w-2xl mx-auto mb-12">
-        {" "}
-        {/* Adjusted max-w for better centering */}
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            {/* Search Icon */}
-            <svg
-              className="h-5 w-5 text-gray-400"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+            <svg className="h-5 w-5 text-gray-400" viewBox="0 0 24 24">
               <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
               />
             </svg>
           </div>
@@ -193,7 +169,7 @@ export default function Shop() {
             placeholder="Search products by name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full p-3 pl-10 border border-gray-300 focus:border-lime-600 focus:ring-lime-600 focus:outline-none text-gray-900 rounded-full shadow-sm transition-all duration-200"
+            className="w-full p-3 pl-10 border border-gray-300 focus:border-lime-600 focus:ring-lime-600 rounded-full shadow-sm transition duration-200"
           />
         </div>
       </div>
@@ -204,14 +180,13 @@ export default function Shop() {
           currentProducts.map((p) => (
             <div
               key={p.id}
-              className="bg-white rounded-2xl shadow-lg border border-gray-200 hover:border-lime-600 transform hover:-translate-y-2 transition-all duration-300 group overflow-hidden"
+              className="bg-white rounded-2xl shadow-lg border hover:border-lime-600 transition transform hover:-translate-y-2 duration-300 group overflow-hidden"
             >
               <Link to={`/shop/${p.id}`}>
                 <img
                   src={
-                    p.images && p.images.length > 0
-                      ? p.images[0]
-                      : "https://placehold.co/600x400/E0E0E0/888888?text=No+Image"
+                    p.images?.[0] ||
+                    "https://placehold.co/600x400/E0E0E0/888888?text=No+Image"
                   }
                   alt={p.name}
                   className="w-full h-48 object-cover rounded-t-2xl group-hover:scale-105 transition-transform duration-300"
@@ -227,11 +202,11 @@ export default function Shop() {
                   {p.name}
                 </h3>
                 <p className="mt-1 text-lime-700 font-bold text-2xl">
-                  ₹{Number(p.price).toFixed(2)}
+                  ₹{(+p.price).toFixed(2)}
                 </p>
                 <Link
                   to={`/shop/${p.id}`}
-                  className="mt-6 inline-block bg-lime-700 hover:bg-lime-800 text-white font-semibold py-2 px-6 rounded-full shadow-md transform hover:scale-105 transition-all duration-300 text-sm"
+                  className="mt-6 inline-block bg-lime-700 hover:bg-lime-800 text-white font-semibold py-2 px-6 rounded-full shadow transition transform hover:scale-105 duration-300 text-sm"
                 >
                   View Details →
                 </Link>
@@ -245,14 +220,14 @@ export default function Shop() {
         )}
       </div>
 
-      {/* Pagination Controls */}
-      {totalPages > 1 && renderPaginationButtons()}
+      {/* Pagination */}
+      {renderPagination()}
 
-      {/* Tailwind CSS custom font import */}
+      {/* Font import */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
         .font-inter { font-family: 'Inter', sans-serif; }
-        @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
+        @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.5}}
         .animate-pulse { animation: pulse 1.5s infinite; }
       `}</style>
     </div>

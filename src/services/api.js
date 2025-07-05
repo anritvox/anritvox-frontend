@@ -49,6 +49,14 @@ export async function submitContact(message) {
   return body;
 }
 
+export async function fetchContactsAdmin(token) {
+  const res = await fetch(`${BASE_URL}/api/contact`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to load contact submissions");
+  return res.json(); // expects [{ id, name, email, phone, message, created_at }, …]
+}
+
 // Admin: Authentication
 export async function loginAdmin(credentials) {
   const res = await fetch(`${BASE_URL}/api/auth/login`, {

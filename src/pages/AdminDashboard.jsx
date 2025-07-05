@@ -76,7 +76,7 @@ export default function AdminDashboard() {
         <div>
           <div className="flex justify-between items-center mb-10">
             <h2 className="text-3xl font-extrabold text-lime-700 ">
-              Master<span className="text-gray-900">Sound</span>
+              Antrivox<span className="text-gray-900">.com</span>
             </h2>
             {/* Close button for mobile sidebar */}
             <button
