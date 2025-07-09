@@ -167,9 +167,9 @@ export default function Shop() {
 
   return (
     <div className="min-h-screen bg-white text-gray-900 py-12 px-4 sm:px-6 lg:px-8 font-inter">
-      <h2 className="text-4xl md:text-5xl font-bold text-center mb-8">
+      {/* <h2 className="text-4xl md:text-5xl font-bold text-center mb-8">
         Explore Our <span className="text-lime-700">Products</span>
-      </h2>
+      </h2> */}
 
       {/* Search + Filter/Sort Bar */}
       <div className="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

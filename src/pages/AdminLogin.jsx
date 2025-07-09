@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginAdmin } from "../services/api"; // Keep existing import
+import { loginAdmin } from "../services/api";
 
 export default function AdminLogin() {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showNotification, setShowNotification] = useState(false); // New state for notification
+  const [showNotification, setShowNotification] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -22,26 +22,27 @@ export default function AdminLogin() {
     try {
       const { token } = await loginAdmin(credentials);
       localStorage.setItem("ms_token", token);
-      setShowNotification(true); // Show notification on success
+      setShowNotification(true);
 
       // Delay navigation to allow notification to be seen
       setTimeout(() => {
         navigate("/admin/dashboard", {
           state: { from: "login", animation: "slide-left" },
-        }); // Pass animation type
-      }, 1500); // Wait for 1.5 seconds before navigating
+        });
+      }, 1500);
     } catch (e) {
       setError(e.message);
     } finally {
-      setLoading(false);
+      setTimeout(() => {
+        setLoading(false);
+      }, 500);
     }
   };
 
-  // Common Tailwind CSS classes for inputs and buttons (adapted for white theme)
   const commonInputClasses =
     "mt-1 w-full bg-white text-gray-900 border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-lime-600 focus:border-transparent transition-all duration-200 placeholder-gray-500 shadow-sm";
   const commonButtonClasses =
-    "w-full bg-lime-700 hover:bg-lime-800 text-white font-bold py-3 px-6 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed";
+    "w-full bg-lime-700 hover:bg-lime-800 text-white font-bold py-3 px-6 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"; // No longer need flex/justify-center here, spinner is in overlay
 
   return (
     // Main container with white background and Inter font
@@ -55,7 +56,7 @@ export default function AdminLogin() {
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-1" // Adjusted text color for white background
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               Email
             </label>
@@ -67,13 +68,13 @@ export default function AdminLogin() {
               value={credentials.email}
               onChange={handleChange}
               className={commonInputClasses}
-              disabled={loading}
+              disabled={loading} // Disable input while loading
             />
           </div>
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-1" // Adjusted text color for white background
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               Password
             </label>
@@ -85,13 +86,11 @@ export default function AdminLogin() {
               value={credentials.password}
               onChange={handleChange}
               className={commonInputClasses}
-              disabled={loading}
+              disabled={loading} // Disable input while loading
             />
           </div>
           {error && (
             <p className="text-red-600 text-sm text-center animate-fade-in">
-              {" "}
-              {/* Adjusted text color for contrast */}
               {error}
             </p>
           )}
@@ -99,9 +98,9 @@ export default function AdminLogin() {
             <button
               type="submit"
               className={commonButtonClasses}
-              disabled={loading || !credentials.email || !credentials.password} // Disable if fields are empty or loading
+              disabled={loading || !credentials.email || !credentials.password}
             >
-              {loading ? "Signing In..." : "Sign In"}
+              Sign In
             </button>
           </div>
         </form>
@@ -125,6 +124,16 @@ export default function AdminLogin() {
             ></path>
           </svg>
           <span>Login Successful! Redirecting...</span>
+        </div>
+      )}
+
+      {/* Full-page Loading Overlay with Blur and Spinner */}
+      {loading && (
+        <div className="loading-overlay">
+          <div className="spinner-3d-container-fullpage">
+            <div className="spinner-3d-inner-fullpage"></div>
+          </div>
+          <p className="loading-text">Authenticating...</p>
         </div>
       )}
 
@@ -160,6 +169,94 @@ export default function AdminLogin() {
         }
         .page-slide-out-left {
           animation: slideOutLeft 0.5s ease-out forwards;
+        }
+
+        /* Full-page Loading Overlay */
+        .loading-overlay {
+          position: fixed; /* Fixed to cover the whole viewport */
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background-color: rgba(0, 0, 0, 0.4); /* Semi-transparent dark background */
+          display: flex;
+          flex-direction: column; /* Stack spinner and text vertically */
+          align-items: center;
+          justify-content: center;
+          z-index: 9999; /* High z-index to be on top of everything */
+          backdrop-filter: blur(5px); /* Apply blur to the content behind */
+          -webkit-backdrop-filter: blur(5px); /* For Safari support */
+          animation: overlayFadeIn 0.3s ease-out forwards;
+        }
+
+        @keyframes overlayFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .loading-text {
+            color: white;
+            margin-top: 1rem;
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 600; /* semi-bold */
+        }
+
+        /* 3D Spinner Styles for Fullpage Overlay */
+        .spinner-3d-container-fullpage {
+          width: 60px; /* Larger size for the full-page spinner */
+          height: 60px;
+          perspective: 150px; /* Adjust perspective for larger size */
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .spinner-3d-inner-fullpage {
+          width: 40px; /* Size of the inner cube/shape */
+          height: 40px;
+          position: relative;
+          transform-style: preserve-3d;
+          animation: rotate3dCube 2.5s infinite ease-in-out; /* Main rotation animation, slightly slower */
+        }
+
+        .spinner-3d-inner-fullpage::before,
+        .spinner-3d-inner-fullpage::after {
+          content: '';
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          border: 4px solid white; /* Thicker white borders */
+          box-sizing: border-box;
+          opacity: 0.8;
+        }
+
+        .spinner-3d-inner-fullpage::before {
+          transform: rotateY(0deg) translateZ(20px); /* Front face (half of inner size) */
+          animation: spin3dFront 2.5s infinite ease-in-out;
+        }
+
+        .spinner-3d-inner-fullpage::after {
+          transform: rotateY(90deg) translateZ(20px); /* Side face - rotated */
+          animation: spin3dSide 2.5s infinite ease-in-out;
+        }
+
+        /* Keyframes remain the same, but you might adjust animation durations for the larger spinner */
+        @keyframes rotate3dCube {
+          0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+          25% { transform: rotateX(90deg) rotateY(45deg) rotateZ(0deg); }
+          50% { transform: rotateX(180deg) rotateY(90deg) rotateZ(180deg); }
+          75% { transform: rotateX(270deg) rotateY(135deg) rotateZ(270deg); }
+          100% { transform: rotateX(360deg) rotateY(180deg) rotateZ(360deg); }
+        }
+
+        @keyframes spin3dFront {
+            0%, 100% { transform: rotateY(0deg) translateZ(20px); }
+            50% { transform: rotateY(180deg) translateZ(20px); }
+        }
+
+        @keyframes spin3dSide {
+            0%, 100% { transform: rotateY(90deg) translateZ(20px); }
+            50% { transform: rotateY(270deg) translateZ(20px); }
         }
       `}</style>
     </div>

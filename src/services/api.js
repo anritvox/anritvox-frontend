@@ -1,5 +1,5 @@
 // export const BASE_URL = "https://anritvox-backend.onrender.com";
-export const BASE_URL = "https://anritvox-backend-production.up.railway.app"; // Change to your backend URL
+export const BASE_URL = import.meta.env.VITE_API_URL;
 
 // Helper: attach authorization header
 function authHeader(token) {

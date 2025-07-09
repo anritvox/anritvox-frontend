@@ -71,12 +71,12 @@ export default function AdminDashboard() {
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl border-r border-gray-200 p-6 flex flex-col justify-between
                      transform transition-transform duration-300 ease-in-out
                      ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
-                     sm:relative sm:translate-x-0 sm:flex sm:min-w-[16rem]`} // Ensure min-width on desktop
+                     sm:relative sm:translate-x-0 sm:flex sm:min-w-[16rem]`}
       >
         <div>
           <div className="flex justify-between items-center mb-10">
             <h2 className="text-3xl font-extrabold text-lime-700 ">
-              Antrivox<span className="text-gray-900">.com</span>
+              Admin<span className="text-gray-900">Panel</span>
             </h2>
             {/* Close button for mobile sidebar */}
             <button

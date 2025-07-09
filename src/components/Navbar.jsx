@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import logo from "../assets/images/logo.png";
 
 export default function NavBar() {
   const [open, setOpen] = useState(false);
@@ -11,12 +12,15 @@ export default function NavBar() {
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
-            <Link
+            {/* <Link
               to="/"
               // Logo color changed to a prominent olive green
               className="text-2xl font-bold text-lime-700 hover:text-lime-800 transition-colors duration-300"
             >
-              Antrivox
+              Anrivox
+            </Link> */}
+            <Link to="/">
+              <img src={logo} alt="Anritvox Logo" className="h-12 w-32" />
             </Link>
           </div>
 
