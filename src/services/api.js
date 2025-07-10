@@ -1,5 +1,5 @@
-// export const BASE_URL = "http://localhost:5000";
-export const BASE_URL = import.meta.env.VITE_API_URL;
+export const BASE_URL = "http://localhost:5000";
+// export const BASE_URL = import.meta.env.VITE_API_URL;
 
 // Helper: attach authorization header
 function authHeader(token) {
@@ -79,11 +79,12 @@ export async function fetchWarrantyAdmin(token) {
   return res.json();
 }
 
-export async function updateWarrantyStatusAdmin(id, status, token) {
+export async function updateWarrantyStatusAdmin(token, id, status) {
   const res = await fetch(`${BASE_URL}/api/warranty/admin/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
+
       ...authHeader(token),
     },
     body: JSON.stringify({ status }),
@@ -93,7 +94,7 @@ export async function updateWarrantyStatusAdmin(id, status, token) {
   return body;
 }
 
-export async function deleteWarrantyAdmin(id, token) {
+export async function deleteWarrantyAdmin(token, id) {
   const res = await fetch(`${BASE_URL}/api/warranty/admin/${id}`, {
     method: "DELETE",
     headers: authHeader(token),

@@ -10,8 +10,8 @@ export default function EWarrantyManagement({ token }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortColumn, setSortColumn] = useState(null); // State for current sort column
-  const [sortDirection, setSortDirection] = useState("asc"); // State for sort direction: 'asc' or 'desc'
+  const [sortColumn, setSortColumn] = useState(null);
+  const [sortDirection, setSortDirection] = useState("asc");
 
   const refetchRequests = async () => {
     setLoading(true);
@@ -21,26 +21,23 @@ export default function EWarrantyManagement({ token }) {
       setRequests(data);
     } catch (err) {
       setError("Failed to fetch warranty requests: " + err.message);
-      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    refetchRequests();
+    if (token) refetchRequests();
   }, [token]);
 
   const handleUpdateStatus = async (id, status) => {
     try {
       setError(null);
-      await updateWarrantyStatusAdmin(id, status, token);
-      setRequests((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, status } : r))
-      );
+      // Corrected signature: (token, id, status)
+      await updateWarrantyStatusAdmin(token, id, status);
+      await refetchRequests(); // refresh list
     } catch (err) {
       setError("Failed to update status: " + err.message);
-      console.error(err);
     }
   };
 
@@ -49,65 +46,54 @@ export default function EWarrantyManagement({ token }) {
       return;
     try {
       setError(null);
-      await deleteWarrantyAdmin(id, token);
-      setRequests((prev) => prev.filter((r) => r.id !== id));
+      // Corrected signature: (token, id)
+      await deleteWarrantyAdmin(token, id);
+      await refetchRequests(); // refresh list
     } catch (err) {
       setError("Failed to delete request: " + err.message);
-      console.error(err);
     }
   };
 
-  // --- Sorting Logic ---
+  // Sorting & filtering
+  const sortedAndFilteredRequests = [...requests]
+    .filter((r) =>
+      [r.serial, r.product_name, r.user_name]
+        .join(" ")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (!sortColumn) return 0;
+      let valA = a[sortColumn],
+        valB = b[sortColumn];
+      if (typeof valA === "string") {
+        valA = valA.toLowerCase();
+        valB = valB.toLowerCase();
+      }
+      if (valA < valB) return sortDirection === "asc" ? -1 : 1;
+      if (valA > valB) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
   const handleSort = (column) => {
     if (sortColumn === column) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
     } else {
       setSortColumn(column);
       setSortDirection("asc");
     }
   };
 
-  // Filter and Sort Requests
-  const sortedAndFilteredRequests = [...requests]
-    .filter((r) => r.serial.toUpperCase().includes(searchTerm.toUpperCase()))
-    .sort((a, b) => {
-      if (!sortColumn) return 0; // No sort column selected
-
-      let valA, valB;
-
-      switch (sortColumn) {
-        case "product_name":
-          valA = a.product_name.toLowerCase();
-          valB = b.product_name.toLowerCase();
-          break;
-        case "status":
-          valA = a.status.toLowerCase();
-          valB = b.status.toLowerCase();
-          break;
-        default:
-          return 0; // Should not happen if sortColumn is one of the defined cases
-      }
-
-      if (valA < valB) {
-        return sortDirection === "asc" ? -1 : 1;
-      }
-      if (valA > valB) {
-        return sortDirection === "asc" ? 1 : -1;
-      }
-      return 0;
-    });
-
-  // --- Common Tailwind CSS classes ---
+  // Tailwind classes (unchanged)
   const commonInputClasses =
-    "w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lime-600 focus:border-transparent transition-all duration-200 shadow-sm";
+    "w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lime-600 transition-all duration-200 shadow-sm";
   const buttonSuccessClasses =
-    "bg-lime-600 hover:bg-lime-700 text-white px-3 py-1 rounded-full shadow-md transform hover:scale-105 transition-all duration-200 text-xs font-semibold";
+    "bg-lime-600 hover:bg-lime-700 text-white px-3 py-1 rounded-full shadow-md hover:scale-105 transition-all duration-200 text-xs font-semibold";
   const buttonWarningClasses =
-    "bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded-full shadow-md transform hover:scale-105 transition-all duration-200 text-xs font-semibold";
+    "bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded-full shadow-md hover:scale-105 transition-all duration-200 text-xs font-semibold";
   const buttonDangerClasses =
-    "bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-full shadow-md transform hover:scale-105 transition-all duration-200 text-xs font-semibold";
+    "bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-full shadow-md hover:scale-105 transition-all duration-200 text-xs font-semibold";
 
-  // --- Loading and Error States ---
   if (loading) {
     return (
       <div className="text-center py-12 text-gray-700">
@@ -132,20 +118,16 @@ export default function EWarrantyManagement({ token }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 sm:p-8 animate-fade-in">
+    <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 sm:p-8">
       <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 text-center">
         E-Warranty <span className="text-lime-700">Requests</span>
       </h1>
 
-      {/* Search Bar for Serial Number */}
+      {/* Search */}
       <div className="mb-6 max-w-sm mx-auto">
-        <label htmlFor="search-serial" className="sr-only">
-          Search by serial number
-        </label>
         <input
-          id="search-serial"
           type="text"
-          placeholder="Search by serial number..."
+          placeholder="Search by serial, product, or name..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className={commonInputClasses}
@@ -154,7 +136,8 @@ export default function EWarrantyManagement({ token }) {
 
       {sortedAndFilteredRequests.length === 0 ? (
         <p className="text-center text-gray-500 py-8 text-lg">
-          No warranty requests found{searchTerm && ` matching "${searchTerm}"`}.
+          No warranty requests found
+          {searchTerm && ` matching "${searchTerm}"`}.
         </p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-lg">
@@ -170,55 +153,23 @@ export default function EWarrantyManagement({ token }) {
                   { name: "Date", key: "registered_at", sortable: false },
                   { name: "Status", key: "status", sortable: true },
                   { name: "Actions", key: "actions", sortable: false },
-                ].map((header) => (
+                ].map((h) => (
                   <th
-                    key={header.key}
+                    key={h.key}
                     className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider"
                   >
-                    {header.sortable ? (
+                    {h.sortable ? (
                       <button
-                        onClick={() => handleSort(header.key)}
+                        onClick={() => handleSort(h.key)}
                         className="flex items-center gap-1 focus:outline-none focus:text-lime-700 focus:ring-1 focus:ring-lime-600 rounded"
                       >
-                        {header.name}
-                        {sortColumn === header.key && (
-                          <span className="ml-1">
-                            {sortDirection === "asc" ? (
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M5 15l7-7 7 7"
-                                />
-                              </svg>
-                            ) : (
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M19 9l-7 7-7-7"
-                                />
-                              </svg>
-                            )}
-                          </span>
+                        {h.name}
+                        {sortColumn === h.key && (
+                          <span>{sortDirection === "asc" ? "↑" : "↓"}</span>
                         )}
                       </button>
                     ) : (
-                      header.name
+                      h.name
                     )}
                   </th>
                 ))}
@@ -226,47 +177,24 @@ export default function EWarrantyManagement({ token }) {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {sortedAndFilteredRequests.map((r) => (
-                <tr
-                  key={r.id}
-                  className="hover:bg-gray-50 transition-colors duration-200"
-                >
-                  <td className="px-4 py-3 text-sm text-gray-800">
-                    {r.serial}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-800">
-                    {r.product_name}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-800">
-                    {r.user_name}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-800">
-                    {r.user_email}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-800">
-                    {r.user_phone || "N/A"}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-800">
+                <tr key={r.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 text-sm">{r.serial}</td>
+                  <td className="px-4 py-3 text-sm">{r.product_name}</td>
+                  <td className="px-4 py-3 text-sm">{r.user_name}</td>
+                  <td className="px-4 py-3 text-sm">{r.user_email}</td>
+                  <td className="px-4 py-3 text-sm">{r.user_phone || "N/A"}</td>
+                  <td className="px-4 py-3 text-sm">
                     {new Date(r.registered_at).toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 text-sm capitalize">
+                  <td className="px-4 py-3 text-sm">
                     <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                        ${
-                          r.status === "pending"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : ""
-                        }
-                        ${
-                          r.status === "accepted"
-                            ? "bg-lime-100 text-lime-800"
-                            : ""
-                        }
-                        ${
-                          r.status === "rejected"
-                            ? "bg-red-100 text-red-800"
-                            : ""
-                        }
-                      `}
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        r.status === "pending"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : r.status === "accepted"
+                          ? "bg-lime-100 text-lime-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
                     >
                       {r.status}
                     </span>
@@ -301,16 +229,6 @@ export default function EWarrantyManagement({ token }) {
           </table>
         </div>
       )}
-
-      {/* Tailwind custom animations & font */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-        .font-inter { font-family: 'Inter', sans-serif; }
-        @keyframes fadeIn { from { opacity:0; transform:translateY(10px);} to { opacity:1; transform:translateY(0);} }
-        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
-        @keyframes pulse { 0%,100% { opacity:1;} 50% { opacity:0.5;} }
-        .animate-pulse { animation: pulse 1.5s infinite; }
-      `}</style>
     </div>
   );
 }
