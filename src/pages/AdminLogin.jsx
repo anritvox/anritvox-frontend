@@ -14,6 +14,11 @@ export default function AdminLogin() {
     setCredentials((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Function to prevent copy, cut, and paste
+  const handlePreventCopyPaste = (e) => {
+    e.preventDefault();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -69,6 +74,9 @@ export default function AdminLogin() {
               onChange={handleChange}
               className={commonInputClasses}
               disabled={loading} // Disable input while loading
+              onCopy={handlePreventCopyPaste} // Disable copy
+              onCut={handlePreventCopyPaste} // Disable cut
+              onPaste={handlePreventCopyPaste} // Disable paste
             />
           </div>
           <div>
@@ -87,6 +95,9 @@ export default function AdminLogin() {
               onChange={handleChange}
               className={commonInputClasses}
               disabled={loading} // Disable input while loading
+              onCopy={handlePreventCopyPaste} // Disable copy
+              onCut={handlePreventCopyPaste} // Disable cut
+              onPaste={handlePreventCopyPaste} // Disable paste
             />
           </div>
           {error && (
