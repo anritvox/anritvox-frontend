@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import heroImage1 from "../assets/images/camera.png";
-import heroImage2 from "../assets/images/dashcam.png";
-import heroImage3 from "../assets/images/hink.png";
-import heroImage4 from "../assets/images/carlight.png";
-import heroImage5 from "../assets/images/image1.png";
+import heroImage1 from "../assets/images/camera.webp";
+import heroImage2 from "../assets/images/dashcam.webp";
+import heroImage3 from "../assets/images/hink.webp";
+import heroImage4 from "../assets/images/carlight.webp";
+import heroImage5 from "../assets/images/image3.webp";
 
 // Array of hero images for the carousel
 const heroImages = [heroImage1, heroImage2, heroImage3, heroImage4, heroImage5];
@@ -100,7 +100,7 @@ export default function Home() {
             <span className="text-lime-700">Never Before</span>
           </h1>
           <p className="mt-4 text-gray-700 text-base sm:text-lg md:text-xl animate-fade-in-up animation-delay-500">
-            Welcome to Antrivox—your destination for high-fidelity audio gear
+            Welcome to Anritvox—your destination for high-fidelity audio gear
             backed by seamless warranty service. Dive into our catalog of
             headphones, speakers, and more.
           </p>
@@ -162,7 +162,7 @@ export default function Home() {
               <div className="mt-4 text-sm text-gray-700 transition-all duration-500 ease-in-out opacity-100 max-h-40 overflow-hidden">
                 <p className="mt-2">
                   Details: From headphones to home theater systems, find your
-                  perfect sound.
+                  perfect sound & product.
                 </p>
               </div>
             )}

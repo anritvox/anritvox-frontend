@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import imageCompression from "browser-image-compression";
+
 import {
   fetchProductsAdmin,
   createProduct,
@@ -86,6 +88,22 @@ export default function ProductManagement({ token }) {
           `Please enter exactly ${form.quantity} serial number(s).`
         );
       }
+      const compressedImages = await Promise.all(
+        Array.from(form.images).map(async (file) => {
+          const options = {
+            maxSizeMB: 1, // target size
+            maxWidthOrHeight: 1920, // max dimension
+            useWebWorker: true,
+            fileType: "image/webp", // convert to WebP
+          };
+          const compressedBlob = await imageCompression(file, options);
+          return new File(
+            [compressedBlob],
+            file.name.replace(/\.\w+$/, ".webp"),
+            { type: "image/webp" }
+          );
+        })
+      );
       const formData = new FormData();
       formData.append("name", form.name);
       formData.append("description", form.description);
@@ -93,9 +111,7 @@ export default function ProductManagement({ token }) {
       formData.append("quantity", form.quantity);
       formData.append("category_id", form.category_id);
       formData.append("subcategory_id", form.subcategory_id);
-      Array.from(form.images).forEach((file) =>
-        formData.append("images", file)
-      );
+      compressedImages.forEach((file) => formData.append("images", file));
       formData.append("serials", JSON.stringify(form.serials));
 
       if (editProductId) await updateProduct(editProductId, formData, token);
