@@ -1,6 +1,6 @@
-// export const BASE_URL = "http://localhost:5000";
-export const BASE_URL =
-  import.meta.env.VITE_BASE_URL || "https://api.anritvox.com";
+export const BASE_URL = "http://localhost:5000";
+// export const BASE_URL =
+//   import.meta.env.VITE_BASE_URL || "https://api.anritvox.com";
 
 // Helper: attach authorization header
 function authHeader(token) {
@@ -20,7 +20,6 @@ export async function fetchProductById(id) {
   return res.json(); // images[] are full S3 URLs
 }
 
-// Public: Warranty
 export async function validateSerial(serial) {
   const res = await fetch(`${BASE_URL}/api/warranty/validate/${serial}`);
   const body = await res.json();
