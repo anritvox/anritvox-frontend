@@ -223,12 +223,6 @@ export default function ProductDetail() {
                 <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
                   {product.name}
                 </h1>
-                <div className="flex items-center gap-2">
-                  <Tag className="h-5 w-5 text-lime-600" />
-                  <span className="text-sm text-gray-600">
-                    Product ID: {product.id}
-                  </span>
-                </div>
               </div>
             </div>
             <div className="flex items-center gap-3">
