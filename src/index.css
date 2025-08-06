@@ -1,14 +1,3 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-/* Apply a default background and text color that respond to dark: */
-html,
-body,
-#root {
-  @apply bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-100;
-}
-
-/* Example: ensure nav bar also responds */
-nav {
-  @apply bg-white dark:bg-gray-800;
-}

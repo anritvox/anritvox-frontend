@@ -6,7 +6,6 @@ import heroImage3 from "../assets/images/hink.webp";
 import heroImage4 from "../assets/images/carlight.webp";
 import heroImage5 from "../assets/images/image3.webp";
 
-// Array of hero images for the carousel
 const heroImages = [heroImage1, heroImage2, heroImage3, heroImage4, heroImage5];
 
 export default function Home() {
