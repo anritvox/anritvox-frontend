@@ -518,7 +518,9 @@ export default function CategoryManagement({ token }) {
       resetForm();
       loadData();
     } catch (e) {
-      setError("Failed to save category: " + e.message);
+      setError(
+        e?.response?.data?.message || "Failed to save category: " + e.message
+      );
     } finally {
       setFormLoading(false);
     }
@@ -548,7 +550,7 @@ export default function CategoryManagement({ token }) {
   const handleRemoveCat = async (id) => {
     if (
       window.confirm(
-        "Are you sure you want to delete this category? This will also delete all associated subcategories and products."
+        "Are you sure you want to delete this category? This will also delete all associated subcategories (products must be reassigned or deleted first)."
       )
     ) {
       setFormLoading(true);
@@ -557,7 +559,11 @@ export default function CategoryManagement({ token }) {
         await deleteCategory(id, token);
         loadData();
       } catch (e) {
-        setError("Failed to delete category: " + e.message);
+        // .message comes from API: show user-friendly explanation
+        setError(
+          e?.response?.data?.message ||
+            "Failed to delete category: " + e.message
+        );
       } finally {
         setFormLoading(false);
       }

@@ -1,12 +1,24 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import heroImage1 from "../assets/images/camera.webp";
-import heroImage2 from "../assets/images/dashcam.webp";
-import heroImage3 from "../assets/images/hink.webp";
-import heroImage4 from "../assets/images/carlight.webp";
-import heroImage5 from "../assets/images/image3.webp";
+import heroImage1 from "../assets/images/Home1.webp";
+import heroImage2 from "../assets/images/Home2.webp";
+import heroImage3 from "../assets/images/Home3.webp";
+import heroImage4 from "../assets/images/Home4.webp";
+import heroImage5 from "../assets/images/Home5.webp";
+import heroImage6 from "../assets/images/Home6.webp";
+import heroImage7 from "../assets/images/Home7.webp";
+import heroImage8 from "../assets/images/Home8.webp";
 
-const heroImages = [heroImage1, heroImage2, heroImage3, heroImage4, heroImage5];
+const heroImages = [
+  heroImage1,
+  heroImage2,
+  heroImage3,
+  heroImage4,
+  heroImage5,
+  heroImage6,
+  heroImage7,
+  heroImage8,
+];
 
 export default function Home() {
   const [activeFeature, setActiveFeature] = useState(null);

@@ -1,5 +1,5 @@
 export const BASE_URL = import.meta.env.VITE_BASE_URL;
-// export const BASE_URL = "http://localhost:5000"; // For local development
+
 // Helper: attach authorization header
 function authHeader(token) {
   return { Authorization: `Bearer ${token}` };
@@ -191,6 +191,97 @@ export async function deleteProduct(id, token) {
     headers: authHeader(token),
   });
   if (!res.ok) throw new Error("Delete product failed");
+}
+
+// Admin: Serial Number Management
+export async function fetchProductSerials(productId, token) {
+  const res = await fetch(
+    `${BASE_URL}/api/serials/products/${productId}/serials`,
+    {
+      headers: authHeader(token),
+    }
+  );
+  if (!res.ok) throw new Error("Failed to load product serials");
+  return res.json(); // { serials: [...], statistics: {...} }
+}
+
+export async function addProductSerials(productId, serials, token) {
+  const res = await fetch(
+    `${BASE_URL}/api/serials/products/${productId}/serials`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeader(token),
+      },
+      body: JSON.stringify({ serials }),
+    }
+  );
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error || "Failed to add serials");
+  return body;
+}
+
+export async function bulkAddProductSerials(productId, data, token) {
+  const res = await fetch(
+    `${BASE_URL}/api/serials/products/${productId}/serials/bulk`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeader(token),
+      },
+      body: JSON.stringify(data), // { serials: [...] } or { csvData: "..." }
+    }
+  );
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error || "Bulk import failed");
+  return body;
+}
+
+export async function updateProductSerial(
+  productId,
+  serialId,
+  newSerial,
+  token
+) {
+  const res = await fetch(
+    `${BASE_URL}/api/serials/products/${productId}/serials/${serialId}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeader(token),
+      },
+      body: JSON.stringify({ serial: newSerial }),
+    }
+  );
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error || "Failed to update serial");
+  return body;
+}
+
+export async function deleteProductSerial(productId, serialId, token) {
+  const res = await fetch(
+    `${BASE_URL}/api/serials/products/${productId}/serials/${serialId}`,
+    {
+      method: "DELETE",
+      headers: authHeader(token),
+    }
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || "Failed to delete serial");
+  }
+  return res.json();
+}
+
+export async function checkSerialAvailability(serial) {
+  const res = await fetch(
+    `${BASE_URL}/api/serials/check/${encodeURIComponent(serial)}`
+  );
+  if (!res.ok) throw new Error("Failed to check serial availability");
+  return res.json(); // { available: true/false, exists: true/false, details: {...} }
 }
 
 // Admin: Subcategories CRUD
