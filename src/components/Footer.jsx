@@ -195,7 +195,7 @@ export default function Footer() {
                     href="tel:+919876543210"
                     className="text-sm text-lime-400 hover:text-lime-300 transition-colors duration-300 font-medium"
                   >
-                    +91 98765 43210
+                    +91 96541 31435
                   </a>
                 </div>
               </div>
