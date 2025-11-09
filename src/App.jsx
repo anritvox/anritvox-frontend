@@ -13,7 +13,6 @@ import "./index.css";
 
 function AppContent() {
   const location = useLocation();
-  // Hide footer only on /admin/dashboard
   const hideFooter = location.pathname === "/admin/dashboard";
   return (
     <>
