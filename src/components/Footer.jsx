@@ -194,9 +194,10 @@ export default function Footer() {
                   <p className="text-xs text-gray-400 mb-1">Visit Us</p>
                   <div className="flex flex-col gap-2">
                     <p className="text-sm text-gray-300">
-                      Shop No 27 Hamilton road, Kashmir gate Delhi
+                      {/* Shop No 27 Hamilton road, Kashmir gate Delhi */}
+                      1628/1, Madarsa Road, Kashmir Gate
                       <br />
-                      New Delhi, India 110006
+                      Delhi, India 110006
                     </p>
                     {/* Google Maps Link */}
                     <a
