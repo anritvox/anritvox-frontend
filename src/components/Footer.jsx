@@ -158,7 +158,7 @@ export default function Footer() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">Call Us</p>
+                  <p className="text-xs text-gray-400 mb-1">Call Us On</p>
                   <a
                     href="tel:+919654131435"
                     className="text-sm text-lime-400 hover:text-lime-300 transition-colors duration-300 font-medium"
