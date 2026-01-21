@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import DashboardOverview from "./admin/DashboardOverview";
-import EWarrantyManagement from "./admin/EWarrantyManagement";
-import CategoryManagement from "./admin/CategoryManagement";
-import ProductManagement from "./admin/ProductManagement";
 
 // Upgraded to Lucide-React for a sharper, futuristic vector style
 import {
@@ -22,7 +18,12 @@ import {
   User,
   Search,
   Bell,
-  Cpu
+  Cpu,
+  TrendingUp,
+  AlertCircle,
+  Users,
+  CheckCircle,
+  Clock
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -34,9 +35,11 @@ export default function AdminDashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const navigate = useNavigate();
-  const token = localStorage.getItem("ms_token");
+  // Mock token for preview
+  const token = localStorage.getItem("ms_token") || "preview-token";
 
   useEffect(() => {
+    // In a real app, strict check. Here we allow preview-token
     if (!token) navigate("/admin/login");
   }, [token, navigate]);
 
@@ -382,6 +385,219 @@ export default function AdminDashboard() {
           animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
         }
       `}</style>
+    </div>
+  );
+}
+
+// =========================================================================
+// PLACEHOLDER COMPONENTS (Usually separate files, merged here for preview)
+// =========================================================================
+
+function DashboardOverview({ isRealTimeSync }) {
+  return (
+    <div className="space-y-8">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[
+          { label: "Total Revenue", value: "₹4,23,000", change: "+12.5%", trend: "up", icon: TrendingUp, color: "text-lime-600", bg: "bg-lime-50" },
+          { label: "Active Orders", value: "86", change: "+5%", trend: "up", icon: Box, color: "text-blue-600", bg: "bg-blue-50" },
+          { label: "New Customers", value: "128", change: "+18%", trend: "up", icon: Users, color: "text-purple-600", bg: "bg-purple-50" },
+          { label: "Pending Issues", value: "3", change: "-2%", trend: "down", icon: AlertCircle, color: "text-red-500", bg: "bg-red-50" },
+        ].map((stat, i) => (
+          <div key={i} className="relative group bg-white/60 p-6 rounded-3xl border border-white/60 shadow-sm hover:shadow-xl transition-all duration-300">
+             <div className={`w-12 h-12 rounded-2xl ${stat.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                <stat.icon className={`w-6 h-6 ${stat.color}`} />
+             </div>
+             <div className="flex justify-between items-end">
+                <div>
+                   <p className="text-sm font-medium text-stone-500 mb-1">{stat.label}</p>
+                   <h3 className="text-3xl font-bold text-stone-800 tracking-tight">{stat.value}</h3>
+                </div>
+                <div className={`px-2.5 py-1 rounded-full text-xs font-bold ${stat.trend === 'up' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                   {stat.change}
+                </div>
+             </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Glass Chart Placeholder */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 bg-white/50 p-8 rounded-3xl border border-white/60 shadow-sm relative overflow-hidden group">
+           <div className="flex justify-between items-center mb-8">
+              <h3 className="text-lg font-bold text-stone-700">Revenue Analytics</h3>
+              <select className="bg-white/50 border border-stone-200 text-stone-600 text-xs rounded-lg px-3 py-1 outline-none">
+                 <option>This Week</option>
+                 <option>This Month</option>
+              </select>
+           </div>
+           
+           {/* Mock Chart Lines */}
+           <div className="h-64 flex items-end justify-between gap-2 px-4 relative z-10">
+              {[40, 60, 45, 70, 50, 80, 65, 85, 90, 75, 60, 95].map((h, i) => (
+                 <div key={i} className="w-full bg-gradient-to-t from-lime-500/10 to-lime-500 rounded-t-lg transition-all duration-500 group-hover:to-lime-400" style={{ height: `${h}%` }}></div>
+              ))}
+           </div>
+           
+           {/* Chart Grid Lines */}
+           <div className="absolute inset-0 top-20 px-8 flex flex-col justify-between pointer-events-none opacity-20">
+              <div className="w-full h-px bg-stone-400 border-dashed border-t"></div>
+              <div className="w-full h-px bg-stone-400 border-dashed border-t"></div>
+              <div className="w-full h-px bg-stone-400 border-dashed border-t"></div>
+              <div className="w-full h-px bg-stone-400 border-dashed border-t"></div>
+           </div>
+        </div>
+
+        <div className="bg-stone-800 p-8 rounded-3xl shadow-xl text-white relative overflow-hidden">
+           <div className="absolute top-0 right-0 w-32 h-32 bg-lime-500/20 rounded-full blur-3xl"></div>
+           <h3 className="text-lg font-bold mb-6 relative z-10">System Health</h3>
+           <div className="space-y-6 relative z-10">
+              <div>
+                 <div className="flex justify-between text-xs mb-2 text-stone-400">
+                    <span>Server Load</span>
+                    <span>32%</span>
+                 </div>
+                 <div className="w-full bg-stone-700 rounded-full h-2 overflow-hidden">
+                    <div className="bg-lime-500 h-full rounded-full w-[32%] shadow-[0_0_10px_rgba(132,204,22,0.5)]"></div>
+                 </div>
+              </div>
+              <div>
+                 <div className="flex justify-between text-xs mb-2 text-stone-400">
+                    <span>Database</span>
+                    <span>Safe</span>
+                 </div>
+                 <div className="w-full bg-stone-700 rounded-full h-2 overflow-hidden">
+                    <div className="bg-blue-500 h-full rounded-full w-[85%]"></div>
+                 </div>
+              </div>
+              <div className="pt-4 mt-4 border-t border-stone-700">
+                 <div className="flex items-center gap-3">
+                    <div className="p-2 bg-stone-700 rounded-lg">
+                       <Cpu className="w-5 h-5 text-lime-400" />
+                    </div>
+                    <div>
+                       <p className="text-sm font-bold">All Systems Operational</p>
+                       <p className="text-xs text-stone-500">{isRealTimeSync ? "Live Monitoring" : "Paused"}</p>
+                    </div>
+                 </div>
+              </div>
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EWarrantyManagement() {
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+           <h3 className="text-xl font-bold text-stone-800">E-Warranty Claims</h3>
+           <p className="text-sm text-stone-500">Manage customer warranty requests</p>
+        </div>
+        <button className="bg-stone-800 hover:bg-stone-700 text-white px-6 py-2.5 rounded-xl shadow-lg shadow-stone-800/20 transition-all font-medium flex items-center gap-2">
+           <span>+ New Claim</span>
+        </button>
+      </div>
+
+      <div className="bg-white/60 rounded-3xl border border-white/60 overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+           <table className="w-full text-left border-collapse">
+              <thead>
+                 <tr className="bg-stone-100/50 text-stone-500 text-xs uppercase tracking-wider">
+                    <th className="p-6 font-semibold">Claim ID</th>
+                    <th className="p-6 font-semibold">Product</th>
+                    <th className="p-6 font-semibold">Customer</th>
+                    <th className="p-6 font-semibold">Status</th>
+                    <th className="p-6 font-semibold">Date</th>
+                    <th className="p-6 font-semibold text-right">Actions</th>
+                 </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100">
+                 {[101, 102, 103, 104].map((id, idx) => (
+                    <tr key={id} className="hover:bg-white/50 transition-colors">
+                       <td className="p-6 font-mono text-sm text-stone-600">#WR-{2024}-{id}</td>
+                       <td className="p-6 font-medium text-stone-800">Android Stereo X{idx}</td>
+                       <td className="p-6 text-stone-600 flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-stone-200 flex items-center justify-center text-[10px] font-bold">JD</div>
+                          John Doe
+                       </td>
+                       <td className="p-6">
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${idx % 2 === 0 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                             {idx % 2 === 0 ? 'Approved' : 'Pending'}
+                          </span>
+                       </td>
+                       <td className="p-6 text-stone-500 text-sm">Oct {10+idx}, 2024</td>
+                       <td className="p-6 text-right">
+                          <button className="text-stone-400 hover:text-lime-600 transition-colors">View</button>
+                       </td>
+                    </tr>
+                 ))}
+              </tbody>
+           </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CategoryManagement() {
+  return (
+    <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center p-8">
+       <div className="w-24 h-24 bg-lime-100 rounded-full flex items-center justify-center mb-6 animate-blob">
+          <Folder className="w-10 h-10 text-lime-600" />
+       </div>
+       <h3 className="text-2xl font-bold text-stone-800 mb-2">Category Management</h3>
+       <p className="text-stone-500 max-w-md mx-auto mb-8">Organize your product catalog efficiently. Create, edit, and delete categories and sub-categories here.</p>
+       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-2xl">
+          {['Electronics', 'Audio', 'Accessories'].map((cat) => (
+             <div key={cat} className="bg-white/60 p-6 rounded-2xl border border-white/60 hover:border-lime-300 transition-all cursor-pointer group">
+                <div className="flex justify-between items-start mb-4">
+                   <Folder className="w-6 h-6 text-stone-400 group-hover:text-lime-600 transition-colors" />
+                   <span className="bg-stone-100 text-stone-500 text-xs px-2 py-0.5 rounded">12 items</span>
+                </div>
+                <h4 className="font-bold text-left">{cat}</h4>
+             </div>
+          ))}
+       </div>
+    </div>
+  );
+}
+
+function ProductManagement() {
+  return (
+    <div className="space-y-6">
+       <div className="flex justify-between items-center">
+          <h3 className="text-xl font-bold text-stone-800">Inventory</h3>
+          <div className="flex gap-2">
+             <button className="p-2 bg-white/60 rounded-lg border border-white/60 text-stone-500 hover:text-stone-800"><Search className="w-5 h-5"/></button>
+             <button className="bg-lime-500 hover:bg-lime-400 text-white px-4 py-2 rounded-lg shadow-lg shadow-lime-500/20 font-medium">Add Product</button>
+          </div>
+       </div>
+
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((item) => (
+             <div key={item} className="bg-white/60 rounded-3xl border border-white/60 p-4 shadow-sm hover:shadow-xl transition-all duration-300 group">
+                <div className="h-40 bg-stone-100 rounded-2xl mb-4 relative overflow-hidden">
+                   <div className="absolute inset-0 flex items-center justify-center text-stone-300">
+                      <Box className="w-12 h-12" />
+                   </div>
+                   <div className="absolute top-2 right-2 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-lg text-xs font-bold text-stone-600">
+                      In Stock
+                   </div>
+                </div>
+                <h4 className="font-bold text-stone-800 mb-1">Premium Car Stereo Z{item}</h4>
+                <p className="text-xs text-stone-500 mb-4">SKU: AN-2024-00{item}</p>
+                <div className="flex justify-between items-center">
+                   <span className="font-mono font-bold text-lime-700">₹12,999</span>
+                   <button className="p-2 rounded-full hover:bg-stone-100 text-stone-400 hover:text-stone-800 transition-colors">
+                      <Menu className="w-4 h-4" />
+                   </button>
+                </div>
+             </div>
+          ))}
+       </div>
     </div>
   );
 }
