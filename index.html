@@ -24,13 +24,14 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@200;400;700&display=swap');
         
         :root {
             --olive-primary: #556b2f;
-            --olive-dark: #3d4d2a;
-            --olive-light: #808b6d;
+            --olive-dark: #2d381c;
+            --olive-muted: #808b6d;
             --cream-white: #fafaf9;
+            --pure-white: #ffffff;
         }
 
         body {
@@ -41,42 +42,46 @@
             overflow-x: hidden;
         }
 
-        /* Hero Background with Supercar */
-        .hero-section {
+        h1, h2, .font-heading {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Intense Hero Design */
+        .hero-viewport {
             position: relative;
-            background: linear-gradient(rgba(61, 77, 42, 0.7), rgba(61, 77, 42, 0.9)), 
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(rgba(45, 56, 28, 0.6), rgba(45, 56, 28, 0.9)), 
                         url('https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?q=80&w=2070&auto=format&fit=crop');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
-            height: 100vh;
         }
 
-        /* Custom Animations */
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-15px); }
-            100% { transform: translateY(0px); }
+        /* Glassmorphism Navigation */
+        .nav-blur {
+            backdrop-filter: blur(12px);
+            background: rgba(250, 250, 249, 0.7);
+            border-bottom: 1px solid rgba(85, 107, 47, 0.1);
         }
 
-        @keyframes slideInUp {
-            from { opacity: 0; transform: translateY(40px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* Floating Animation */
+        @keyframes float-y {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
         }
 
-        @keyframes scaleIn {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
+        .animate-float {
+            animation: float-y 5s ease-in-out infinite;
         }
 
-        .animate-float { animation: float 6s ease-in-out infinite; }
-        .animate-slide-up { animation: slideInUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .animate-scale-in { animation: scaleIn 0.8s ease-out forwards; }
-
+        /* Reveal Core Logic */
         .reveal {
             opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.8s ease-out;
+            transform: translateY(40px);
+            transition: all 1s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         .reveal.active {
@@ -84,277 +89,289 @@
             transform: translateY(0);
         }
 
-        /* Glassmorphism Olive */
-        .glass-olive {
-            background: rgba(85, 107, 47, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(85, 107, 47, 0.2);
-        }
-
-        .nav-scrolled {
-            background: rgba(250, 250, 249, 0.9);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
-        }
-
+        /* Custom Olive Buttons */
         .btn-olive {
-            background-color: var(--olive-primary);
-            color: white;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: var(--olive-primary);
+            color: var(--pure-white);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
         }
 
         .btn-olive:hover {
-            background-color: var(--olive-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(85, 107, 47, 0.3);
+            background: var(--olive-dark);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(85, 107, 47, 0.3);
         }
 
-        .feature-card {
-            background: white;
-            transition: all 0.4s ease;
-            border: 1px solid #e5e7eb;
+        /* Bento Grid Cards */
+        .bento-card {
+            background: var(--pure-white);
+            border: 1px solid rgba(85, 107, 47, 0.08);
+            border-radius: 2rem;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .feature-card:hover {
+        .bento-card:hover {
             border-color: var(--olive-primary);
-            box-shadow: 0 20px 40px rgba(85, 107, 47, 0.1);
-            transform: translateY(-10px);
+            box-shadow: 0 30px 60px rgba(85, 107, 47, 0.05);
+            transform: scale(1.02);
         }
 
-        .feature-card:hover .icon-box {
-            background-color: var(--olive-primary);
-            color: white;
-            transform: rotate(10deg);
-        }
-
-        .icon-box {
+        .icon-accent {
+            background: rgba(85, 107, 47, 0.05);
+            color: var(--olive-primary);
+            width: 64px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1.25rem;
             transition: all 0.3s ease;
         }
 
-        /* Text Gradients */
-        .text-olive-gradient {
-            background: linear-gradient(135deg, #556b2f 0%, #3d4d2a 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .bento-card:hover .icon-accent {
+            background: var(--olive-primary);
+            color: white;
+            transform: rotate(-8deg);
+        }
+
+        /* Texture Overlays */
+        .grain {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            opacity: 0.03;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            z-index: 9999;
         }
     </style>
 </head>
 <body>
+    <div class="grain"></div>
+
+    <!-- React Root Entry Point (Preserved) -->
+    <div id="root"></div>
 
     <!-- Navigation -->
-    <nav id="navbar" class="fixed w-full z-50 transition-all duration-500 px-6 py-4">
+    <nav id="main-nav" class="fixed w-full z-[100] transition-all duration-500 px-8 py-5">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <div class="w-10 h-10 bg-[#556b2f] rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-olive-900/20 rotate-3 hover:rotate-0 transition-transform">A</div>
-                <span class="text-2xl font-extrabold tracking-tighter text-olive-dark">ANRITVOX</span>
+            <div class="flex items-center gap-3 group cursor-pointer">
+                <div class="w-12 h-12 bg-[#556b2f] rounded-2xl flex items-center justify-center font-bold text-white shadow-xl rotate-6 group-hover:rotate-0 transition-transform">A</div>
+                <span class="text-2xl font-black tracking-tighter text-olive-dark">ANRITVOX</span>
             </div>
-            <div class="hidden md:flex gap-10 text-sm font-bold uppercase tracking-widest text-olive-dark/70">
-                <a href="#features" class="hover:text-olive-primary transition-colors">Features</a>
-                <a href="#about" class="hover:text-olive-primary transition-colors">Audio Specs</a>
-                <a href="#contact" class="hover:text-olive-primary transition-colors">Support</a>
+            
+            <div class="hidden lg:flex gap-12 text-xs font-bold uppercase tracking-[0.2em] text-olive-dark/60">
+                <a href="#features" class="hover:text-olive-primary transition-colors">Innovations</a>
+                <a href="#specs" class="hover:text-olive-primary transition-colors">Tech Specs</a>
+                <a href="#support" class="hover:text-olive-primary transition-colors">Concierge</a>
             </div>
-            <button class="btn-olive px-7 py-3 rounded-full text-xs font-bold uppercase tracking-widest">Store</button>
+
+            <div class="flex items-center gap-4">
+                <button class="btn-olive px-8 py-3.5 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg">
+                    Store
+                </button>
+            </div>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <section class="hero-section flex items-center justify-center px-6 overflow-hidden">
-        <div class="absolute inset-0 bg-black/20 z-0"></div>
-        <div class="max-w-5xl z-10 text-center">
-            <div class="animate-scale-in">
-                <span class="inline-block px-6 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-bold tracking-[0.3em] uppercase mb-8">Premium Automotive Audio</span>
-                <h1 class="text-6xl md:text-9xl font-black text-white mb-8 leading-[0.9] drop-shadow-2xl">
-                    Anritvox <br/>
-                    <span class="text-transparent border-t-2 border-white/30 pt-4" style="-webkit-text-stroke: 1px white;">MASTERCLASS</span>
+    <section class="hero-viewport">
+        <div class="max-w-6xl px-6 text-center relative z-10">
+            <div class="animate-float">
+                <span class="inline-block px-6 py-2 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white/80 text-[10px] font-bold tracking-[0.4em] uppercase mb-10">Artisan Audio Systems</span>
+                <h1 class="text-7xl md:text-[10rem] font-black text-white leading-[0.85] mb-8 tracking-tighter drop-shadow-2xl">
+                    ANRITVOX <br/>
+                    <span class="opacity-20 italic font-light tracking-normal text-6xl md:text-8xl">Elite</span>
                 </h1>
-                <p class="text-white/80 text-xl md:text-2xl mb-12 max-w-2xl mx-auto font-light leading-relaxed">
-                    Elevate your driving experience with studio-grade sound engineering wrapped in an olive-tinted aesthetic of power.
+                <p class="text-white/60 text-lg md:text-2xl mb-14 max-w-2xl mx-auto font-light leading-relaxed">
+                    Where industrial power meets organic design. Experience the MS111 — a masterpiece of acoustic clarity and olive-toned luxury.
                 </p>
                 <div class="flex flex-col sm:flex-row gap-6 justify-center items-center">
-                    <button class="btn-olive w-full sm:w-auto px-10 py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-3">
-                        SHOP Anritvox <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                    <button class="btn-olive px-12 py-5 rounded-2xl font-bold text-lg flex items-center gap-4 group">
+                        EXPLORE MS111 
+                        <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
                     </button>
-                    <button class="w-full sm:w-auto px-10 py-5 rounded-2xl font-bold text-white border border-white/30 hover:bg-white/10 transition-all backdrop-blur-sm">
-                        VIEW SPECS
+                    <button class="px-12 py-5 rounded-2xl font-bold text-white border border-white/20 hover:bg-white/5 backdrop-blur-sm transition-all">
+                        CINEMATIC VIEW
                     </button>
                 </div>
             </div>
         </div>
-        <!-- Floating Element -->
-        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 animate-float">
-            <i data-lucide="chevron-down" class="text-white w-8 h-8 opacity-50"></i>
+        <div class="absolute bottom-12 animate-bounce opacity-30 text-white">
+            <i data-lucide="mouse-pointer-2" class="w-6 h-6"></i>
         </div>
     </section>
 
-    <!-- Content Split Section -->
-    <section id="features" class="py-32 px-6 bg-white overflow-hidden">
+    <!-- Bento Features Section -->
+    <section id="features" class="py-40 px-8 relative overflow-hidden">
         <div class="max-w-7xl mx-auto">
-            <div class="grid lg:grid-cols-2 gap-20 items-center mb-32">
-                <div class="reveal">
-                    <h2 class="text-5xl md:text-6xl font-black text-olive-dark mb-8 leading-tight">Superior <br/><span class="text-olive-light">Engineering.</span></h2>
-                    <p class="text-xl text-gray-500 mb-10 leading-relaxed">
-                        The Anritvox isn't just a car stereo; it's a statement of quality. Built for those who demand clarity at every turn and power in every beat.
-                    </p>
-                    <div class="space-y-6">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-olive-primary/10 rounded-full flex items-center justify-center text-olive-primary">
-                                <i data-lucide="check" class="w-6 h-6"></i>
-                            </div>
-                            <span class="font-bold text-lg">Next-Gen FM Signal Processing</span>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-olive-primary/10 rounded-full flex items-center justify-center text-olive-primary">
-                                <i data-lucide="check" class="w-6 h-6"></i>
-                            </div>
-                            <span class="font-bold text-lg">Lossless Audio Compatibility</span>
-                        </div>
-                    </div>
+            <div class="flex flex-col md:flex-row justify-between items-end mb-24 gap-8 reveal">
+                <div class="max-w-2xl">
+                    <h2 class="text-5xl md:text-7xl font-black text-olive-dark mb-6 leading-tight">Precision <br/><span class="text-olive-muted">Architecture.</span></h2>
+                    <p class="text-xl text-olive-dark/50 font-medium">Beyond a stereo. A fully integrated acoustic command center.</p>
                 </div>
-                <div class="relative reveal">
-                    <div class="absolute -inset-4 bg-olive-primary/5 rounded-[3rem] -rotate-3"></div>
-                    <img src="https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=2070&auto=format&fit=crop" class="relative rounded-[2.5rem] shadow-2xl grayscale hover:grayscale-0 transition-all duration-700" alt="Car Audio">
+                <div class="pb-4">
+                    <div class="w-20 h-1 bg-olive-primary rounded-full"></div>
                 </div>
             </div>
 
-            <!-- Features Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <!-- Feature 1 -->
-                <div class="feature-card p-10 rounded-[2.5rem] reveal">
-                    <div class="icon-box w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-8 text-olive-primary">
-                        <i data-lucide="radio" class="w-8 h-8"></i>
+            <div class="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-6">
+                <!-- Large Feature -->
+                <div class="md:col-span-6 lg:col-span-8 bento-card p-12 flex flex-col justify-between reveal">
+                    <div>
+                        <div class="icon-accent mb-10"><i data-lucide="radio" class="w-8 h-8"></i></div>
+                        <h3 class="text-3xl font-black mb-4">Hybrid FM Tuning</h3>
+                        <p class="text-olive-dark/60 text-lg max-w-md">Proprietary signal scanning that locks onto frequencies with surgical precision, even in remote landscapes.</p>
                     </div>
-                    <h3 class="text-2xl font-bold text-olive-dark mb-4">FM Precision</h3>
-                    <p class="text-gray-500 leading-relaxed">Crystal clear reception with automatic frequency adjustment for uninterrupted listening.</p>
+                    <div class="mt-12 pt-8 border-t border-gray-100 flex gap-10">
+                        <div>
+                            <span class="block text-2xl font-bold">87.5-108</span>
+                            <span class="text-xs uppercase tracking-widest opacity-40">MHz Range</span>
+                        </div>
+                        <div>
+                            <span class="block text-2xl font-bold">Auto-Sync</span>
+                            <span class="text-xs uppercase tracking-widest opacity-40">Frequency Control</span>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Feature 2 -->
-                <div class="feature-card p-10 rounded-[2.5rem] reveal">
-                    <div class="icon-box w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-8 text-olive-primary">
-                        <i data-lucide="zap" class="w-8 h-8"></i>
+                <!-- Vertical Feature -->
+                <div class="md:col-span-3 lg:col-span-4 bento-card p-10 reveal">
+                    <div class="icon-accent mb-8"><i data-lucide="smartphone" class="w-8 h-8"></i></div>
+                    <h3 class="text-2xl font-extrabold mb-4">Command Center</h3>
+                    <p class="text-olive-dark/60">Full wireless remote control integration. Manage your soundscape without taking your eyes off the horizon.</p>
+                    <div class="mt-10 bg-olive-dark/5 p-6 rounded-3xl">
+                        <i data-lucide="wifi" class="text-olive-primary mb-2"></i>
+                        <span class="block text-sm font-bold opacity-60">Ultra-low latency</span>
                     </div>
-                    <h3 class="text-2xl font-bold text-olive-dark mb-4">Pure Output</h3>
-                    <p class="text-gray-500 leading-relaxed">High-fidelity amplification ensuring your music sounds exactly as the artist intended.</p>
                 </div>
 
-                <!-- Feature 3 -->
-                <div class="feature-card p-10 rounded-[2.5rem] reveal">
-                    <div class="icon-box w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-8 text-olive-primary">
-                        <i data-lucide="cpu" class="w-8 h-8"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-olive-dark mb-4">Smart Connect</h3>
-                    <p class="text-gray-400 leading-relaxed">Seamlessly switch between USB, AUX, and SD modes with our intelligent processing unit.</p>
+                <!-- Small Grid Features -->
+                <div class="md:col-span-3 lg:col-span-4 bento-card p-10 reveal">
+                    <div class="icon-accent mb-8"><i data-lucide="zap" class="w-8 h-8"></i></div>
+                    <h3 class="text-2xl font-extrabold mb-4">Pure Current</h3>
+                    <p class="text-olive-dark/60">High-capacity power delivery ensuring distortion-free bass and crystalline highs.</p>
                 </div>
 
-                <!-- Feature 4 -->
-                <div class="feature-card p-10 rounded-[2.5rem] reveal">
-                    <div class="icon-box w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-8 text-olive-primary">
-                        <i data-lucide="shield-check" class="w-8 h-8"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-olive-dark mb-4">Built to Last</h3>
-                    <p class="text-gray-500 leading-relaxed">Military-grade components designed to withstand vibration and temperature fluctuations.</p>
+                <div class="md:col-span-3 lg:col-span-4 bento-card p-10 reveal">
+                    <div class="icon-accent mb-8"><i data-lucide="shield" class="w-8 h-8"></i></div>
+                    <h3 class="text-2xl font-extrabold mb-4">Rugged Build</h3>
+                    <p class="text-olive-dark/60">Industrial-grade shielding prevents interference from engine electronics.</p>
                 </div>
 
-                <!-- Feature 5 -->
-                <div class="feature-card p-10 rounded-[2.5rem] reveal">
-                    <div class="icon-box w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-8 text-olive-primary">
-                        <i data-lucide="globe" class="w-8 h-8"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-olive-dark mb-4">Global Reach</h3>
-                    <p class="text-gray-500 leading-relaxed">Free global shipping on all orders. We bring premium sound to your doorstep, anywhere.</p>
-                </div>
-
-                <!-- Feature 6 -->
-                <div class="feature-card p-10 rounded-[2.5rem] reveal">
-                    <div class="icon-box w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-8 text-olive-primary">
-                        <i data-lucide="headset" class="w-8 h-8"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-olive-dark mb-4">Expert Care</h3>
-                    <p class="text-gray-500 leading-relaxed">24/7 dedicated support team ready to assist with installation and optimizations.</p>
+                <div class="md:col-span-3 lg:col-span-4 bento-card p-10 reveal">
+                    <div class="icon-accent mb-8"><i data-lucide="truck" class="w-8 h-8"></i></div>
+                    <h3 class="text-2xl font-extrabold mb-4">Global Link</h3>
+                    <p class="text-olive-dark/60">Complimentary priority shipping to over 150 countries. The world, delivered.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- CTA Section -->
-    <section class="py-24 px-6">
-        <div class="max-w-7xl mx-auto bg-olive-dark rounded-[3rem] p-12 md:p-24 text-center text-white relative overflow-hidden reveal">
-            <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+    <!-- Dynamic CTA Section -->
+    <section class="py-24 px-8 mb-40">
+        <div class="max-w-7xl mx-auto bg-olive-dark rounded-[4rem] p-16 md:p-32 text-center text-white relative overflow-hidden reveal">
+            <div class="absolute inset-0 opacity-20 pointer-events-none">
+                <div class="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_-20%,rgba(255,255,255,0.1),transparent)]"></div>
+            </div>
             <div class="relative z-10">
-                <h2 class="text-4xl md:text-6xl font-black mb-8 leading-tight">Ready to Transform <br/>Your Drive?</h2>
-                <p class="text-white/60 text-xl mb-12 max-w-xl mx-auto">Get the Anritvox Anritvox today and experience audio like never before.</p>
-                <button class="bg-white text-olive-dark px-12 py-5 rounded-2xl font-black text-xl hover:scale-105 transition-transform">
-                    ORDER NOW
-                </button>
+                <h2 class="text-5xl md:text-8xl font-black mb-10 tracking-tighter">REDESIGN YOUR <br/>SONIC JOURNEY</h2>
+                <p class="text-white/50 text-xl md:text-2xl mb-16 max-w-xl mx-auto font-light">Join the elite circle of drivers who refuse to compromise on sound.</p>
+                <div class="flex flex-wrap justify-center gap-6">
+                    <button class="bg-white text-olive-dark px-16 py-6 rounded-3xl font-black text-xl hover:scale-105 transition-transform shadow-2xl">
+                        GET THE MS111
+                    </button>
+                    <button class="bg-transparent border border-white/20 text-white px-16 py-6 rounded-3xl font-bold text-xl hover:bg-white/5 transition-all">
+                        TALK TO EXPERT
+                    </button>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="py-20 px-6 border-t border-olive-primary/10">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-12">
-            <div class="max-w-xs">
-                <div class="flex items-center gap-2 mb-6">
-                    <div class="w-8 h-8 bg-olive-primary rounded-lg"></div>
-                    <span class="text-xl font-black text-olive-dark">ANRITVOX</span>
+    <!-- Minimalist Footer -->
+    <footer class="py-24 px-8 border-t border-olive-primary/10">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-20">
+            <div class="md:col-span-2">
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="w-10 h-10 bg-olive-primary rounded-xl"></div>
+                    <span class="text-2xl font-black text-olive-dark tracking-tighter">ANRITVOX</span>
                 </div>
-                <p class="text-gray-400 text-sm leading-relaxed">
-                    Crafting the future of in-car entertainment. Premium hardware for the sophisticated driver.
+                <p class="text-olive-dark/40 max-w-sm text-lg leading-relaxed">
+                    Setting the gold standard in automotive acoustics. Crafted with passion, engineered with power.
                 </p>
             </div>
-            <div class="grid grid-cols-2 gap-20">
-                <div class="space-y-4">
-                    <h4 class="font-bold text-olive-dark">Products</h4>
-                    <ul class="text-gray-400 text-sm space-y-2">
-                        <li><a href="#" class="hover:text-olive-primary">Anritvox Stereo</a></li>
-                        <li><a href="#" class="hover:text-olive-primary">Accessories</a></li>
-                        <li><a href="#" class="hover:text-olive-primary">New Releases</a></li>
-                    </ul>
-                </div>
-                <div class="space-y-4">
-                    <h4 class="font-bold text-olive-dark">Support</h4>
-                    <ul class="text-gray-400 text-sm space-y-2">
-                        <li><a href="#" class="hover:text-olive-primary">Help Center</a></li>
-                        <li><a href="#" class="hover:text-olive-primary">Shipping Info</a></li>
-                        <li><a href="#" class="hover:text-olive-primary">Returns</a></li>
-                    </ul>
-                </div>
+            <div class="space-y-6">
+                <h4 class="font-bold text-olive-dark uppercase text-xs tracking-widest">Navigation</h4>
+                <ul class="space-y-4 text-olive-dark/60 text-sm font-medium">
+                    <li><a href="#" class="hover:text-olive-primary">Audio Catalog</a></li>
+                    <li><a href="#" class="hover:text-olive-primary">Installation Guide</a></li>
+                    <li><a href="#" class="hover:text-olive-primary">Brand Story</a></li>
+                </ul>
+            </div>
+            <div class="space-y-6">
+                <h4 class="font-bold text-olive-dark uppercase text-xs tracking-widest">Connect</h4>
+                <ul class="space-y-4 text-olive-dark/60 text-sm font-medium">
+                    <li><a href="#" class="hover:text-olive-primary">Global Support</a></li>
+                    <li><a href="#" class="hover:text-olive-primary">Instagram</a></li>
+                    <li><a href="#" class="hover:text-olive-primary">X (Twitter)</a></li>
+                </ul>
             </div>
         </div>
-        <div class="max-w-7xl mx-auto mt-20 pt-10 border-t border-olive-primary/5 text-center text-gray-400 text-xs tracking-widest uppercase">
-            © 2024 Anritvox Audio Systems. All rights reserved.
+        <div class="max-w-7xl mx-auto mt-32 pt-10 border-t border-olive-primary/5 flex flex-col md:flex-row justify-between items-center text-olive-dark/30 text-[10px] font-bold tracking-[0.3em] uppercase">
+            <span>© 2024 ANRITVOX AUDIO. EST PHILIPPINES.</span>
+            <div class="flex gap-8 mt-6 md:mt-0">
+                <a href="#">Privacy</a>
+                <a href="#">Terms</a>
+                <a href="#">Cookies</a>
+            </div>
         </div>
     </footer>
+
+    <!-- Preserved React Entry Script -->
+    <script type="module" src="/src/main.jsx"></script>
 
     <script>
         // Initialize Icons
         lucide.createIcons();
 
-        // Navbar Scroll Effect
+        // High-Performance Scroll Reveal
+        const observerOptions = {
+            threshold: 0.15,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    // Optional: stop observing once revealed
+                    // revealObserver.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+        // Smart Navbar Transition
         window.addEventListener('scroll', () => {
-            const nav = document.getElementById('navbar');
-            if (window.scrollY > 50) {
-                nav.classList.add('nav-scrolled');
+            const nav = document.getElementById('main-nav');
+            if (window.scrollY > 100) {
+                nav.classList.add('nav-blur', 'py-4', 'shadow-xl');
+                nav.classList.remove('py-5');
             } else {
-                nav.classList.remove('nav-scrolled');
+                nav.classList.remove('nav-blur', 'py-4', 'shadow-xl');
+                nav.classList.add('py-5');
             }
         });
 
-        // Scroll Reveal Animation
-        function reveal() {
-            var reveals = document.querySelectorAll(".reveal");
-            for (var i = 0; i < reveals.length; i++) {
-                var windowHeight = window.innerHeight;
-                var elementTop = reveals[i].getBoundingClientRect().top;
-                var elementVisible = 150;
-                if (elementTop < windowHeight - elementVisible) {
-                    reveals[i].classList.add("active");
-                }
-            }
-        }
-
-        window.addEventListener("scroll", reveal);
-        // Trigger once on load
-        reveal();
+        // Parallax Effect for Hero
+        window.addEventListener('scroll', () => {
+            const scroll = window.pageYOffset;
+            const hero = document.querySelector('.hero-viewport');
+            hero.style.backgroundPositionY = `${scroll * 0.5}px`;
+        });
     </script>
 </body>
 </html>
