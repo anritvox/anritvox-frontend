@@ -20,8 +20,10 @@ import {
   AlertCircle,
   Loader2,
   Grid3x3,
-  List,
+  Layers,
   ChevronRight,
+  Sparkles,
+  Zap
 } from "lucide-react";
 
 export default function CategoryManagement({ token }) {
@@ -87,8 +89,7 @@ export default function CategoryManagement({ token }) {
     setFormLoading(true);
     setError(null);
     try {
-      if (!name.trim() || !parentId)
-        throw new Error("Subcategory name and parent category are required.");
+      if (!name.trim() || !parentId) throw new Error("Subcategory name and parent category are required.");
       const data = { name, category_id: parentId };
       if (editSubId) {
         await updateSubcategory(editSubId, data, token);
@@ -135,231 +136,254 @@ export default function CategoryManagement({ token }) {
   };
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center py-20">
-      <Loader2 className="h-10 w-10 text-[#c45500] animate-spin mb-4" />
-      <p className="text-gray-500 font-medium">Loading classifications...</p>
+    <div className="min-h-screen bg-[#0a0c10] flex items-center justify-center">
+      <div className="relative">
+        <div className="w-16 h-16 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
+        <Zap className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-cyan-500 animate-pulse" size={20} />
+      </div>
     </div>
   );
 
   return (
-    <div className="space-y-10 animate-fade-in p-2">
-      {/* Error Alert */}
-      {error && (
-        <div className="bg-[#fff1f0] border border-[#ffa39e] rounded-md p-4 flex items-start gap-3 shadow-sm">
-          <AlertCircle className="h-5 w-5 text-[#f5222d] mt-0.5" />
-          <div className="flex-1">
-            <h3 className="font-bold text-[#cf1322] text-sm">Action Required</h3>
-            <p className="text-xs text-[#cf1322] mt-1">{error}</p>
-          </div>
-          <button onClick={() => setError(null)} className="text-gray-400 hover:text-black">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-      )}
+    <div className="min-h-screen bg-[#0a0c10] text-gray-100 p-4 lg:p-8 font-sans selection:bg-cyan-500/30">
+      {/* Background Orbs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-600/10 blur-[120px] rounded-full animate-pulse delay-700" />
+      </div>
 
-      {/* Main Categories Section */}
-      <section className="bg-white">
-        <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gray-50 rounded-lg">
-              <Folder className="h-6 w-6 text-[#232f3e]" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-[#111]">Product Categories</h2>
-              <p className="text-xs text-gray-500">Organize products into high-level departments</p>
-            </div>
+      <div className="relative z-10 max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#161b22]/40 backdrop-blur-xl border border-white/5 p-6 rounded-[2rem] shadow-2xl">
+          <div>
+            <h1 className="text-3xl font-black tracking-tighter bg-gradient-to-r from-white via-cyan-400 to-purple-500 bg-clip-text text-transparent flex items-center gap-3">
+              <Layers className="text-cyan-400" />
+              Taxonomy Engine
+            </h1>
+            <p className="text-gray-400 text-xs mt-1 font-mono uppercase tracking-widest">Global Classification & Hierarchy</p>
+          </div>
+          <div className="flex gap-2">
+             <button onClick={loadData} className="p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all">
+                <Sparkles size={18} className="text-cyan-400" />
+             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Add/Edit Form */}
-          <div className="lg:col-span-1 bg-[#fcfcfc] border border-gray-200 rounded-lg p-6 h-fit">
-            <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
-              <Plus className="h-4 w-4 text-[#c45500]" /> {editCatId ? "Update Category" : "Add New Category"}
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Category Name</label>
-                <input 
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Electronics"
-                  className="w-full p-2 border border-[#888c8c] rounded-[3px] focus:shadow-[0_0_0_3px_rgba(0,113,133,.5)] focus:border-[#007185] outline-none text-sm"
-                  disabled={formLoading}
-                />
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/50 p-4 rounded-2xl flex items-center gap-3 text-red-400 animate-fade-in backdrop-blur-md">
+            <AlertCircle size={20} />
+            <span className="text-sm font-medium">{error}</span>
+            <button onClick={() => setError(null)} className="ml-auto hover:bg-red-500/20 p-1 rounded-lg transition-colors">
+              <X size={18} />
+            </button>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          {/* Categories Section */}
+          <section className="space-y-6">
+            <div className="bg-[#161b22]/40 backdrop-blur-xl border border-white/5 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              
+              <div className="flex items-center gap-4 mb-8">
+                <div className="p-3 bg-cyan-500/10 rounded-2xl border border-cyan-500/20">
+                  <Grid3x3 className="text-cyan-400" size={24} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">Primary Departments</h2>
+                  <p className="text-xs text-gray-500 font-mono">Top-level structural nodes</p>
+                </div>
               </div>
-              <div className="flex gap-2 pt-2">
-                <button 
-                  onClick={handleCatSave}
-                  disabled={formLoading || !name.trim()}
-                  className="flex-1 bg-[#ffd814] hover:bg-[#f7ca00] border border-[#fcd200] shadow-[0_2px_5px_0_rgba(213,217,217,.5)] py-1.5 rounded-lg text-sm font-medium transition-all"
-                >
-                  {formLoading ? "Saving..." : (editCatId ? "Update" : "Save Category")}
-                </button>
-                {editCatId && (
-                  <button 
-                    onClick={resetForm}
-                    className="px-4 py-1.5 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+
+              {/* Cat Form */}
+              <div className="space-y-4 mb-8 p-6 bg-white/5 rounded-3xl border border-white/5">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Category Identifier</label>
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter category name..."
+                    className="w-full bg-[#0a0c10] border border-white/10 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-cyan-500/50 outline-none transition-all placeholder:text-gray-700 text-sm"
+                    disabled={formLoading}
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleCatSave}
+                    disabled={formLoading || !name.trim()}
+                    className="flex-1 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 disabled:opacity-50 text-black font-black text-xs uppercase tracking-widest py-4 rounded-2xl shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all flex items-center justify-center gap-2"
                   >
-                    Cancel
+                    {formLoading ? <Loader2 className="animate-spin" size={16} /> : (editCatId ? <Save size={16} /> : <Plus size={16} />)}
+                    {editCatId ? "Commit Update" : "Deploy Category"}
                   </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Table */}
-          <div className="lg:col-span-2">
-            <div className="border border-[#e7e9ec] rounded-lg overflow-hidden shadow-sm">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-[#f0f2f2] border-b border-[#e7e9ec]">
-                  <tr>
-                    <th className="px-4 py-2 font-bold text-gray-700">ID</th>
-                    <th className="px-4 py-2 font-bold text-gray-700">Category Name</th>
-                    <th className="px-4 py-2 font-bold text-gray-700 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {categories.map((c) => (
-                    <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 text-gray-500 font-mono text-xs">{c.id}</td>
-                      <td className="px-4 py-3 font-bold text-[#007185]">{c.name}</td>
-                      <td className="px-4 py-3 text-right space-x-4">
-                        <button 
-                          onClick={() => { setEditCatId(c.id); setName(c.name); setEditSubId(null); setParentId(""); }}
-                          className="text-[#007185] hover:underline hover:text-[#c45500] font-medium"
-                        >
-                          Edit
-                        </button>
-                        <button 
-                          onClick={() => handleRemoveCat(c.id)}
-                          className="text-[#af2a2a] hover:underline font-medium"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {categories.length === 0 && (
-                    <tr><td colSpan="3" className="px-4 py-10 text-center text-gray-400">No categories found.</td></tr>
+                  {editCatId && (
+                    <button onClick={resetForm} className="px-6 bg-white/5 hover:bg-white/10 text-gray-400 rounded-2xl transition-colors">
+                      <X size={20} />
+                    </button>
                   )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <hr className="border-gray-100" />
-
-      {/* Subcategories Section */}
-      <section className="bg-white">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gray-50 rounded-lg">
-              <List className="h-6 w-6 text-[#232f3e]" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-[#111]">Subcategories</h2>
-              <p className="text-xs text-gray-500">Fine-grained grouping for easier product discovery</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Form */}
-          <div className="lg:col-span-1 bg-[#fcfcfc] border border-gray-200 rounded-lg p-6 h-fit">
-            <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
-              <Plus className="h-4 w-4 text-[#c45500]" /> {editSubId ? "Edit Subcategory" : "Add Subcategory"}
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Parent Category</label>
-                <select 
-                  value={parentId}
-                  onChange={(e) => setParentId(e.target.value)}
-                  className="w-full p-2 border border-[#888c8c] rounded-[3px] focus:shadow-[0_0_0_3px_rgba(0,113,133,.5)] focus:border-[#007185] outline-none text-sm bg-white"
-                  disabled={formLoading || categories.length === 0}
-                >
-                  <option value="">Select Parent</option>
-                  {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Subcategory Name</label>
-                <input 
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Smartphones"
-                  className="w-full p-2 border border-[#888c8c] rounded-[3px] focus:shadow-[0_0_0_3px_rgba(0,113,133,.5)] focus:border-[#007185] outline-none text-sm"
-                  disabled={formLoading}
-                />
-              </div>
-              <div className="flex gap-2 pt-2">
-                <button 
-                  onClick={handleSubSave}
-                  disabled={formLoading || !name.trim() || !parentId}
-                  className="flex-1 bg-[#ffd814] hover:bg-[#f7ca00] border border-[#fcd200] shadow-[0_2px_5px_0_rgba(213,217,217,.5)] py-1.5 rounded-lg text-sm font-medium transition-all"
-                >
-                  {formLoading ? "Saving..." : (editSubId ? "Update" : "Save Subcategory")}
-                </button>
-                {editSubId && (
-                  <button onClick={resetForm} className="px-4 py-1.5 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50">Cancel</button>
-                )}
-              </div>
-            </div>
-          </div>
 
-          {/* Table */}
-          <div className="lg:col-span-2">
-            <div className="border border-[#e7e9ec] rounded-lg overflow-hidden shadow-sm">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-[#f0f2f2] border-b border-[#e7e9ec]">
-                  <tr>
-                    <th className="px-4 py-2 font-bold text-gray-700">Subcategory</th>
-                    <th className="px-4 py-2 font-bold text-gray-700">Parent</th>
-                    <th className="px-4 py-2 font-bold text-gray-700 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {subcategories.map((sc) => (
-                    <tr key={sc.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-bold text-[#007185]">{sc.name}</td>
-                      <td className="px-4 py-3">
-                        <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full text-gray-600 border border-gray-200">
-                          {categories.find(c => c.id === sc.category_id)?.name || "N/A"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right space-x-4">
-                        <button 
-                          onClick={() => { setEditSubId(sc.id); setName(sc.name); setParentId(sc.category_id); setEditCatId(null); }}
-                          className="text-[#007185] hover:underline font-medium"
-                        >
-                          Edit
-                        </button>
-                        <button 
-                          onClick={() => handleRemoveSub(sc.id)}
-                          className="text-[#af2a2a] hover:underline font-medium"
-                        >
-                          Delete
-                        </button>
-                      </td>
+              {/* Table */}
+              <div className="overflow-hidden rounded-3xl border border-white/5 bg-[#0a0c10]/50">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-white/5">
+                      <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Ref ID</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Label</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">Actions</th>
                     </tr>
-                  ))}
-                  {subcategories.length === 0 && (
-                    <tr><td colSpan="3" className="px-4 py-10 text-center text-gray-400">No subcategories found.</td></tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 text-sm">
+                    {categories.map((c) => (
+                      <tr key={c.id} className="hover:bg-white/[0.02] transition-colors group">
+                        <td className="px-6 py-4 font-mono text-cyan-500/70 text-xs">#{c.id.toString().padStart(3, '0')}</td>
+                        <td className="px-6 py-4 font-bold text-gray-300">{c.name}</td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                              onClick={() => { setEditCatId(c.id); setName(c.name); setEditSubId(null); setParentId(""); }}
+                              className="p-2 hover:bg-cyan-500/20 text-cyan-400 rounded-lg transition-colors"
+                            >
+                              <Edit3 size={16} />
+                            </button>
+                            <button 
+                              onClick={() => handleRemoveCat(c.id)}
+                              className="p-2 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {categories.length === 0 && (
+                      <tr>
+                        <td colSpan="3" className="px-6 py-12 text-center text-gray-600 italic">No primary departments detected.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .animate-fade-in { animation: fadeIn 0.4s ease-in-out; }
-      `}</style>
+          {/* Subcategories Section */}
+          <section className="space-y-6">
+             <div className="bg-[#161b22]/40 backdrop-blur-xl border border-white/5 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-purple-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              
+              <div className="flex items-center gap-4 mb-8">
+                <div className="p-3 bg-purple-500/10 rounded-2xl border border-purple-500/20">
+                  <FolderPlus className="text-purple-400" size={24} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">Sub-Classifications</h2>
+                  <p className="text-xs text-gray-500 font-mono">Secondary hierarchical clusters</p>
+                </div>
+              </div>
+
+              {/* Sub Form */}
+              <div className="space-y-4 mb-8 p-6 bg-white/5 rounded-3xl border border-white/5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Parent Nexus</label>
+                    <select
+                      value={parentId}
+                      onChange={(e) => setParentId(e.target.value)}
+                      className="w-full bg-[#0a0c10] border border-white/10 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-purple-500/50 outline-none transition-all text-sm appearance-none"
+                      disabled={formLoading || categories.length === 0}
+                    >
+                      <option value="">Select Parent</option>
+                      {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Sub Label</label>
+                    <input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. Smartphones"
+                      className="w-full bg-[#0a0c10] border border-white/10 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-purple-500/50 outline-none transition-all placeholder:text-gray-700 text-sm"
+                      disabled={formLoading}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleSubSave}
+                    disabled={formLoading || !name.trim() || !parentId}
+                    className="flex-1 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 disabled:opacity-50 text-black font-black text-xs uppercase tracking-widest py-4 rounded-2xl shadow-[0_0_20px_rgba(168,85,247,0.3)] transition-all flex items-center justify-center gap-2"
+                  >
+                    {formLoading ? <Loader2 className="animate-spin" size={16} /> : (editSubId ? <Save size={16} /> : <Plus size={16} />)}
+                    {editSubId ? "Commit Change" : "Initialize Sub-Node"}
+                  </button>
+                  {editSubId && (
+                    <button onClick={resetForm} className="px-6 bg-white/5 hover:bg-white/10 text-gray-400 rounded-2xl transition-colors">
+                      <X size={20} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-hidden rounded-3xl border border-white/5 bg-[#0a0c10]/50">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-white/5">
+                      <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Cluster</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Nexus</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 text-sm">
+                    {subcategories.map((sc) => (
+                      <tr key={sc.id} className="hover:bg-white/[0.02] transition-colors group">
+                        <td className="px-6 py-4 font-bold text-gray-300">{sc.name}</td>
+                        <td className="px-6 py-4">
+                          <span className="px-3 py-1 bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-mono rounded-full uppercase tracking-tighter">
+                            {categories.find(c => c.id === sc.category_id)?.name || "N/A"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                           <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                              onClick={() => { setEditSubId(sc.id); setName(sc.name); setParentId(sc.category_id); setEditCatId(null); }}
+                              className="p-2 hover:bg-purple-500/20 text-purple-400 rounded-lg transition-colors"
+                            >
+                              <Edit3 size={16} />
+                            </button>
+                            <button 
+                              onClick={() => handleRemoveSub(sc.id)}
+                              className="p-2 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {subcategories.length === 0 && (
+                      <tr>
+                        <td colSpan="3" className="px-6 py-12 text-center text-gray-600 italic">No sub-clusters indexed.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <style>{\`
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #374151; }
+      \`}</style>
     </div>
   );
 }
