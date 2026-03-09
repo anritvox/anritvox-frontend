@@ -12,33 +12,34 @@ import AdminDashboard from "./pages/AdminDashboard";
 import "./index.css";
 
 function AppContent() {
-  const location = useLocation();
-  const hideFooter = location.pathname === "/admin/dashboard";
-  return (
-    <>
-      <NavBar />
-      <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/shop" element={<Shop />} />
-          <Route path="/shop/:id" element={<ProductDetail />} />
-          <Route path="/ewarranty" element={<EWarranty />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        </Routes>
-      </main>
-      {!hideFooter && <Footer />}
-    </>
-  );
+ const location = useLocation();
+ const isAdminPath = location.pathname.startsWith("/admin");
+
+ return (
+ <>
+ {!isAdminPath && <NavBar />}
+ <main>
+ <Routes>
+ <Route path="/" element={<Home />} />
+ <Route path="/shop" element={<Shop />} />
+ <Route path="/shop/:id" element={<ProductDetail />} />
+ <Route path="/ewarranty" element={<EWarranty />} />
+ <Route path="/contact" element={<Contact />} />
+ <Route path="/admin/login" element={<AdminLogin />} />
+ <Route path="/admin/dashboard" element={<AdminDashboard />} />
+ </Routes>
+ </main>
+ {!isAdminPath && <Footer />}
+ </>
+ );
 }
 
 function App() {
-  return (
-    <BrowserRouter>
-      <AppContent />
-    </BrowserRouter>
-  );
+ return (
+ <BrowserRouter>
+ <AppContent />
+ </BrowserRouter>
+ );
 }
 
 export default App;
