@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import DashboardOverview from "./admin/DashboardOverview";
-import EWarrantyManagement from "./admin/EWarrantyManagement";
-import CategoryManagement from "./admin/CategoryManagement";
-import ProductManagement from "./admin/ProductManagement";
-
+import React, { useState, useEffect } from \"react\";
+import { useNavigate } from \"react-router-dom\";
+import DashboardOverview from \"./admin/DashboardOverview\";
+import EWarrantyManagement from \"./admin/EWarrantyManagement\";
+import CategoryManagement from \"./admin/CategoryManagement\";
+import ProductManagement from \"./admin/ProductManagement\";
 import {
   FiHome,
   FiFileText,
@@ -13,15 +12,16 @@ import {
   FiLogOut,
   FiMenu,
   FiX,
-  FiKey,
-  FiActivity,
-  FiRefreshCw,
+  FiSearch,
+  FiSettings,
   FiWifi,
   FiWifiOff,
-} from "react-icons/fi";
+  FiRefreshCw,
+  FiExternalLink,
+} from \"react-icons/fi\";
 
 export default function AdminDashboard() {
-  const [section, setSection] = useState("dashboard");
+  const [section, setSection] = useState(\"dashboard\");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [lastSync, setLastSync] = useState(new Date());
@@ -29,35 +29,29 @@ export default function AdminDashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const navigate = useNavigate();
-  const token = localStorage.getItem("ms_token");
+  const token = localStorage.getItem(\"ms_token\");
 
   useEffect(() => {
-    if (!token) navigate("/admin/login");
+    if (!token) navigate(\"/admin/login\");
   }, [token, navigate]);
 
   // Real-time sync monitoring
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      if (isRealTimeSync) {
-        triggerSync();
-      }
+      if (isRealTimeSync) triggerSync();
     };
     const handleOffline = () => setIsOnline(false);
+    window.addEventListener(\"online\", handleOnline);
+    window.addEventListener(\"offline\", handleOffline);
 
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    // Real-time sync every 30 seconds when online
     const syncInterval = setInterval(() => {
-      if (navigator.onLine && isRealTimeSync) {
-        triggerSync();
-      }
+      if (navigator.onLine && isRealTimeSync) triggerSync();
     }, 30000);
 
     return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener(\"online\", handleOnline);
+      window.removeEventListener(\"offline\", handleOffline);
       clearInterval(syncInterval);
     };
   }, [isRealTimeSync]);
@@ -71,355 +65,213 @@ export default function AdminDashboard() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("ms_token");
-    navigate("/admin/login");
-  };
-
-  const handleSectionChange = (sec) => {
-    setSection(sec);
-    setMobileMenuOpen(false);
-  };
-
-  const renderSection = () => {
-    switch (section) {
-      case "dashboard":
-        return (
-          <DashboardOverview token={token} isRealTimeSync={isRealTimeSync} />
-        );
-      case "ewarranty":
-        return <EWarrantyManagement token={token} />;
-      case "categories":
-        return <CategoryManagement token={token} />;
-      case "products":
-        return <ProductManagement token={token} />;
-      default:
-        return (
-          <DashboardOverview token={token} isRealTimeSync={isRealTimeSync} />
-        );
-    }
+    localStorage.removeItem(\"ms_token\");
+    navigate(\"/admin/login\");
   };
 
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: FiHome },
-    { id: "ewarranty", label: "E-Warranty", icon: FiFileText },
-    { id: "categories", label: "Categories", icon: FiFolder },
-    { id: "products", label: "Products", icon: FiBox },
+    { id: \"dashboard\", label: \"Dashboard Overview\", icon: FiHome },
+    { id: \"products\", label: \"Product Management\", icon: FiBox },
+    { id: \"categories\", label: \"Category Management\", icon: FiFolder },
+    { id: \"ewarranty\", label: \"E-Warranty Database\", icon: FiFileText },
   ];
 
+  const renderSection = () => {
+    const props = { token, isRealTimeSync };
+    switch (section) {
+      case \"dashboard\": return <DashboardOverview {...props} />;
+      case \"ewarranty\": return <EWarrantyManagement {...props} />;
+      case \"categories\": return <CategoryManagement {...props} />;
+      case \"products\": return <ProductManagement {...props} />;
+      default: return <DashboardOverview {...props} />;
+    }
+  };
+
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-lime-50/30 to-green-50/30 text-gray-900 font-inter antialiased">
-      {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black bg-opacity-60 backdrop-blur-sm sm:hidden transition-all duration-300"
-          onClick={() => setMobileMenuOpen(false)}
-        ></div>
-      )}
-
-      {/* Enhanced Sidebar */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-50 bg-white/95 backdrop-blur-xl shadow-2xl border-r border-lime-200/50 flex flex-col
-                  transform transition-all duration-500 ease-in-out
-                  ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
-                  sm:relative sm:translate-x-0 sm:flex
-                  ${sidebarCollapsed ? "sm:w-20" : "sm:w-72"}`}
-      >
-        {/* Sidebar Header */}
-        <div className="p-6 flex-shrink-0">
-          <div className="flex justify-between items-center mb-8">
-            <div
-              className={`transition-all duration-300 ${
-                sidebarCollapsed ? "opacity-0 w-0" : "opacity-100 w-auto"
-              }`}
-            >
-              <h2 className="text-2xl font-black bg-gradient-to-r from-lime-600 to-green-600 bg-clip-text text-transparent">
-                Anritvox
-              </h2>
-              <p className="text-xs text-gray-500 mt-1">Admin Dashboard</p>
-            </div>
-
-            {/* Desktop sidebar toggle */}
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="hidden sm:block text-gray-400 hover:text-lime-600 transition-colors duration-200 p-2 hover:bg-lime-50 rounded-lg"
-            >
-              <FiMenu className="h-5 w-5" />
-            </button>
-
-            {/* Mobile close button */}
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="sm:hidden text-gray-600 hover:text-lime-700 focus:outline-none focus:ring-2 focus:ring-lime-600 rounded-md p-1"
-              aria-label="Close menu"
-            >
-              <FiX className="h-7 w-7" />
-            </button>
-          </div>
-
-          {/* Real-time Status */}
-          <div
-            className={`mb-6 transition-all duration-300 ${
-              sidebarCollapsed
-                ? "opacity-0 h-0 overflow-hidden"
-                : "opacity-100 h-auto"
-            }`}
+    <div className=\"min-h-screen bg-[#f3f3f3] font-sans antialiased flex flex-col\">
+      {/* Top Navbar - Amazon Style */}
+      <header className=\"bg-[#131921] text-white h-16 flex items-center px-4 sticky top-0 z-50\">
+        <div className=\"flex items-center gap-4 w-full\">
+          <button 
+            onClick={() => setMobileMenuOpen(true)}
+            className=\"sm:hidden p-2 hover:border border-white rounded-sm\"
           >
-            <div className="bg-gradient-to-r from-green-50 to-lime-50 p-3 rounded-xl border border-lime-200">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  {isOnline ? (
-                    <FiWifi className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <FiWifiOff className="h-4 w-4 text-red-500" />
-                  )}
-                  <span className="text-xs font-medium text-gray-600">
-                    {isOnline ? "Connected" : "Offline"}
-                  </span>
-                </div>
-                <button
-                  onClick={triggerSync}
-                  disabled={!isOnline || isSyncing}
-                  className="p-1 hover:bg-white/50 rounded transition-colors duration-200"
-                >
-                  <FiRefreshCw
-                    className={`h-3 w-3 text-gray-400 ${
-                      isSyncing ? "animate-spin" : ""
-                    }`}
-                  />
-                </button>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-500">Real-time Sync</span>
-                <label className="flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isRealTimeSync}
-                    onChange={(e) => setIsRealTimeSync(e.target.checked)}
-                    className="sr-only"
-                  />
-                  <div
-                    className={`relative w-8 h-4 rounded-full transition-colors duration-200 ${
-                      isRealTimeSync ? "bg-lime-500" : "bg-gray-300"
-                    }`}
-                  >
-                    <div
-                      className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform duration-200 ${
-                        isRealTimeSync ? "translate-x-4" : "translate-x-0"
-                      }`}
-                    ></div>
-                  </div>
-                </label>
-              </div>
-            </div>
-            <p className="text-xs text-gray-400 mt-2">
-              Last sync: {lastSync.toLocaleTimeString()}
-            </p>
+            <FiMenu className=\"h-6 w-6\" />
+          </button>
+
+          <div 
+            onClick={() => navigate(\"/\")}
+            className=\"flex items-center cursor-pointer p-2 hover:border border-white rounded-sm\"
+          >
+            <h1 className=\"text-xl font-bold tracking-tight\">anritvox</h1>
+            <span className=\"text-[#febd69] text-xs ml-1 pt-1 font-bold\">admin</span>
           </div>
 
-          {/* Navigation Menu */}
-          <nav className="space-y-2">
-            {menuItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => handleSectionChange(item.id)}
-                className={`group flex items-center w-full text-left rounded-xl transition-all duration-300 ease-in-out font-medium
-                  ${
-                    sidebarCollapsed
-                      ? "px-3 py-3 justify-center"
-                      : "px-4 py-3 gap-3"
-                  }
-                  ${
-                    section === item.id
-                      ? "bg-gradient-to-r from-lime-600 to-green-600 text-white shadow-lg shadow-lime-200 transform scale-105"
-                      : "text-gray-700 hover:bg-gradient-to-r hover:from-lime-50 hover:to-green-50 hover:text-lime-700 hover:shadow-md"
-                  }`}
-                title={sidebarCollapsed ? item.label : ""}
-              >
-                <item.icon
-                  className={`${
-                    sidebarCollapsed ? "h-6 w-6" : "h-5 w-5"
-                  } transition-all duration-200`}
-                />
-                {!sidebarCollapsed && (
-                  <span className="flex-1">{item.label}</span>
-                )}
+          <div className=\"hidden md:flex flex-1 max-w-2xl ml-4\">
+            <div className=\"flex w-full group\">
+              <input 
+                type=\"text\" 
+                placeholder=\"Search admin dashboard...\" 
+                className=\"flex-1 p-2 rounded-l-md text-black focus:outline-none focus:ring-2 focus:ring-[#f3a847]\"
+              />
+              <button className=\"bg-[#febd69] hover:bg-[#f3a847] p-2 rounded-r-md transition-colors\">
+                <FiSearch className=\"h-5 w-5 text-[#131921]\" />
               </button>
-            ))}
+            </div>
+          </div>
 
-            {/* External Tools */}
-            <div
-              className={`border-t border-gray-200 pt-4 mt-4 ${
-                sidebarCollapsed
-                  ? "opacity-0 h-0 overflow-hidden"
-                  : "opacity-100"
-              }`}
+          <div className=\"flex items-center gap-2 ml-auto\">
+            <div className=\"hidden lg:flex items-center gap-2 px-3 py-1 border border-white/20 rounded-md bg-white/5\">
+              <div className={`h-2 w-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
+              <span className=\"text-xs font-medium\">{isOnline ? 'Live' : 'Offline'}</span>
+            </div>
+            
+            <div className=\"hidden sm:flex flex-col px-3 py-1 hover:border border-white rounded-sm cursor-pointer border border-transparent\">
+              <span className=\"text-[10px] text-gray-400 leading-none\">Hello, Admin</span>
+              <span className=\"text-sm font-bold leading-none mt-1 text-[#febd69]\">Systems Control</span>
+            </div>
+
+            <button 
+              onClick={handleLogout}
+              className=\"flex items-center gap-1 px-3 py-2 border border-transparent hover:border-white rounded-sm text-sm font-bold transition-all\"
             >
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                External Tools
-              </p>
-              <button
-                onClick={() => {
-                  window.open(
-                    "https://pranavkumar2601.github.io/serial-number-genrator/",
-                    "_blank"
-                  );
-                }}
-                className="flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl transition-all duration-300 ease-in-out font-medium text-gray-700 hover:bg-gradient-to-r hover:from-lime-50 hover:to-green-100 hover:text-lime-700"
+              <FiLogOut className=\"h-4 w-4\" />
+              <span className=\"hidden md:inline\">Logout</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <div className=\"flex flex-1 relative overflow-x-hidden\">
+        {/* Amazon Sidebar - Dark Blue Style */}
+        <aside className={`
+          fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out
+          sm:relative sm:translate-x-0 border-r border-gray-200
+          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}>
+          <div className=\"h-full flex flex-col\">
+            <div className=\"p-4 bg-[#232f3e] text-white flex items-center justify-between\">
+              <div className=\"flex items-center gap-2\">
+                <div className=\"p-1.5 bg-white/10 rounded-md\">
+                  <FiSettings className=\"h-5 w-5 text-[#febd69]\" />
+                </div>
+                <span className=\"font-bold\">Admin Portal</span>
+              </div>
+              <button onClick={() => setMobileMenuOpen(false)} className=\"sm:hidden text-white hover:text-[#febd69]\">
+                <FiX className=\"h-6 w-6\" />
+              </button>
+            </div>
+
+            <nav className=\"flex-1 p-2 space-y-0.5 overflow-y-auto\">
+              <p className=\"px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2\">Core Features</p>
+              {menuItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => { setSection(item.id); setMobileMenuOpen(false); }}
+                  className={`
+                    w-full flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-all
+                    ${section === item.id 
+                      ? 'bg-gray-100 text-[#c45500] shadow-sm' 
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-black'}
+                  `}
+                >
+                  <item.icon className={`h-5 w-5 ${section === item.id ? 'text-[#c45500]' : 'text-gray-400'}`} />
+                  {item.label}
+                </button>
+              ))}
+
+              <p className=\"px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-6\">System Status</p>
+              <div className=\"mx-2 p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-3\">
+                <div className=\"flex items-center justify-between\">
+                  <div className=\"flex items-center gap-2\">
+                    {isOnline ? <FiWifi className=\"h-4 w-4 text-green-500\" /> : <FiWifiOff className=\"h-4 w-4 text-red-500\" />}
+                    <span className=\"text-xs font-semibold\">{isOnline ? 'Active' : 'Offline'}</span>
+                  </div>
+                  <button onClick={triggerSync} disabled={!isOnline || isSyncing} className=\"p-1 hover:bg-white rounded shadow-sm transition-all active:scale-95\">
+                    <FiRefreshCw className={`h-3.5 w-3.5 text-gray-400 ${isSyncing ? 'animate-spin text-[#c45500]' : ''}`} />
+                  </button>
+                </div>
+                <div className=\"flex items-center justify-between pt-2 border-t border-gray-200\">
+                  <span className=\"text-[10px] font-medium text-gray-500\">Auto-Sync</span>
+                  <label className=\"relative inline-flex items-center cursor-pointer scale-90\">
+                    <input type=\"checkbox\" checked={isRealTimeSync} onChange={(e) => setIsRealTimeSync(e.target.checked)} className=\"sr-only peer\" />
+                    <div className=\"w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#c45500]\"></div>
+                  </label>
+                </div>
+              </div>
+
+              <p className=\"px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-6\">External</p>
+              <button 
+                onClick={() => window.open(\"https://pranavkumar2601.github.io/serial-number-genrator/\", \"_blank\")}
+                className=\"w-full flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-black transition-all\"
               >
-                <FiKey className="h-5 w-5" />
+                <FiExternalLink className=\"h-5 w-5 text-gray-400\" />
                 <span>Serial Generator</span>
               </button>
-            </div>
-          </nav>
-        </div>
+            </nav>
 
-        {/* Enhanced Logout Button - Fixed for mobile visibility */}
-        <div className="p-6 mt-auto flex-shrink-0">
-          <button
-            onClick={handleLogout}
-            className={`flex items-center justify-center w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out relative overflow-hidden group
-              ${sidebarCollapsed ? "px-3 py-4" : "px-6 py-4 gap-2"}`}
-          >
-            {/* Animated background */}
-            <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-700 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
-
-            <FiLogOut
-              className={`${
-                sidebarCollapsed ? "h-6 w-6" : "h-5 w-5"
-              } relative z-10`}
-            />
-            {!sidebarCollapsed && <span className="relative z-10">Logout</span>}
-
-            {/* Ripple effect */}
-            <div className="absolute inset-0 rounded-xl bg-white opacity-0 group-active:opacity-20 transition-opacity duration-150"></div>
-          </button>
-        </div>
-      </aside>
-
-      {/* Enhanced Main Content */}
-      <main className="flex-1 relative overflow-hidden">
-        {/* Top Header Bar */}
-        <header className="bg-white/80 backdrop-blur-xl border-b border-lime-200/50 p-4 sm:p-6 sticky top-0 z-30">
-          <div className="flex items-center justify-between">
-            {/* Mobile menu button - Enhanced visibility */}
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="sm:hidden bg-lime-600 text-white p-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-lime-500 focus:ring-offset-2"
-              aria-label="Open menu"
-            >
-              <FiMenu className="h-5 w-5" />
-            </button>
-
-            {/* Page Title */}
-            <div className="hidden sm:block">
-              <h1 className="text-2xl font-bold text-gray-900 capitalize">
-                {section === "dashboard"
-                  ? "Dashboard Overview"
-                  : section.replace("-", " ")}
-              </h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Welcome to Anritvox Admin Dashboard - Real-time business
-                insights
-              </p>
-            </div>
-
-            {/* Real-time Status Indicator */}
-            <div className="flex items-center gap-4">
-              <div className="hidden md:flex items-center gap-2 bg-green-50 px-4 py-2 rounded-xl border border-green-200">
-                <FiActivity
-                  className={`h-4 w-4 text-green-600 ${
-                    isRealTimeSync && isOnline ? "animate-pulse" : ""
-                  }`}
-                />
-                <span className="text-sm font-medium text-green-700">
-                  {isRealTimeSync && isOnline ? "Live" : "Paused"}
-                </span>
+            <div className=\"p-4 border-t bg-gray-50\">
+              <div className=\"flex items-center gap-3 px-2 py-2\">
+                <div className=\"h-8 w-8 rounded-full bg-[#131921] flex items-center justify-center text-[#febd69] font-bold text-xs\">A</div>
+                <div className=\"flex flex-col overflow-hidden\">
+                  <span className=\"text-xs font-bold truncate\">System Admin</span>
+                  <span className=\"text-[10px] text-gray-500 truncate\">Last sync: {lastSync.toLocaleTimeString()}</span>
+                </div>
               </div>
             </div>
           </div>
-        </header>
+        </aside>
 
-        {/* Content Area */}
-        <div className="p-4 sm:p-6 lg:p-8 relative min-h-screen">
-          {/* Animated Background Elements */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-lime-400/10 to-green-400/10 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-            <div className="absolute top-1/2 right-1/4 w-80 h-80 bg-gradient-to-r from-green-400/10 to-emerald-400/10 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-            <div className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-gradient-to-r from-lime-400/10 to-lime-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
-          </div>
+        {/* Main Content Area */}
+        <main className=\"flex-1 p-4 md:p-6 lg:p-10 overflow-y-auto\">
+          <div className=\"max-w-7xl mx-auto\">
+            {/* Page Header */}
+            <div className=\"mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4\">
+              <div>
+                <nav className=\"flex text-xs text-gray-500 mb-2 font-medium\">
+                  <span className=\"hover:text-[#c45500] cursor-pointer\">Admin Dashboard</span>
+                  <span className=\"mx-1 text-gray-400\">›</span>
+                  <span className=\"text-gray-900 font-bold capitalize\">{section}</span>
+                </nav>
+                <h1 className=\"text-3xl font-bold text-[#111] capitalize\">
+                  {section === \"dashboard\" ? \"Dashboard Overview\" : section.replace(\"-\", \" \")}
+                </h1>
+                <p className=\"text-sm text-gray-500 mt-1\">Manage your storefront data and system settings in real-time.</p>
+              </div>
+              <div className=\"flex items-center gap-2\">
+                <button 
+                  onClick={triggerSync}
+                  className=\"px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-bold hover:bg-gray-50 transition-all flex items-center gap-2\"
+                >
+                  <FiRefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                  Refresh
+                </button>
+              </div>
+            </div>
 
-          {/* Content */}
-          <div className="relative z-10">
-            <div className="animate-fade-in-up">{renderSection()}</div>
+            {/* Component Render Wrapper - Amazon Card Style */}
+            <div className=\"bg-white rounded-lg shadow-[0_2px_5px_0_rgba(213,217,217,.5)] border border-[#d5d9d9] min-h-[600px] overflow-hidden\">
+              <div className=\"p-6\">
+                {renderSection()}
+              </div>
+            </div>
           </div>
+        </main>
+      </div>
+
+      {/* Mini Footer - Amazon Style */}
+      <footer className=\"bg-[#131921] text-white py-10 mt-auto border-t-8 border-[#232f3e]\">
+        <div className=\"max-w-7xl mx-auto px-4 text-center\">
+          <div className=\"flex flex-wrap justify-center gap-x-8 gap-y-4 mb-6 text-sm font-medium\">
+            <span className=\"hover:underline cursor-pointer\">Conditions of Use</span>
+            <span className=\"hover:underline cursor-pointer\">Privacy Notice</span>
+            <span className=\"hover:underline cursor-pointer\">System Help</span>
+            <span className=\"hover:underline cursor-pointer\">Contact Support</span>
+          </div>
+          <p className=\"text-xs text-gray-400\">© 2026 Anritvox Admin Portal. All rights reserved.</p>
         </div>
-      </main>
-
-      {/* Enhanced Custom Styles */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-
-        .font-inter {
-          font-family: 'Inter', sans-serif;
-        }
-
-        @keyframes fadeInUp {
-          from { 
-            opacity: 0; 
-            transform: translateY(30px); 
-          }
-          to { 
-            opacity: 1; 
-            transform: translateY(0); 
-          }
-        }
-
-        .animate-fade-in-up {
-          animation: fadeInUp 0.8s ease-out forwards;
-        }
-
-        @keyframes blob {
-          0% {
-            transform: translate(0px, 0px) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.2);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.8);
-          }
-          100% {
-            transform: translate(0px, 0px) scale(1);
-          }
-        }
-
-        .animate-blob {
-          animation: blob 15s infinite cubic-bezier(0.4, 0.0, 0.2, 1);
-        }
-
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-          width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb {
-          background: #84cc16;
-          border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: #65a30d;
-        }
-      `}</style>
+      </footer>
     </div>
   );
 }
