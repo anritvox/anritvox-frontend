@@ -6,155 +6,90 @@ export default function NavBar() {
   const [open, setOpen] = useState(false);
 
   return (
-    // Main navigation container with white background and Inter font
-    <nav className="bg-white shadow-md relative z-20 font-inter antialiased">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
-          {/* Logo */}
-          <div className="flex-shrink-0 flex items-center">
-            {/* <Link
-              to="/"
-              // Logo color changed to a prominent olive green
-              className="text-2xl font-bold text-lime-700 hover:text-lime-800 transition-colors duration-300"
-            >
-              Anrivox
-            </Link> */}
-            <Link to="/">
-              <img src={logo} alt="Anritvox Logo" className="h-12 w-32" />
-            </Link>
-          </div>
+    <nav className="bg-[#131921] text-white font-sans antialiased sticky top-0 z-50">
+      {/* Top Bar */}
+      <div className="max-w-[1500px] mx-auto px-4 py-2 flex items-center gap-4 h-16">
+        {/* Logo */}
+        <Link to="/" className="flex-shrink-0 border border-transparent hover:border-white p-1 rounded-sm">
+          <img src={logo} alt="Anritvox" className="h-8 w-auto invert brightness-0" />
+        </Link>
 
-          {/* Desktop Links */}
-          <div className="hidden sm:flex sm:items-center sm:space-x-8">
-            <Link
-              to="/"
-              // Link text dark, hover effect in olive green
-              className="text-gray-800 hover:text-lime-700 transition-colors duration-300 px-3 py-2 rounded-md font-medium"
-            >
-              Home
-            </Link>
-            <Link
-              to="/shop"
-              className="text-gray-800 hover:text-lime-700 transition-colors duration-300 px-3 py-2 rounded-md font-medium"
-            >
-              Shop
-            </Link>
-            <Link
-              to="/ewarranty"
-              className="text-gray-800 hover:text-lime-700 transition-colors duration-300 px-3 py-2 rounded-md font-medium"
-            >
-              E-Warranty
-            </Link>
-            <Link
-              to="/contact"
-              className="text-gray-800 hover:text-lime-700 transition-colors duration-300 px-3 py-2 rounded-md font-medium"
-            >
-              Contact
-            </Link>
-            <Link
-              to="/admin/login"
-              // Admin button styled with olive green background and white text
-              className="bg-lime-700 hover:bg-lime-800 text-white font-semibold py-2 px-6 rounded-full shadow-md transform hover:scale-105 transition-all duration-300 ease-in-out"
-            >
-              Admin
-            </Link>
-          </div>
-
-          {/* Hamburger for mobile */}
-          <div className="flex items-center sm:hidden">
-            <button
-              onClick={() => setOpen(!open)}
-              // Hamburger icon color dark, hover background olive green
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-white hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-lime-600 transition-colors duration-300"
-              aria-controls="mobile-menu"
-              aria-expanded={open ? "true" : "false"}
-            >
-              <span className="sr-only">Open main menu</span>
-              <svg
-                className="h-6 w-6"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                {open ? (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                ) : (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M4 8h16M4 16h16"
-                  />
-                )}
-              </svg>
-            </button>
+        {/* Deliver to India */}
+        <div className="hidden lg:flex items-center gap-1 border border-transparent hover:border-white p-1 rounded-sm cursor-pointer ml-2">
+          <svg className="w-5 h-5 mt-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-400 leading-none">Deliver to</span>
+            <span className="text-sm font-bold leading-none">India</span>
           </div>
         </div>
+
+        {/* Search Bar */}
+        <div className="flex-1 hidden md:flex bg-white rounded-md overflow-hidden h-10 ml-2">
+          <select className="bg-gray-100 text-gray-600 px-3 border-r text-xs outline-none cursor-pointer hover:bg-gray-200">
+            <option>All</option>
+          </select>
+          <input 
+            type="text" 
+            className="flex-1 px-4 py-1 text-black text-sm outline-none"
+            placeholder="Search Anritvox..."
+          />
+          <button className="bg-[#febd69] hover:bg-[#f3a847] px-5 text-gray-800 flex items-center justify-center">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </button>
+        </div>
+
+        {/* Account & Lists */}
+        <Link to="/admin/login" className="flex flex-col border border-transparent hover:border-white p-1 rounded-sm ml-2">
+          <span className="text-xs leading-none">Hello, Admin</span>
+          <span className="text-sm font-bold leading-none">Account & Lists</span>
+        </Link>
+
+        {/* Returns & Orders */}
+        <div className="hidden md:flex flex-col border border-transparent hover:border-white p-1 rounded-sm ml-2 cursor-pointer">
+          <span className="text-xs leading-none">Returns</span>
+          <span className="text-sm font-bold leading-none">& Orders</span>
+        </div>
+
+        {/* Cart */}
+        <div className="flex items-end border border-transparent hover:border-white p-1 rounded-sm ml-2 cursor-pointer relative">
+          <div className="relative">
+            <span className="absolute -top-1 left-3 text-[#f08804] font-bold text-base">0</span>
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+          </div>
+          <span className="font-bold text-sm hidden sm:block">Cart</span>
+        </div>
+        
+        {/* Hamburger for mobile */}
+        <button className="md:hidden p-1" onClick={() => setOpen(!open)}>
+           <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+      </div>
+
+      {/* Bottom Bar */}
+      <div className="bg-[#232f3e] px-4 py-1 flex items-center gap-4 text-sm font-medium overflow-x-auto whitespace-nowrap scrollbar-hide">
+        <button className="flex items-center gap-1 border border-transparent hover:border-white px-2 py-1 rounded-sm">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+          All
+        </button>
+        <Link to="/" className="border border-transparent hover:border-white px-2 py-1 rounded-sm">Home</Link>
+        <Link to="/shop" className="border border-transparent hover:border-white px-2 py-1 rounded-sm font-bold">Shop</Link>
+        <Link to="/ewarranty" className="border border-transparent hover:border-white px-2 py-1 rounded-sm">E-Warranty</Link>
+        <Link to="/contact" className="border border-transparent hover:border-white px-2 py-1 rounded-sm">Contact Us</Link>
+        <span className="border border-transparent hover:border-white px-2 py-1 rounded-sm cursor-pointer text-gray-300">Best Sellers</span>
+        <span className="border border-transparent hover:border-white px-2 py-1 rounded-sm cursor-pointer text-gray-300">Electronics</span>
       </div>
 
       {/* Mobile Menu */}
-      <div
-        className={`sm:hidden ${open ? "block" : "hidden"}`}
-        id="mobile-menu"
-      >
-        <div className="px-2 pt-2 pb-3 space-y-1 bg-gray-800 rounded-b-lg shadow-xl">
-          {" "}
-          {/* Dark background for mobile menu */}
-          <Link
-            to="/"
-            // Mobile link text white, hover background olive green
-            className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-lime-700 transition-colors duration-300"
-            onClick={() => setOpen(false)}
-          >
-            Home
-          </Link>
-          <Link
-            to="/shop"
-            className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-lime-700 transition-colors duration-300"
-            onClick={() => setOpen(false)}
-          >
-            Shop
-          </Link>
-          <Link
-            to="/ewarranty"
-            className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-lime-700 transition-colors duration-300"
-            onClick={() => setOpen(false)}
-          >
-            E-Warranty
-          </Link>
-          <Link
-            to="/contact"
-            className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-lime-700 transition-colors duration-300"
-            onClick={() => setOpen(false)}
-          >
-            Contact
-          </Link>
-          <Link
-            to="/admin/login"
-            // Mobile Admin button in olive green
-            className="block px-3 py-2 rounded-md text-base font-medium bg-lime-700 text-white hover:bg-lime-800 transition-colors duration-300 mt-2"
-            onClick={() => setOpen(false)}
-          >
-            Admin
-          </Link>
+      {open && (
+        <div className="md:hidden bg-white text-black absolute top-full left-0 w-full shadow-2xl z-50 p-4 border-t">
+           <div className="flex flex-col gap-4">
+              <Link to="/" onClick={() => setOpen(false)} className="font-bold text-lg">Home</Link>
+              <Link to="/shop" onClick={() => setOpen(false)} className="font-bold text-lg">Shop</Link>
+              <Link to="/ewarranty" onClick={() => setOpen(false)} className="font-bold text-lg">E-Warranty</Link>
+              <Link to="/contact" onClick={() => setOpen(false)} className="font-bold text-lg">Contact</Link>
+           </div>
         </div>
-      </div>
-
-      {/* Tailwind CSS custom font import (if not already global) */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-
-        .font-inter {
-          font-family: 'Inter', sans-serif;
-        }
-      `}</style>
+      )}
     </nav>
   );
 }
