@@ -24,7 +24,7 @@ export default function EWarrantyManagement({ token }) {
     setLoading(true);
     try {
       const data = await fetchWarrantyAdmin(token);
-      setWarranties(data);
+      setWarranties(data || []);
     } catch (err) {
       console.error("Warranty load error:", err);
     } finally {
@@ -53,6 +53,7 @@ export default function EWarrantyManagement({ token }) {
   };
 
   const handleUpdate = async () => {
+    if (!selectedWarranty) return;
     setIsUpdating(true);
     try {
       await updateWarrantyAdmin(selectedWarranty.id, selectedWarranty, token);
@@ -116,13 +117,11 @@ export default function EWarrantyManagement({ token }) {
   );
 
   return (
-    <div className="min-h-screen bg-[#050608] text-gray-300 p-4 lg:p-12 font-sans selection:bg-purple-500/30 selection:text-white relative overflow-hidden custom-scroll">
-      {/* Background FX */}
+    <div className="min-h-screen bg-[#050608] text-gray-300 p-4 lg:p-12 font-sans selection:bg-purple-500/30 selection:text-white relative overflow-hidden">
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-900/10 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-900/10 blur-[120px] rounded-full pointer-events-none" />
 
       <div className="max-w-7xl mx-auto relative z-10 animate-fade-in">
-        {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
           <div>
             <div className="flex items-center gap-3 mb-4">
@@ -153,7 +152,6 @@ export default function EWarrantyManagement({ token }) {
           </div>
         </div>
 
-        {/* Dynamic Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {[
             { label: 'Authenticated', val: stats.active, icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-500/5' },
@@ -173,7 +171,6 @@ export default function EWarrantyManagement({ token }) {
           ))}
         </div>
 
-        {/* Action Bar */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
           <div className="lg:col-span-3 relative group">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-purple-400 transition-colors" size={20} />
@@ -201,9 +198,8 @@ export default function EWarrantyManagement({ token }) {
           </div>
         </div>
 
-        {/* Database Grid */}
         <div className="bg-[#0a0c10]/50 border border-white/5 rounded-[2.5rem] overflow-hidden backdrop-blur-xl mb-8">
-          <div className="overflow-x-auto custom-scroll">
+          <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b border-white/5">
@@ -251,39 +247,21 @@ export default function EWarrantyManagement({ token }) {
                     </td>
                     <td className="px-8 py-6 text-right">
                       <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          onClick={() => handleEdit(w)}
-                          className="p-3 bg-white/5 hover:bg-purple-500/20 text-purple-400 rounded-2xl transition-all"
-                        >
+                        <button onClick={() => handleEdit(w)} className="p-3 bg-white/5 hover:bg-purple-500/20 text-purple-400 rounded-2xl transition-all">
                           <Edit3 size={18} />
                         </button>
-                        <button 
-                          onClick={() => handleDelete(w.id)}
-                          className="p-3 bg-white/5 hover:bg-red-500/20 text-red-400 rounded-2xl transition-all"
-                        >
+                        <button onClick={() => handleDelete(w.id)} className="p-3 bg-white/5 hover:bg-red-500/20 text-red-400 rounded-2xl transition-all">
                           <Trash2 size={18} />
                         </button>
                       </div>
                     </td>
                   </tr>
                 ))}
-                
-                {filteredWarranties.length === 0 && (
-                  <tr>
-                    <td colSpan="4" className="px-8 py-20 text-center">
-                      <div className="flex flex-col items-center gap-4">
-                        <SearchCode size={48} className="text-gray-800" />
-                        <p className="text-gray-600 font-mono text-sm">No records detected in current scan sector.</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Footer Stats & Pagination */}
         <div className="p-6 bg-white/5 border border-white/5 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3 text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">
             <Layers size={14} className="text-purple-400" />
@@ -294,7 +272,7 @@ export default function EWarrantyManagement({ token }) {
             <button 
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(p => p - 1)}
-              className="px-4 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border border-white/5"
+              className="px-4 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border border-white/5"
             >
               Prev Segment
             </button>
@@ -314,7 +292,7 @@ export default function EWarrantyManagement({ token }) {
             <button 
               disabled={currentPage === totalPages || totalPages === 0}
               onClick={() => setCurrentPage(p => p + 1)}
-              className="px-4 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border border-white/5"
+              className="px-4 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border border-white/5"
             >
               Next Segment
             </button>
@@ -322,7 +300,6 @@ export default function EWarrantyManagement({ token }) {
         </div>
       </div>
 
-      {/* Edit Modal */}
       {isEditModalOpen && selectedWarranty && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-[#050608]/80 backdrop-blur-xl" onClick={() => setIsEditModalOpen(false)} />
@@ -385,7 +362,7 @@ export default function EWarrantyManagement({ token }) {
                   type="date"
                   value={selectedWarranty.purchase_date?.split('T')[0]}
                   onChange={(e) => setSelectedWarranty({...selectedWarranty, purchase_date: e.target.value})}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500/50 outline-none transition-all color-scheme-dark"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500/50 outline-none transition-all"
                 />
               </div>
             </div>
@@ -411,7 +388,7 @@ export default function EWarrantyManagement({ token }) {
       )}
 
       <style>
-        {`
+        {\`
           @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -419,30 +396,7 @@ export default function EWarrantyManagement({ token }) {
           .animate-fade-in {
             animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
           }
-          .custom-scroll::-webkit-scrollbar {
-            height: 6px;
-          }
-          .custom-scroll::-webkit-scrollbar-track {
-            background: transparent;
-          }
-          .custom-scroll::-webkit-scrollbar-thumb {
-            background: #1f2937;
-            border-radius: 10px;
-          }
-          ::-webkit-scrollbar {
-            width: 8px;
-          }
-          ::-webkit-scrollbar-track {
-            background: transparent;
-          }
-          ::-webkit-scrollbar-thumb {
-            background: #1f2937;
-            border-radius: 10px;
-          }
-          input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(1);
-          }
-        `}
+        \`}
       </style>
     </div>
   );
