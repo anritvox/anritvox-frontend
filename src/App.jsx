@@ -1,20 +1,16 @@
 import React, { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
-// Lazy load all pages for performance
+// Lazy load existing pages
 const Home = lazy(() => import("./pages/Home"));
 const Shop = lazy(() => import("./pages/Shop"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const EWarranty = lazy(() => import("./pages/EWarranty"));
 const Contact = lazy(() => import("./pages/Contact"));
-// Login & Register removed to fix Vercel build errors
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-const Terms = lazy(() => import("./pages/Terms"));
-const Privacy = lazy(() => import("./pages/Privacy"));
 
 import "./index.css";
 
@@ -26,14 +22,13 @@ const PageLoader = () => (
 
 function AppContent() {
   const location = useLocation();
-  // Hide Navbar & Footer on ALL /admin/* paths including /admin/login
   const isAdminPath = location.pathname.startsWith("/admin");
 
   return (
     <>
       {!isAdminPath && <Navbar />}
       <main>
-        <Suspense fallback={<PageLoader />}>Clean fix for Vercel build: remove backslashes and missing imports
+        <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/shop" element={<Shop />} />
@@ -41,13 +36,10 @@ function AppContent() {
             <Route path="/ewarranty" element={<EWarranty />} />
             <Route path="/e-warranty" element={<EWarranty />} />
             <Route path="/contact" element={<Contact />} />
-            {/* Removed broken login/register routes */}
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<Privacy />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/*" element={<AdminDashboard />} />
-            <Route path="*" element={<NotFound />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
       </main>
