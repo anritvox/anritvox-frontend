@@ -19,7 +19,7 @@ import {
   X,
   AlertCircle,
   Loader2,
-  Grid3X3,
+  Grid3x3,
   List,
   ChevronRight,
 } from "lucide-react";
