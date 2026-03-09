@@ -13,7 +13,7 @@ export default function Shop() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const productsPerPage = 20;
+  const productsPerPage = 16;
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -31,7 +31,6 @@ export default function Shop() {
     loadProducts();
   }, []);
 
-  // Reset page when filters/search/sort change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, selectedCategory, selectedSubcategory, sortOption]);
@@ -39,255 +38,158 @@ export default function Shop() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white text-gray-800">
-        <p className="text-xl animate-pulse">Loading products…</p>
+        <p className="text-xl animate-pulse font-bold">Loading Anritvox Products...</p>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white text-red-600">
-        <p className="text-xl">Error: {error}</p>
-      </div>
-    );
-  }
-
-  // Derive filter options
-  const categoryOptions = Array.from(
-    new Set(products.map((p) => p.category_name).filter(Boolean))
-  );
+  const categoryOptions = Array.from(new Set(products.map((p) => p.category_name).filter(Boolean)));
+  
   const subcategoryOptions = Array.from(
     new Set(
       products
-        .filter((p) =>
-          selectedCategory ? p.category_name === selectedCategory : true
-        )
+        .filter((p) => (selectedCategory ? p.category_name === selectedCategory : true))
         .map((p) => p.subcategory_name)
         .filter(Boolean)
     )
   );
 
-  // 1) Filter by search, category, subcategory
   let filtered = products
     .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    .filter((p) =>
-      selectedCategory ? p.category_name === selectedCategory : true
-    )
-    .filter((p) =>
-      selectedSubcategory ? p.subcategory_name === selectedSubcategory : true
-    );
+    .filter((p) => (selectedCategory ? p.category_name === selectedCategory : true))
+    .filter((p) => (selectedSubcategory ? p.subcategory_name === selectedSubcategory : true));
 
-  // 2) Sort
   if (sortOption === "priceAsc") {
-    filtered = filtered.sort((a, b) => a.price - b.price);
+    filtered = [...filtered].sort((a, b) => a.price - b.price);
   } else if (sortOption === "priceDesc") {
-    filtered = filtered.sort((a, b) => b.price - a.price);
+    filtered = [...filtered].sort((a, b) => b.price - a.price);
   }
 
-  // 3) Pagination
   const totalPages = Math.ceil(filtered.length / productsPerPage);
-  const idxLast = currentPage * productsPerPage;
-  const idxFirst = idxLast - productsPerPage;
-  const currentProducts = filtered.slice(idxFirst, idxLast);
-
-  const paginate = (page) => setCurrentPage(page);
-
-  // Render pagination
-  const renderPagination = () => {
-    if (totalPages <= 1) return null;
-    const pages = [];
-    const maxButtons = 5;
-    let start = 1,
-      end = totalPages;
-    if (totalPages > maxButtons) {
-      const half = Math.floor(maxButtons / 2);
-      if (currentPage <= half) end = maxButtons;
-      else if (currentPage + half >= totalPages)
-        start = totalPages - maxButtons + 1;
-      else {
-        start = currentPage - half;
-        end = currentPage + half;
-      }
-    }
-    for (let i = start; i <= end; i++) pages.push(i);
-    return (
-      <nav className="flex justify-center items-center space-x-2 mt-8">
-        <button
-          onClick={() => paginate(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="px-3 py-1 text-sm rounded bg-white border text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-        >
-          ‹ Prev
-        </button>
-        {start > 1 && (
-          <>
-            <button
-              onClick={() => paginate(1)}
-              className="px-3 py-1 text-sm rounded bg-white border"
-            >
-              1
-            </button>
-            {start > 2 && <span className="px-1">…</span>}
-          </>
-        )}
-        {pages.map((num) => (
-          <button
-            key={num}
-            onClick={() => paginate(num)}
-            className={`px-3 py-1 text-sm rounded ${
-              num === currentPage
-                ? "bg-lime-600 text-white"
-                : "bg-white border text-gray-700 hover:bg-gray-50"
-            }`}
-          >
-            {num}
-          </button>
-        ))}
-        {end < totalPages && (
-          <>
-            {end < totalPages - 1 && <span className="px-1">…</span>}
-            <button
-              onClick={() => paginate(totalPages)}
-              className="px-3 py-1 text-sm rounded bg-white border"
-            >
-              {totalPages}
-            </button>
-          </>
-        )}
-        <button
-          onClick={() => paginate(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className="px-3 py-1 text-sm rounded bg-white border text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-        >
-          Next ›
-        </button>
-      </nav>
-    );
-  };
+  const currentProducts = filtered.slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage);
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 py-12 px-4 sm:px-6 lg:px-8 font-inter">
-      {/* <h2 className="text-4xl md:text-5xl font-bold text-center mb-8">
-        Explore Our <span className="text-lime-700">Products</span>
-      </h2> */}
-
-      {/* Search + Filter/Sort Bar */}
-      <div className="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        {/* Search */}
-        <div className="relative w-full md:w-1/2">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-5 w-5 text-gray-400" viewBox="0 0 24 24">
-              <path
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-          </div>
-          <input
-            type="text"
-            placeholder="Search products by name..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-full focus:border-lime-600 focus:ring-lime-600 transition duration-200"
-          />
-        </div>
-
-        {/* Filter & Sort */}
-        <div className="w-full md:w-auto flex flex-wrap gap-2">
-          <select
-            value={selectedCategory}
-            onChange={(e) => {
-              setSelectedCategory(e.target.value);
-              setSelectedSubcategory("");
-            }}
-            className="w-full md:w-auto px-3 py-2 border border-gray-300 rounded text-sm"
-          >
-            <option value="">All Categories</option>
-            {categoryOptions.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={selectedSubcategory}
-            onChange={(e) => setSelectedSubcategory(e.target.value)}
-            disabled={!selectedCategory}
-            className="w-full md:w-auto px-3 py-2 border border-gray-300 rounded text-sm disabled:opacity-50"
-          >
-            <option value="">All Subcategories</option>
-            {subcategoryOptions.map((sub) => (
-              <option key={sub} value={sub}>
-                {sub}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value)}
-            className="w-full md:w-auto px-3 py-2 border border-gray-300 rounded text-sm"
-          >
-            <option value="">Sort By</option>
-            <option value="priceAsc">Price: Low to High</option>
-            <option value="priceDesc">Price: High to Low</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Products Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-        {currentProducts.length > 0 ? (
-          currentProducts.map((p) => (
-            <div
-              key={`${p.id}-${p.displaySerial}`}
-              className="bg-white rounded-2xl shadow-lg border hover:border-lime-600 transition transform hover:-translate-y-1 duration-200 group overflow-hidden"
+    <div className="min-h-screen bg-gray-100 text-gray-900 font-sans antialiased">
+      <div className="max-w-[1500px] mx-auto flex flex-col md:flex-row gap-6 p-4">
+        
+        {/* Amazon-style Sidebar */}
+        <aside className="w-full md:w-64 flex-shrink-0 bg-white p-4 border rounded-sm shadow-sm self-start">
+          <h3 className="font-bold text-sm mb-3 border-b pb-2">Department</h3>
+          <ul className="space-y-2 text-sm text-[#007185]">
+            <li 
+              className={`cursor-pointer hover:text-[#c45500] ${!selectedCategory ? 'font-bold text-black' : ''}`}
+              onClick={() => { setSelectedCategory(""); setSelectedSubcategory(""); }}
             >
-              <Link to={`/shop/${p.id}`}>
-                <img
-                  src={
-                    p.images?.[0] ||
-                    "https://placehold.co/600x400/E0E0E0/888888?text=No+Image"
-                  }
-                  alt={p.name}
-                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                  onError={(e) => {
-                    e.target.src =
-                      "https://placehold.co/600x400/E0E0E0/888888?text=Image+Not+Found";
-                  }}
-                />
-              </Link>
-              <div className="p-6">
-                <h3 className="text-xl font-semibold mb-2">{p.name}</h3>
-                <p className="text-lime-700 font-bold text-2xl">
-                  ₹{Number(p.price).toFixed(2)}
-                </p>
-                <Link
-                  to={`/shop/${p.id}`}
-                  className="mt-4 inline-block bg-lime-700 hover:bg-lime-800 text-white font-semibold py-2 px-5 rounded-full text-sm transition transform hover:scale-105"
-                >
-                  View Details →
+              All Departments
+            </li>
+            {categoryOptions.map(cat => (
+              <li 
+                key={cat} 
+                className={`cursor-pointer hover:text-[#c45500] ${selectedCategory === cat ? 'font-bold text-black' : ''}`}
+                onClick={() => { setSelectedCategory(cat); setSelectedSubcategory(""); }}
+              >
+                {cat}
+              </li>
+            ))}
+          </ul>
+
+          <h3 className="font-bold text-sm mt-6 mb-3 border-b pb-2">Avg. Customer Review</h3>
+          <div className="space-y-2">
+            {[4,3,2,1].map(star => (
+              <div key={star} className="flex items-center gap-2 cursor-pointer text-sm hover:text-[#c45500]">
+                <span className="text-[#ffa41c] font-bold">
+                  {"★".repeat(star)}{"☆".repeat(5-star)}
+                </span>
+                <span className="text-gray-700">& Up</span>
+              </div>
+            ))}
+          </div>
+
+          <h3 className="font-bold text-sm mt-6 mb-3 border-b pb-2">Price</h3>
+          <ul className="space-y-2 text-sm text-[#007185]">
+             <li className="cursor-pointer hover:text-[#c45500]">Under ₹5,000</li>
+             <li className="cursor-pointer hover:text-[#c45500]">₹5,000 - ₹10,000</li>
+             <li className="cursor-pointer hover:text-[#c45500]">₹10,000 - ₹20,000</li>
+             <li className="cursor-pointer hover:text-[#c45500]">Over ₹20,000</li>
+          </ul>
+        </aside>
+
+        {/* Main Product Feed */}
+        <main className="flex-1">
+          {/* Results Info Bar */}
+          <div className="bg-white border p-3 mb-4 rounded-sm shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
+            <span className="text-sm">
+              1-{currentProducts.length} of {filtered.length} results for <span className="text-[#c45500] font-bold">"{searchTerm || 'All Products'}"</span>
+            </span>
+            <div className="flex items-center gap-2">
+               <label className="text-xs text-gray-600">Sort by:</label>
+               <select 
+                className="text-xs bg-gray-100 border rounded-md px-2 py-1 outline-none hover:bg-gray-200 cursor-pointer"
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value)}
+              >
+                <option value="">Featured</option>
+                <option value="priceAsc">Price: Low to High</option>
+                <option value="priceDesc">Price: High to Low</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Product Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {currentProducts.map((p) => (
+              <div key={p.id} className="bg-white border rounded-sm p-4 flex flex-col hover:shadow-lg transition-shadow duration-200 group">
+                <Link to={`/shop/${p.id}`} className="h-52 flex items-center justify-center mb-4 relative overflow-hidden">
+                  <img 
+                    src={p.images?.[0] || "https://placehold.co/400x400?text=No+Image"} 
+                    alt={p.name}
+                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                  />
                 </Link>
+                <div className="flex-1">
+                  <Link to={`/shop/${p.id}`} className="text-[#007185] hover:text-[#c45500] font-medium text-sm line-clamp-3 mb-1 leading-snug">
+                    {p.name}
+                  </Link>
+                  <div className="flex items-center gap-1 mb-1">
+                    <div className="flex text-[#ffa41c] text-xs">★★★★★</div>
+                    <span className="text-xs text-[#007185] font-medium">2,308</span>
+                  </div>
+                  <div className="flex items-baseline gap-0.5 mt-1">
+                    <span className="text-xs font-bold self-start mt-1">₹</span>
+                    <span className="text-2xl font-medium">{Math.floor(p.price).toLocaleString()}</span>
+                    <span className="text-xs font-bold">00</span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    M.R.P: <span className="line-through">₹{(p.price * 1.4).toFixed(0)}</span> (40% off)
+                  </div>
+                  <p className="text-xs mt-3 font-bold text-gray-900">Get it by Tomorrow</p>
+                  <p className="text-xs text-gray-600">FREE Delivery by Anritvox</p>
+                </div>
+                <button className="mt-4 bg-[#ffd814] hover:bg-[#f7ca00] text-black text-xs py-2 rounded-full font-medium border border-[#fcd200] transition-colors shadow-sm">
+                  Add to Cart
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-12 mb-8">
+              <div className="flex border rounded-md overflow-hidden bg-white shadow-sm">
+                {[...Array(totalPages)].map((_, i) => (
+                  <button 
+                    key={i}
+                    onClick={() => setCurrentPage(i + 1)}
+                    className={`px-4 py-2 border-r last:border-r-0 text-sm ${currentPage === i + 1 ? 'bg-gray-100 font-bold' : 'hover:bg-gray-100'}`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
               </div>
             </div>
-          ))
-        ) : (
-          <p className="col-span-full text-center text-gray-600">
-            No products found.
-          </p>
-        )}
+          )}
+        </main>
       </div>
-
-      {/* Pagination */}
-      {renderPagination()}
-
-      {/* Font import */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-      `}</style>
     </div>
   );
 }
