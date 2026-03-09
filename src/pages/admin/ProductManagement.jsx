@@ -31,7 +31,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Folder,
-  Grid3X3,
+  Grid3x3,
   Settings2,
   Download,
   Search,
