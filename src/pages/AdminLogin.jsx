@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginAdmin } from "../services/api";
-import { FiEye, FiEyeOff, FiAlertCircle } from "react-icons/fi";
-import { Loader2 } from "lucide-react";
-import logo from "../assets/images/logo.webp";
+import { FiEye, FiEyeOff, FiAlertCircle, FiLock, FiMail } from "react-icons/fi";
+import { Loader2, Shield } from "lucide-react";
 
 export default function AdminLogin() {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
@@ -30,128 +29,141 @@ export default function AdminLogin() {
         navigate("/admin/dashboard");
       }, 1500);
     } catch (e) {
-      setError(e.message || "Invalid credentials. Please try again.");
+      setError(e.message || "Access Denied: Invalid Authentication Credentials.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center pt-10 px-4 font-sans text-[#0f1111] animate-fade-in text-left">
-      {/* Amazon Logo Header */}
-      <div className="mb-6 flex flex-col items-center">
-        <img src={logo} alt="Anritvox Logo" className="h-10 mb-1" />
-        <span className="text-[13px] font-bold text-[#c45500]">Admin Central</span>
-      </div>
+    <div className="min-h-screen bg-[#0a0b10] flex items-center justify-center p-6 relative overflow-hidden font-sans">
+      {/* Background Animated Orbs */}
+      <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-cyan-500/10 blur-[150px] rounded-full animate-pulse" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-purple-500/10 blur-[150px] rounded-full animate-pulse delay-700" />
 
-      {/* Main Login Card */}
-      <div className="w-full max-w-[350px] border border-gray-300 rounded-lg p-6 shadow-sm mb-6 bg-white">
-        <h1 className="text-[28px] font-normal mb-4">Sign in</h1>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1">
-            <label htmlFor="email" className="block text-[13px] font-bold pl-0.5">
-              Email Address
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              value={credentials.email}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-400 rounded-sm focus:border-[#e77600] focus:shadow-[0_0_3px_2px_rgba(228,121,17,0.5)] outline-none text-[13px] transition-all"
-              disabled={loading}
-            />
+      <div className="w-full max-w-[420px] relative z-10">
+        {/* Logo / Title Area */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center h-20 w-20 bg-gradient-to-tr from-cyan-400 to-purple-500 rounded-[2rem] shadow-[0_0_30px_rgba(34,211,238,0.3)] mb-6 transform hover:rotate-12 transition-transform duration-500">
+            <Shield className="h-10 w-10 text-black stroke-[2.5px]" />
           </div>
+          <h1 className="text-4xl font-black text-white tracking-tighter mb-2">
+            Anritvox<span className="text-cyan-400">OS</span>
+          </h1>
+          <p className="text-gray-500 font-medium uppercase tracking-[0.3em] text-[10px]">Secure Terminal Access</p>
+        </div>
 
-          <div className="space-y-1">
-            <div className="flex justify-between items-center pr-0.5">
-              <label htmlFor="password" className="block text-[13px] font-bold pl-0.5">
-                Password
-              </label>
-              <button type="button" className="text-xs text-[#0066c0] hover:text-[#c45500] hover:underline">
-                Forgot your password?
-              </button>
-            </div>
-            <div className="relative">
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                required
-                value={credentials.password}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-400 rounded-sm focus:border-[#e77600] focus:shadow-[0_0_3px_2px_rgba(228,121,17,0.5)] outline-none text-[13px] transition-all"
-                disabled={loading}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-2 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
-              </button>
-            </div>
-          </div>
-
-          {error && (
-            <div className="flex items-start gap-2 p-3 border border-red-400 bg-white rounded text-[#c40000] text-sm shadow-sm">
-              <FiAlertCircle className="mt-0.5 flex-shrink-0" size={16} />
-              <div>
-                <span className="font-bold">There was a problem</span>
-                <p className="text-[12px] mt-1">{error}</p>
+        {/* Login Card */}
+        <div className="bg-[#0f111a]/80 backdrop-blur-2xl border border-white/5 rounded-[2.5rem] p-10 shadow-2xl">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Email Field */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Identity Vector</label>
+              <div className="relative group">
+                <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-cyan-400 transition-colors" />
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="admin@anritvox.com"
+                  value={credentials.email}
+                  onChange={handleChange}
+                  className="w-full bg-[#161b22]/50 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-gray-700 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                  disabled={loading}
+                />
               </div>
             </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-b from-[#f7dfa1] to-[#f0c14b] border border-[#a88734] border-b-[#9c7e31] hover:from-[#f5d181] hover:to-[#edb92e] active:from-[#f0c14b] active:to-[#f0c14b] py-1.5 rounded-sm shadow-sm text-[13px] font-normal text-[#111] transition-all flex items-center justify-center gap-2 mt-2"
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign in"}
-          </button>
-        </form>
+            {/* Password Field */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Access Protocol</label>
+              <div className="relative group">
+                <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-cyan-400 transition-colors" />
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  placeholder="••••••••"
+                  value={credentials.password}
+                  onChange={handleChange}
+                  className="w-full bg-[#161b22]/50 border border-white/10 rounded-2xl py-4 pl-12 pr-12 text-white placeholder:text-gray-700 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white transition-colors"
+                >
+                  {showPassword ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
+                </button>
+              </div>
+            </div>
 
-        <p className="text-[12px] mt-4 leading-tight text-gray-600">
-          By signing in, you agree to Anritvox's <span className="text-[#0066c0] hover:text-[#c45500] hover:underline cursor-pointer">Conditions of Use</span> and <span className="text-[#0066c0] hover:text-[#c45500] hover:underline cursor-pointer">Privacy Notice</span>.
-        </p>
-      </div>
+            {/* Error Notification */}
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex items-start gap-3 animate-shake">
+                <FiAlertCircle className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
+                <p className="text-xs font-bold text-red-400 leading-relaxed">{error}</p>
+              </div>
+            )}
 
-      <div className="w-full max-w-[350px] flex items-center gap-2 mb-6">
-        <div className="flex-1 h-px bg-gray-200"></div>
-        <span className="text-[12px] text-gray-500 whitespace-nowrap">New to Anritvox?</span>
-        <div className="flex-1 h-px bg-gray-200"></div>
-      </div>
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-cyan-400 hover:bg-cyan-300 disabled:bg-gray-800 text-black font-black py-4 rounded-2xl shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:shadow-[0_0_30px_rgba(34,211,238,0.6)] active:scale-95 transition-all flex items-center justify-center gap-2 overflow-hidden relative group"
+            >
+              {loading ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                <>
+                  <span>INITIALIZE ACCESS</span>
+                  <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500" />
+                </>
+              )}
+            </button>
+          </form>
 
-      <button className="w-full max-w-[350px] bg-gradient-to-b from-[#f7f8fa] to-[#e7e9ec] border border-[#adb1b8] border-b-[#a2a6ac] hover:from-[#e7eaf0] hover:to-[#d8dbe0] py-1.5 rounded-sm shadow-sm text-[13px] font-normal text-[#111] transition-all">
-        Create your Anritvox account
-      </button>
-
-      <div className="mt-8 w-full border-t border-gray-200 pt-6 text-center">
-        <div className="flex justify-center gap-6 text-[11px] text-[#0066c0] mb-3">
-          <span className="hover:text-[#c45500] hover:underline cursor-pointer">Conditions of Use</span>
-          <span className="hover:text-[#c45500] hover:underline cursor-pointer">Privacy Notice</span>
-          <span className="hover:text-[#c45500] hover:underline cursor-pointer">Help</span>
+          {/* Footer links */}
+          <div className="mt-8 pt-8 border-t border-white/5 flex flex-col items-center gap-4">
+            <button className="text-[10px] font-black text-gray-500 hover:text-cyan-400 uppercase tracking-widest transition-colors">
+              Request Hardware Key
+            </button>
+            <div className="text-[10px] text-gray-600 font-medium">
+              &copy; 2026 ANRITVOX SECURE SYSTEMS
+            </div>
+          </div>
         </div>
-        <p className="text-[11px] text-gray-500">
-          © 2024, Anritvox.com, Inc. or its affiliates
-        </p>
       </div>
 
+      {/* Login Successful Notification */}
       {showNotification && (
-        <div className="fixed top-4 right-4 bg-white border-l-4 border-green-500 shadow-xl p-4 animate-slide-in z-50">
-          <p className="font-bold text-sm text-green-700">Login Successful!</p>
-          <p className="text-xs text-gray-500">Redirecting to dashboard...</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0b10]/80 backdrop-blur-sm px-6">
+          <div className="bg-[#0f111a] border border-cyan-400/50 rounded-[2.5rem] p-12 text-center shadow-[0_0_50px_rgba(34,211,238,0.2)] animate-scale-in">
+            <div className="h-20 w-20 bg-cyan-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(34,211,238,0.5)]">
+              <Shield className="h-10 w-10 text-black" />
+            </div>
+            <h2 className="text-3xl font-black text-white mb-2 tracking-tight">Access Granted</h2>
+            <p className="text-gray-500 font-mono text-xs">Handshaking with terminal... redirecting</p>
+          </div>
         </div>
       )}
 
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-        .animate-slide-in { animation: slideIn 0.3s ease-out forwards; }
+      <style jsx global>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
+        }
+        .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
+        
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9) translateY(20px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-scale-in { animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
       `}</style>
     </div>
   );
