@@ -1,29 +1,28 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import DashboardOverview   from "./admin/DashboardOverview";
+import DashboardOverview from "./admin/DashboardOverview";
 import EWarrantyManagement from "./admin/EWarrantyManagement";
-import CategoryManagement  from "./admin/CategoryManagement";
-import ProductManagement   from "./admin/ProductManagement";
+import CategoryManagement from "./admin/CategoryManagement";
+import ProductManagement from "./admin/ProductManagement";
 import {
   FiHome, FiFileText, FiFolder, FiBox, FiLogOut,
   FiMenu, FiX, FiWifi, FiWifiOff, FiRefreshCw,
-  FiMoon, FiSun, FiExternalLink,
+  FiMoon, FiSun, FiExternalLink, FiChevronLeft, FiChevronRight,
 } from "react-icons/fi";
 
 export default function AdminDashboard() {
-  const [section, setSection]             = useState("dashboard");
+  const [section, setSection] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isOnline, setIsOnline]           = useState(navigator.onLine);
-  const [lastSync, setLastSync]           = useState(new Date());
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [lastSync, setLastSync] = useState(new Date());
   const [isRealTimeSync, setIsRealTimeSync] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [isSyncing, setIsSyncing]         = useState(false);
-  const [darkMode, setDarkMode]           = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
   const navigate = useNavigate();
 
   const token = localStorage.getItem("ms_token");
 
-  // ✅ FIXED: proper auth guard
   useEffect(() => {
     if (!token) {
       navigate("/admin/login", { replace: true });
@@ -31,15 +30,15 @@ export default function AdminDashboard() {
   }, [token, navigate]);
 
   useEffect(() => {
-    const handleOnline  = () => { setIsOnline(true);  if (isRealTimeSync) triggerSync(); };
+    const handleOnline = () => { setIsOnline(true); if (isRealTimeSync) triggerSync(); };
     const handleOffline = () => setIsOnline(false);
-    window.addEventListener("online",  handleOnline);
+    window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
     const syncInterval = setInterval(() => {
       if (navigator.onLine && isRealTimeSync) triggerSync();
     }, 30000);
     return () => {
-      window.removeEventListener("online",  handleOnline);
+      window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
       clearInterval(syncInterval);
     };
@@ -56,107 +55,133 @@ export default function AdminDashboard() {
   };
 
   const menuItems = [
-    { id: "dashboard",  label: "Overview",   icon: FiHome,     color: "text-cyan-400"   },
+    { id: "dashboard",  label: "Overview",   icon: FiHome,     color: "text-cyan-400" },
     { id: "products",   label: "Inventory",  icon: FiBox,      color: "text-purple-400" },
-    { id: "categories", label: "Categories", icon: FiFolder,   color: "text-pink-400"   },
-    { id: "ewarranty",  label: "Warranty",   icon: FiFileText, color: "text-emerald-400"},
+    { id: "categories", label: "Categories", icon: FiFolder,   color: "text-pink-400" },
+    { id: "ewarranty",  label: "Warranty",   icon: FiFileText, color: "text-emerald-400" },
   ];
 
-  // ✅ FIXED: actually pass props to each component
   const renderSection = () => {
     const props = { token, isRealTimeSync };
     switch (section) {
-      case "dashboard":  return <DashboardOverview   {...props} />;
+      case "dashboard":  return <DashboardOverview  {...props} />;
       case "ewarranty":  return <EWarrantyManagement {...props} />;
       case "categories": return <CategoryManagement  {...props} />;
       case "products":   return <ProductManagement   {...props} />;
-      default:           return <DashboardOverview   {...props} />;
+      default:           return <DashboardOverview  {...props} />;
     }
   };
 
-  if (!token) return null; // prevent flash before redirect
+  if (!token) return null;
 
   return (
-    <div className="min-h-screen bg-[#0a0b10] text-white font-sans overflow-hidden flex flex-col">
-      {/* Scanline effect */}
-      <div className="scanline pointer-events-none" />
-
-      {/* Glow blobs */}
-      <div className="fixed top-0 left-1/4 w-96 h-96 bg-cyan-500/5 blur-[120px] rounded-full pointer-events-none" />
-      <div className="fixed bottom-0 right-1/4 w-96 h-96 bg-purple-500/5 blur-[120px] rounded-full pointer-events-none" />
+    <div className={`min-h-screen font-sans ${darkMode ? "bg-[#0a0a0f] text-white" : "bg-gray-100 text-gray-900"} flex flex-col`}>
 
       {/* Top Navbar */}
-      <nav className="sticky top-0 z-50 bg-[#0d1117]/90 border-b border-white/5 backdrop-blur-xl px-4 py-3 flex items-center justify-between">
+      <header className={`flex items-center justify-between px-4 py-3 border-b ${
+        darkMode ? "bg-[#0d1117] border-cyan-500/20" : "bg-white border-gray-200"
+      } sticky top-0 z-50 shadow-lg`}>
         <div className="flex items-center gap-3">
-          <button onClick={() => setMobileMenuOpen(true)} className="sm:hidden p-2 text-cyan-400 hover:bg-cyan-500/10 rounded-lg">
-            <FiMenu size={20} />
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="sm:hidden p-2 text-cyan-400 hover:bg-cyan-500/10 rounded-lg">
+            <FiMenu className="h-5 w-5" />
           </button>
-          <button onClick={() => navigate("/")} className="flex items-center gap-2 cursor-pointer group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center text-black font-black text-sm">A</div>
-            <span className="font-black text-lg tracking-tight">
+          <div onClick={() => navigate("/")} className="flex items-center gap-2 cursor-pointer group">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center font-black text-black text-sm">A</div>
+            <span className="font-bold text-lg tracking-tight">
               Anritvox<span className="text-cyan-400">OS</span>
             </span>
-          </button>
-        </div>
-
-        <div className="hidden sm:flex items-center gap-3">
-          {/* Online status */}
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${
-            isOnline
-              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-              : "border-red-500/30 bg-red-500/10 text-red-400"
-          }`}>
-            {isOnline ? <FiWifi size={12} /> : <FiWifiOff size={12} />}
-            {isOnline ? "Online" : "Offline"}
           </div>
+        </div>
 
-          <button onClick={triggerSync} className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-cyan-400 transition-colors">
-            <FiRefreshCw size={16} className={isSyncing ? "animate-spin" : ""} />
+        <div className="flex items-center gap-3">
+          <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
+            isOnline ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"
+          }`}>
+            {isOnline ? <FiWifi className="h-3 w-3" /> : <FiWifiOff className="h-3 w-3" />}
+            <span>{isOnline ? "Online" : "Offline"}</span>
+          </div>
+          <button onClick={() => setIsRealTimeSync(!isRealTimeSync)} className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${
+            isRealTimeSync ? "bg-cyan-500/10 text-cyan-400" : "bg-gray-500/10 text-gray-400"
+          }`}>
+            <FiRefreshCw className={`h-3 w-3 ${isSyncing ? "animate-spin" : ""}`} />
+            {isRealTimeSync ? "Live" : "Manual"}
           </button>
-
+          <span className="text-xs text-gray-500 hidden md:block">
+            Synced {lastSync.toLocaleTimeString()}
+          </span>
           <button onClick={() => setDarkMode(!darkMode)} className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-yellow-400 transition-colors">
-            {darkMode ? <FiSun size={16} /> : <FiMoon size={16} />}
+            {darkMode ? <FiSun className="h-4 w-4" /> : <FiMoon className="h-4 w-4" />}
           </button>
-
-          <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-500/10 text-sm font-semibold transition-all">
-            <FiLogOut size={14} /> Exit
+          <button onClick={handleLogout} className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition-colors">
+            <FiLogOut className="h-4 w-4" /> Exit
           </button>
         </div>
-      </nav>
+      </header>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <aside className={`
-          ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
-          sm:translate-x-0
-          fixed sm:static z-40 h-full
-          ${sidebarCollapsed ? "w-16" : "w-64"}
-          bg-[#0d1117]/95 border-r border-white/5 backdrop-blur-xl
-          flex flex-col transition-all duration-300
-        `}>
-          <div className="flex items-center justify-between px-4 py-4 border-b border-white/5">
-            {!sidebarCollapsed && <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Core Modules</span>}
-            <button onClick={() => { setSidebarCollapsed(!sidebarCollapsed); setMobileMenuOpen(false); }} className="text-gray-500 hover:text-white p-1">
-              {mobileMenuOpen ? <FiX size={18} /> : <FiMenu size={18} />}
+        <aside className={`${
+          mobileMenuOpen ? "flex" : "hidden sm:flex"
+        } flex-col ${
+          sidebarCollapsed ? "w-16" : "w-56"
+        } transition-all duration-300 ${
+          darkMode ? "bg-[#0d1117] border-r border-cyan-500/10" : "bg-white border-r border-gray-200"
+        } p-3 gap-1 fixed sm:relative inset-y-0 left-0 top-16 z-40 pt-4`}>
+
+          <button
+            onClick={() => { setSidebarCollapsed(!sidebarCollapsed); setMobileMenuOpen(false); }}
+            className="hidden sm:flex items-center justify-end mb-4 pr-1 text-gray-500 hover:text-white"
+          >
+            {sidebarCollapsed ? <FiChevronRight /> : <FiChevronLeft />}
+          </button>
+
+          {!sidebarCollapsed && (
+            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest px-3 mb-2">Core Modules</p>
+          )}
+
+          {menuItems.map(item => (
+            <button
+              key={item.id}
+              onClick={() => { setSection(item.id); setMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all ${
+                section === item.id
+                  ? "bg-gradient-to-r from-cyan-500/15 to-transparent text-cyan-400 border border-cyan-500/20"
+                  : `${darkMode ? "text-gray-500 hover:text-gray-200 hover:bg-white/5" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"}`
+              }`}
+            >
+              <item.icon className={`h-5 w-5 flex-shrink-0 ${section === item.id ? "text-cyan-400" : item.color}`} />
+              {!sidebarCollapsed && <span>{item.label}</span>}
             </button>
+          ))}
+
+          <div className="mt-auto">
+            <a
+              href="https://anritvox-frontend.vercel.app"
+              target="_blank"
+              rel="noreferrer"
+              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition-all ${
+                darkMode ? "text-gray-500 hover:text-gray-200 hover:bg-white/5" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+              }`}
+            >
+              <FiExternalLink className="h-5 w-5 flex-shrink-0" />
+              {!sidebarCollapsed && <span>View Store</span>}
+            </a>
           </div>
+        </aside>
 
-          <nav className="flex-1 p-3 space-y-1 overflow-y-auto custom-scrollbar">
-            {menuItems.map(item => (
-              <button
-                key={item.id}
-                onClick={() => { setSection(item.id); setMobileMenuOpen(false); }}
-                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all group ${
-                  section === item.id
-                    ? "bg-gradient-to-r from-cyan-500/15 to-transparent text-cyan-400 border border-cyan-500/20"
-                    : "text-gray-500 hover:text-gray-200 hover:bg-white/5"
-                }`}
-              >
-                <item.icon size={18} className={section === item.id ? "text-cyan-400" : item.color} />
-                {!sidebarCollapsed && item.label}
-              </button>
-            ))}
-          </nav>
+        {/* Mobile overlay */}
+        {mobileMenuOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-30 sm:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
 
-          {/* Serial Key link */}
-          <div className="p-3 border-
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          {renderSection()}
+        </main>
+      </div>
+    </div>
+  );
+}
