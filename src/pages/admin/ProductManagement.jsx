@@ -68,6 +68,8 @@ export default function ProductManagement({ token }) {
   const [fileError, setFileError] = useState("");
   const [currentProductPage, setCurrentProductPage] = useState(1);
   const [productsPerPage] = useState(10);
+  
+  // Serial Management State
   const [showSerialModal, setShowSerialModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productSerials, setProductSerials] = useState([]);
@@ -81,6 +83,7 @@ export default function ProductManagement({ token }) {
   const [bulkSerialPreview, setBulkSerialPreview] = useState([]);
   const [currentSerialPage, setCurrentSerialPage] = useState(1);
   const [serialsPerPage] = useState(20);
+
   const formRef = useRef(null);
 
   const totalProductPages = Math.ceil(products.length / productsPerPage);
@@ -88,6 +91,7 @@ export default function ProductManagement({ token }) {
     (currentProductPage - 1) * productsPerPage,
     currentProductPage * productsPerPage
   );
+
   const filteredSerials = productSerials.filter((serial) =>
     serial.serial.toLowerCase().includes(serialSearch.toLowerCase())
   );
@@ -138,6 +142,7 @@ export default function ProductManagement({ token }) {
       const allowed = ["image/jpeg", "image/png", "image/webp"];
       const fileList = Array.from(files);
       const invalidFiles = fileList.filter((file) => !allowed.includes(file.type));
+      
       if (invalidFiles.length > 0) {
         alert("Invalid formats. Only JPEG, PNG, and WEBP are allowed.");
         return;
@@ -168,16 +173,23 @@ export default function ProductManagement({ token }) {
       setFileError("Invalid file. Please upload a .xlsx file.");
       return;
     }
+
     try {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: "array" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      
       const serials = rows
         .map((row) => row[0])
         .filter((val) => val != null && String(val).trim() !== "")
         .map((s) => String(s).trim().toUpperCase());
-      setForm((prev) => ({ ...prev, quantity: serials.length, serials }));
+
+      setForm((prev) => ({
+        ...prev,
+        quantity: serials.length,
+        serials
+      }));
     } catch (err) {
       setFileError("Error reading Excel file.");
     }
@@ -206,7 +218,12 @@ export default function ProductManagement({ token }) {
     try {
       return await Promise.all(
         imageFiles.map(async (file) => {
-          const options = { maxSizeMB: 1, maxWidthOrHeight: 1280, useWebWorker: true, fileType: "image/webp" };
+          const options = {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1280,
+            useWebWorker: true,
+            fileType: "image/webp"
+          };
           const compressedFile = await imageCompression(file, options);
           return new File([compressedFile], file.name.replace(/\.\w+$/, ".webp"), { type: "image/webp" });
         })
@@ -220,21 +237,25 @@ export default function ProductManagement({ token }) {
     e.preventDefault();
     setFormLoading(true);
     setError(null);
+
     try {
       let compressedImages = [];
       if (form.images.length > 0) {
         compressedImages = await compressImages(Array.from(form.images));
       }
+
       const formData = new FormData();
       formData.append("name", form.name.trim());
       formData.append("description", form.description.trim());
       formData.append("price", form.price);
       formData.append("category_id", form.category_id);
       if (form.subcategory_id) formData.append("subcategory_id", form.subcategory_id);
+      
       if (!editProductId) {
         formData.append("quantity", form.quantity);
         formData.append("serials", JSON.stringify(form.serials));
       }
+
       compressedImages.forEach((image) => formData.append("images", image));
 
       if (editProductId) {
@@ -242,6 +263,7 @@ export default function ProductManagement({ token }) {
       } else {
         await createProduct(formData, token);
       }
+      
       resetForm();
       await loadData();
     } catch (err) {
@@ -317,11 +339,13 @@ export default function ProductManagement({ token }) {
     setBulkSerialError("");
     const file = e.target.files?.[0];
     if (!file || !file.name.match(/\.(xlsx|xls)$/)) return;
+
     try {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: "array" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      
       const serials = rows.map((row) => row[0]).filter((val) => val != null && String(val).trim() !== "").map((s) => String(s).trim().toUpperCase());
       setBulkSerialPreview(serials);
     } catch (err) {
@@ -373,117 +397,121 @@ export default function ProductManagement({ token }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#f0f2f2]">
-        <div className="flex flex-col items-center p-8 bg-white rounded shadow-md">
-          <Loader2 className="h-10 w-10 text-[#e77600] animate-spin" />
-          <p className="text-xl font-bold text-[#0f1111] mt-4">Loading Inventory...</p>
-        </div>
+      <div className="min-h-screen bg-[#0a0a0c] flex flex-col items-center justify-center gap-4">
+        <Loader2 className="h-10 w-10 text-cyan-500 animate-spin" />
+        <p className="text-cyan-500 font-bold tracking-widest animate-pulse">LOADING INVENTORY...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f0f2f2] font-sans text-[#0f1111] p-4 sm:p-6 animate-fade-in">
-      {/* Amazon-style Admin Header */}
-      <div className="bg-[#131921] text-white p-4 -mx-4 -mt-4 mb-8 flex items-center justify-between shadow-lg">
+    <div className="min-h-screen bg-[#0a0a0c] font-sans text-slate-100 p-4 sm:p-6 animate-fade-in text-[12px]">
+      {/* Neon Dark Admin Header */}
+      <div className="bg-[#16161a] border border-cyan-500/30 p-4 -mx-4 -mt-4 mb-8 flex items-center justify-between shadow-[0_0_20px_rgba(6,182,212,0.15)] rounded-b-xl">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-[#ffd814] rounded shadow">
-            <Package className="h-6 w-6 text-[#131921]" />
+          <div className="p-2 bg-cyan-500/10 rounded-lg border border-cyan-500/20 shadow-[0_0_10px_rgba(6,182,212,0.2)]">
+            <Grid3x3 className="h-6 w-6 text-cyan-400" />
           </div>
           <div>
-            <h1 className="text-xl font-bold">Amazon Admin | Product Management</h1>
-            <p className="text-xs text-gray-400">Manage your inventory and serial numbers</p>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">
+              ANRITVOX | Product Management
+            </h1>
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Admin Control Panel</p>
           </div>
         </div>
+        
         <div className="flex gap-4 text-sm">
-          <div className="text-center">
-            <div className="font-bold text-[#ffd814]">{products.length}</div>
-            <div className="text-[10px] uppercase">Products</div>
+          <div className="text-center px-4 border-r border-slate-800">
+            <div className="font-bold text-cyan-400 text-lg leading-none">{products.length}</div>
+            <div className="text-[10px] text-slate-500 uppercase font-bold mt-1">Products</div>
           </div>
-          <div className="text-center">
-            <div className="font-bold text-[#ffd814]">{categories.length}</div>
-            <div className="text-[10px] uppercase">Categories</div>
+          <div className="text-center px-4">
+            <div className="font-bold text-fuchsia-400 text-lg leading-none">{categories.length}</div>
+            <div className="text-[10px] text-slate-500 uppercase font-bold mt-1">Categories</div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Form Section */}
-        <div ref={formRef} className="bg-white border border-gray-300 rounded overflow-hidden shadow-sm">
-          <div className="bg-[#f0f2f2] border-b border-gray-300 px-6 py-3 flex items-center justify-between">
-            <h2 className="text-lg font-bold flex items-center gap-2 text-[#0f1111]">
-              {editProductId ? <Edit3 className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+        <div ref={formRef} className="bg-[#16161a] border border-slate-800 rounded-xl overflow-hidden shadow-2xl transition-all hover:border-cyan-500/20">
+          <div className="bg-slate-900/50 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+            <h2 className="text-lg font-bold flex items-center gap-2 text-slate-200">
+              {editProductId ? <Edit3 className="h-5 w-5 text-fuchsia-400" /> : <Plus className="h-5 w-5 text-cyan-400" />}
               {editProductId ? "Edit Product Details" : "Add a New Product"}
             </h2>
           </div>
-          <div className="p-6">
-            <form onSubmit={handleSave} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-1">
-                  <label className="text-sm font-bold">Product Name</label>
+
+          <form onSubmit={handleSave} className="p-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Product Name</label>
                   <input
                     name="name"
                     type="text"
                     required
-                    className="w-full px-3 py-2 border border-gray-400 rounded focus:border-[#e77600] focus:shadow-[0_0_3px_2px_rgba(228,121,17,0.5)] outline-none"
+                    className="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg focus:border-cyan-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] outline-none transition-all text-slate-100"
                     value={form.name}
                     onChange={handleChange}
                     disabled={formLoading}
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-bold flex items-center gap-1"><IndianRupee className="h-3 w-3" /> Price</label>
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Price (INR)</label>
                   <input
                     name="price"
                     type="number"
                     step="0.01"
                     required
-                    className="w-full px-3 py-2 border border-gray-400 rounded focus:border-[#e77600] focus:shadow-[0_0_3px_2px_rgba(228,121,17,0.5)] outline-none"
+                    className="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg focus:border-cyan-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] outline-none transition-all text-slate-100"
                     value={form.price}
                     onChange={handleChange}
                     disabled={formLoading}
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-bold">Category</label>
-                  <select
-                    name="category_id"
-                    required
-                    className="w-full px-3 py-2 border border-gray-400 rounded bg-[#f0f2f2] focus:border-[#e77600] outline-none"
-                    value={form.category_id}
-                    onChange={handleChange}
-                    disabled={formLoading}
-                  >
-                    <option value="">Choose a Category</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-bold">Subcategory</label>
-                  <select
-                    name="subcategory_id"
-                    className="w-full px-3 py-2 border border-gray-400 rounded bg-[#f0f2f2] focus:border-[#e77600] outline-none disabled:opacity-50"
-                    value={form.subcategory_id}
-                    onChange={handleChange}
-                    disabled={formLoading || !form.category_id}
-                  >
-                    <option value="">Optional</option>
-                    {subcategories
-                      .filter((sc) => String(sc.category_id) === String(form.category_id))
-                      .map((sc) => (
-                        <option key={sc.id} value={sc.id}>{sc.name}</option>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Category</label>
+                    <select
+                      name="category_id"
+                      required
+                      className="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg focus:border-cyan-500 outline-none text-slate-100"
+                      value={form.category_id}
+                      onChange={handleChange}
+                      disabled={formLoading}
+                    >
+                      <option value="">Select</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
                       ))}
-                  </select>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Subcategory</label>
+                    <select
+                      name="subcategory_id"
+                      className="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg focus:border-cyan-500 outline-none disabled:opacity-30 text-slate-100"
+                      value={form.subcategory_id}
+                      onChange={handleChange}
+                      disabled={formLoading || !form.category_id}
+                    >
+                      <option value="">Optional</option>
+                      {subcategories
+                        .filter((sc) => String(sc.category_id) === String(form.category_id))
+                        .map((sc) => (
+                          <option key={sc.id} value={sc.id}>{sc.name}</option>
+                        ))}
+                    </select>
+                  </div>
                 </div>
-                <div className="md:col-span-2 space-y-1">
-                  <label className="text-sm font-bold">Description</label>
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Description</label>
                   <textarea
                     name="description"
                     rows="3"
                     required
-                    className="w-full px-3 py-2 border border-gray-400 rounded focus:border-[#e77600] focus:shadow-[0_0_3px_2px_rgba(228,121,17,0.5)] outline-none"
+                    className="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg focus:border-cyan-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] outline-none transition-all text-slate-100"
                     value={form.description}
                     onChange={handleChange}
                     disabled={formLoading}
@@ -491,135 +519,202 @@ export default function ProductManagement({ token }) {
                 </div>
               </div>
 
-              {/* Images Section */}
-              <div className="border border-gray-300 rounded p-4 bg-[#fcfcfc]">
-                <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4 text-[#e77600]" />
-                  Product Images
-                </h3>
-                <div className="flex flex-wrap gap-4">
-                  {editProductId && existingImages.map((img, i) => (
-                    <div key={i} className="relative border p-1 rounded">
-                      <img src={img.url} className="w-20 h-20 object-cover" alt="Existing" />
-                      <button type="button" onClick={() => setExistingImages(prev => prev.filter(x => x.id !== img.id))} className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1"><X className="h-3 w-3"/></button>
-                    </div>
-                  ))}
-                  <label className="w-20 h-20 border-2 border-dashed border-gray-300 rounded flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors">
-                    <Upload className="h-6 w-6 text-gray-400" />
-                    <span className="text-[10px] text-gray-500">Upload</span>
-                    <input name="images" type="file" multiple hidden accept="image/*" onChange={handleChange} />
-                  </label>
-                  {form.images.length > 0 && Array.from(form.images).map((file, i) => (
-                    <div key={i} className="relative border p-1 rounded bg-green-50">
-                      <div className="w-20 h-20 flex items-center justify-center text-xs text-center text-gray-500 p-1 break-all">{file.name}</div>
-                      <button type="button" onClick={() => setForm(prev => ({...prev, images: prev.images.filter((_, idx) => idx !== i)}))} className="absolute -top-2 -right-2 bg-gray-600 text-white rounded-full p-1"><X className="h-3 w-3"/></button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {!editProductId && (
-                <div className="border border-gray-300 rounded p-4 bg-[#fff9f3]">
-                  <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-[#c45500]">
-                    <Hash className="h-4 w-4" /> Initial Inventory Tracking
+              <div className="space-y-4">
+                {/* Images Section */}
+                <div className="border border-slate-800 rounded-xl p-4 bg-slate-900/30">
+                  <h3 className="text-xs font-bold text-slate-300 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                    <ImageIcon className="h-4 w-4 text-cyan-400" /> Product Images
                   </h3>
-                  <div className="flex gap-4 mb-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" checked={serialMethod === "manual"} onChange={() => setSerialMethod("manual")} className="accent-[#e77600]" />
-                      <span className="text-sm">Manual Serial Entry</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" checked={serialMethod === "excel"} onChange={() => setSerialMethod("excel")} className="accent-[#e77600]" />
-                      <span className="text-sm">Excel Import</span>
-                    </label>
-                  </div>
-                  {serialMethod === "manual" ? (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-4">
-                        <label className="text-sm font-bold">Quantity:</label>
-                        <input name="quantity" type="number" min="1" className="w-24 px-3 py-1 border border-gray-400 rounded focus:border-[#e77600] outline-none" value={form.quantity} onChange={handleChange} />
+                  <div className="flex flex-wrap gap-4">
+                    {editProductId && existingImages.map((img, i) => (
+                      <div key={i} className="relative border border-slate-700 p-1 rounded-lg group">
+                        <img src={img.url} className="w-20 h-20 object-cover rounded shadow-lg" alt="Existing" />
+                        <button 
+                          type="button" 
+                          onClick={() => setExistingImages(prev => prev.filter(x => x.id !== img.id))}
+                          className="absolute -top-2 -right-2 bg-rose-600 text-white rounded-full p-1 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3"/>
+                        </button>
                       </div>
-                      {Number(form.quantity) > 0 && (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 max-h-40 overflow-y-auto p-1">
-                          {Array.from({ length: Number(form.quantity) }).map((_, i) => (
-                            <input key={i} placeholder={`Serial #${i + 1}`} className="text-xs p-2 border border-gray-300 rounded font-mono uppercase" value={form.serials[i] || ""} onChange={(e) => handleSerialChange(i, e.target.value)} />
-                          ))}
+                    ))}
+                    <label className="w-20 h-20 border-2 border-dashed border-slate-700 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-slate-800/50 hover:border-cyan-500/50 transition-all text-slate-500 hover:text-cyan-400">
+                      <Upload className="h-6 w-6" />
+                      <span className="text-[10px] uppercase font-bold mt-1">Add</span>
+                      <input name="images" type="file" multiple hidden accept="image/*" onChange={handleChange} />
+                    </label>
+                    {form.images.length > 0 && Array.from(form.images).map((file, i) => (
+                      <div key={i} className="relative border border-cyan-500/30 p-1 rounded-lg bg-cyan-500/5">
+                        <div className="w-20 h-20 flex items-center justify-center text-[10px] text-center text-cyan-400 p-1 break-all font-mono leading-tight">
+                          {file.name}
                         </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <input type="file" accept=".xlsx" onChange={handleExcelUpload} className="text-sm" />
-                      {form.serials.length > 0 && <p className="text-xs text-green-700">{form.serials.length} serials detected from file.</p>}
-                    </div>
-                  )}
+                        <button 
+                          type="button" 
+                          onClick={() => setForm(prev => ({...prev, images: prev.images.filter((_, idx) => idx !== i)}))}
+                          className="absolute -top-2 -right-2 bg-slate-700 text-white rounded-full p-1 shadow-lg"
+                        >
+                          <X className="h-3 w-3"/>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              )}
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                {editProductId && (
-                  <button type="button" onClick={resetForm} className="px-4 py-2 bg-white border border-gray-400 rounded shadow-sm hover:bg-gray-100 text-sm font-medium">
-                    Cancel
-                  </button>
+                {!editProductId && (
+                  <div className="border border-slate-800 rounded-xl p-4 bg-slate-900/30 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-fuchsia-500/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-fuchsia-500/10 transition-all"></div>
+                    <h3 className="text-xs font-bold text-fuchsia-400 mb-4 flex items-center gap-2 uppercase tracking-wider">
+                      <Hash className="h-4 w-4" /> Initial Inventory Tracking
+                    </h3>
+                    <div className="flex gap-4 mb-4">
+                      <label className="flex items-center gap-2 cursor-pointer group/label">
+                        <input type="radio" checked={serialMethod === "manual"} onChange={() => setSerialMethod("manual")} className="accent-fuchsia-500" />
+                        <span className="text-xs font-medium text-slate-300 group-hover/label:text-fuchsia-400 transition-colors">Manual Entry</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer group/label">
+                        <input type="radio" checked={serialMethod === "excel"} onChange={() => setSerialMethod("excel")} className="accent-fuchsia-500" />
+                        <span className="text-xs font-medium text-slate-300 group-hover/label:text-fuchsia-400 transition-colors">Excel Import</span>
+                      </label>
+                    </div>
+
+                    {serialMethod === "manual" ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-4">
+                          <label className="text-xs font-bold text-slate-400">QUANTITY:</label>
+                          <input
+                            name="quantity"
+                            type="number"
+                            min="1"
+                            className="w-24 px-3 py-1 bg-[#0f172a] border border-slate-700 rounded focus:border-fuchsia-500 outline-none text-slate-100"
+                            value={form.quantity}
+                            onChange={handleChange}
+                          />
+                        </div>
+                        {Number(form.quantity) > 0 && (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-40 overflow-y-auto p-1 custom-scrollbar">
+                            {Array.from({ length: Number(form.quantity) }).map((_, i) => (
+                              <input
+                                key={i}
+                                placeholder={`SERIAL #${i + 1}`}
+                                className="text-[10px] p-2 bg-slate-900 border border-slate-800 rounded font-mono uppercase focus:border-fuchsia-500 outline-none text-slate-300"
+                                value={form.serials[i] || ""}
+                                onChange={(e) => handleSerialChange(i, e.target.value)}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="p-4 border border-dashed border-slate-700 rounded-lg text-center hover:border-fuchsia-500/50 transition-all">
+                          <input type="file" accept=".xlsx" onChange={handleExcelUpload} className="text-xs w-full text-slate-400 file:bg-fuchsia-500/10 file:border-0 file:text-fuchsia-400 file:px-4 file:py-1 file:rounded file:mr-4 file:font-bold file:uppercase file:text-[10px] cursor-pointer" />
+                        </div>
+                        {form.serials.length > 0 && <p className="text-[10px] font-bold text-lime-400 animate-pulse">{form.serials.length} SERIALS DETECTED FROM FILE.</p>}
+                      </div>
+                    )}
+                  </div>
                 )}
-                <button
-                  type="submit"
-                  disabled={formLoading || imageCompressing || !form.name || !form.price || !form.category_id}
-                  className="px-6 py-2 bg-[#ffd814] border border-[#fcd200] rounded shadow-sm hover:bg-[#f7ca00] text-[#0f1111] font-bold text-sm min-w-[120px] flex items-center justify-center gap-2 transition-all active:scale-95"
-                >
-                  {formLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  {editProductId ? "Update Item" : "Add to Inventory"}
-                </button>
               </div>
-              {error && <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm flex items-center gap-2"><AlertCircle className="h-4 w-4"/> {error}</div>}
-            </form>
-          </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-6 border-t border-slate-800">
+              {editProductId && (
+                <button 
+                  type="button" 
+                  onClick={resetForm} 
+                  className="px-6 py-2 bg-slate-800 border border-slate-700 rounded-lg hover:bg-slate-700 text-xs font-bold uppercase tracking-widest text-slate-300 transition-all"
+                >
+                  Cancel
+                </button>
+              )}
+              <button
+                type="submit"
+                disabled={formLoading || imageCompressing || !form.name || !form.price || !form.category_id}
+                className={`px-8 py-2 rounded-lg font-bold text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(6,182,212,0.2)] flex items-center justify-center gap-2 transition-all active:scale-95 ${
+                  editProductId 
+                  ? 'bg-fuchsia-600 hover:bg-fuchsia-500 text-white shadow-fuchsia-500/20' 
+                  : 'bg-cyan-600 hover:bg-cyan-500 text-white'
+                } disabled:opacity-50 disabled:shadow-none`}
+              >
+                {formLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                {editProductId ? "Update Product" : "Save to Inventory"}
+              </button>
+            </div>
+
+            {error && (
+              <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-400 text-xs font-bold flex items-center gap-2 animate-shake">
+                <AlertCircle className="h-4 w-4"/> {error}
+              </div>
+            )}
+          </form>
         </div>
 
         {/* Inventory Table */}
-        <div className="bg-white border border-gray-300 rounded shadow-sm overflow-hidden">
-          <div className="bg-[#f0f2f2] border-b border-gray-300 px-6 py-4">
-            <h2 className="text-lg font-bold text-[#0f1111] flex items-center gap-2">
-              <Package className="h-5 w-5 text-gray-500" />
-              Manage Inventory
+        <div className="bg-[#16161a] border border-slate-800 rounded-xl shadow-2xl overflow-hidden">
+          <div className="bg-slate-900/50 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+            <h2 className="text-lg font-bold flex items-center gap-2 text-slate-200">
+              <Package className="h-5 w-5 text-cyan-400" /> 
+              Inventory Database
             </h2>
+            <div className="text-[10px] font-mono text-slate-500 uppercase">System Status: Online</div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-[#f0f2f2] border-b border-gray-300">
+              <thead className="bg-slate-900/80 border-b border-slate-800">
                 <tr>
-                  <th className="px-6 py-3 font-bold uppercase text-[11px] tracking-wider text-gray-600">Product Detail</th>
-                  <th className="px-6 py-3 font-bold uppercase text-[11px] tracking-wider text-gray-600">Price</th>
-                  <th className="px-6 py-3 font-bold uppercase text-[11px] tracking-wider text-gray-600">In Stock</th>
-                  <th className="px-6 py-3 font-bold uppercase text-[11px] tracking-wider text-gray-600">Category</th>
-                  <th className="px-6 py-3 font-bold uppercase text-[11px] tracking-wider text-gray-600">Actions</th>
+                  <th className="px-6 py-4 font-bold uppercase text-[10px] tracking-widest text-slate-500">Product Detail</th>
+                  <th className="px-6 py-4 font-bold uppercase text-[10px] tracking-widest text-slate-500">Price</th>
+                  <th className="px-6 py-4 font-bold uppercase text-[10px] tracking-widest text-slate-500">Stock Status</th>
+                  <th className="px-6 py-4 font-bold uppercase text-[10px] tracking-widest text-slate-500">Category</th>
+                  <th className="px-6 py-4 font-bold uppercase text-[10px] tracking-widest text-slate-500 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-slate-800/50">
                 {paginatedProducts.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50 group">
+                  <tr key={product.id} className="hover:bg-cyan-500/[0.02] transition-colors group">
                     <td className="px-6 py-4">
-                      <div className="font-bold text-[#007185] group-hover:underline cursor-pointer">{product.name}</div>
-                      <div className="text-[11px] text-gray-500 font-mono">ID: {product.id}</div>
+                      <div className="font-bold text-slate-200 group-hover:text-cyan-400 transition-colors">{product.name}</div>
+                      <div className="text-[10px] text-slate-600 font-mono mt-1 tracking-tighter">REF# {product.id}</div>
                     </td>
-                    <td className="px-6 py-4 font-medium"><IndianRupee className="h-3 w-3 inline mb-0.5" /> {Number(product.price).toLocaleString('en-IN')}</td>
+                    <td className="px-6 py-4 font-mono font-bold text-cyan-400">
+                      <IndianRupee className="h-3 w-3 inline mb-0.5" /> 
+                      {Number(product.price).toLocaleString('en-IN')}
+                    </td>
                     <td className="px-6 py-4">
-                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${product.quantity > 5 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        {product.quantity} units
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                        product.quantity > 5 
+                        ? 'bg-lime-500/10 text-lime-400 border border-lime-500/20' 
+                        : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                      }`}>
+                        {product.quantity} UNITS
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-600">
-                      {categories.find(c => c.id === product.category_id)?.name || "N/A"}
+                    <td className="px-6 py-4">
+                      <span className="text-xs text-slate-400 bg-slate-800/50 px-2 py-1 rounded border border-slate-700/50">
+                        {categories.find(c => c.id === product.category_id)?.name || "UNCATEGORIZED"}
+                      </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex gap-2">
-                        <button onClick={() => openSerialModal(product)} className="p-1.5 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 text-gray-700" title="Manage Serials">
+                      <div className="flex justify-end gap-2">
+                        <button 
+                          onClick={() => openSerialModal(product)} 
+                          className="p-2 bg-slate-800/50 border border-slate-700 rounded-lg hover:border-cyan-500/50 hover:text-cyan-400 transition-all"
+                          title="Manage Serials"
+                        >
                           <Settings2 className="h-4 w-4" />
                         </button>
-                        <button onClick={() => handleEdit(product)} className="p-1.5 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 text-[#007185]" title="Edit">
+                        <button 
+                          onClick={() => handleEdit(product)} 
+                          className="p-2 bg-slate-800/50 border border-slate-700 rounded-lg hover:border-fuchsia-500/50 hover:text-fuchsia-400 transition-all"
+                          title="Edit"
+                        >
                           <Edit3 className="h-4 w-4" />
                         </button>
-                        <button onClick={() => handleRemove(product.id)} className="p-1.5 bg-gray-100 border border-gray-300 rounded hover:bg-red-100 text-red-600" title="Delete">
+                        <button 
+                          onClick={() => handleRemove(product.id)} 
+                          className="p-2 bg-slate-800/50 border border-slate-700 rounded-lg hover:bg-rose-500/10 hover:border-rose-500/50 hover:text-rose-500 transition-all"
+                          title="Delete"
+                        >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -632,15 +727,23 @@ export default function ProductManagement({ token }) {
 
           {/* Pagination */}
           {totalProductPages > 1 && (
-            <div className="px-6 py-3 bg-[#f0f2f2] border-t border-gray-300 flex items-center justify-between">
-              <div className="text-xs text-gray-600">
+            <div className="px-6 py-4 bg-slate-900/50 border-t border-slate-800 flex items-center justify-between">
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                 Page {currentProductPage} of {totalProductPages}
               </div>
-              <div className="flex gap-1">
-                <button onClick={() => setCurrentProductPage(p => Math.max(1, p - 1))} disabled={currentProductPage === 1} className="p-1 border border-gray-400 rounded bg-white disabled:opacity-30">
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setCurrentProductPage(p => Math.max(1, p - 1))} 
+                  disabled={currentProductPage === 1}
+                  className="p-2 bg-slate-800 border border-slate-700 rounded-lg hover:border-cyan-500/50 disabled:opacity-20 transition-all"
+                >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
-                <button onClick={() => setCurrentProductPage(p => Math.min(totalProductPages, p + 1))} disabled={currentProductPage === totalProductPages} className="p-1 border border-gray-400 rounded bg-white disabled:opacity-30">
+                <button 
+                  onClick={() => setCurrentProductPage(p => Math.min(totalProductPages, p + 1))} 
+                  disabled={currentProductPage === totalProductPages}
+                  className="p-2 bg-slate-800 border border-slate-700 rounded-lg hover:border-cyan-500/50 disabled:opacity-20 transition-all"
+                >
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
@@ -649,106 +752,165 @@ export default function ProductManagement({ token }) {
         </div>
       </div>
 
-      {/* Serial Numbers Management Modal - Redesigned to Amazon Style */}
+      {/* Neon Serial Modal */}
       {showSerialModal && selectedProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col border border-gray-300">
-            <div className="bg-[#131921] text-white p-4 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-[#16161a] border border-cyan-500/30 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="bg-[#0f172a] border-b border-cyan-500/20 p-5 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold">Serial Number Management</h3>
-                <p className="text-xs text-gray-400">{selectedProduct.name}</p>
+                <h3 className="text-xl font-bold text-cyan-400 tracking-tight">Manage Serial IDs</h3>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">PRODUCT: {selectedProduct.name}</p>
               </div>
-              <button onClick={closeSerialModal} className="text-gray-400 hover:text-white"><X className="h-6 w-6" /></button>
+              <button onClick={closeSerialModal} className="p-2 hover:bg-rose-500/10 text-slate-500 hover:text-rose-400 rounded-full transition-all">
+                <X className="h-6 w-6" />
+              </button>
             </div>
             
-            <div className="p-6 overflow-y-auto flex-1 bg-[#fcfcfc]">
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-white border-2 border-l-4 border-l-[#007185] p-3 rounded shadow-sm">
-                  <div className="text-xs text-gray-500 font-bold uppercase">Total Serials</div>
-                  <div className="text-2xl font-bold">{serialStats.total_serials || 0}</div>
+            <div className="p-6 overflow-y-auto flex-1 space-y-6 custom-scrollbar text-[12px]">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-slate-900/50 border border-slate-800 p-4 rounded-xl">
+                  <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">TOTAL ENTRIES</div>
+                  <div className="text-2xl font-mono font-bold text-slate-200">{serialStats.total_serials || 0}</div>
                 </div>
-                <div className="bg-white border-2 border-l-4 border-l-green-600 p-3 rounded shadow-sm">
-                  <div className="text-xs text-gray-500 font-bold uppercase">Available</div>
-                  <div className="text-2xl font-bold text-green-700">{serialStats.available_serials || 0}</div>
+                <div className="bg-lime-500/5 border border-lime-500/20 p-4 rounded-xl shadow-[inset_0_0_10px_rgba(132,204,22,0.05)]">
+                  <div className="text-[10px] text-lime-500/60 font-bold uppercase tracking-wider mb-1">AVAILABLE</div>
+                  <div className="text-2xl font-mono font-bold text-lime-400">{serialStats.available_serials || 0}</div>
                 </div>
-                <div className="bg-white border-2 border-l-4 border-l-[#c45500] p-3 rounded shadow-sm">
-                  <div className="text-xs text-gray-500 font-bold uppercase">Registered</div>
-                  <div className="text-2xl font-bold text-[#c45500]">{serialStats.used_serials || 0}</div>
+                <div className="bg-fuchsia-500/5 border border-fuchsia-500/20 p-4 rounded-xl shadow-[inset_0_0_10px_rgba(217,70,239,0.05)]">
+                  <div className="text-[10px] text-fuchsia-500/60 font-bold uppercase tracking-wider mb-1">REGISTERED</div>
+                  <div className="text-2xl font-mono font-bold text-fuchsia-400">{serialStats.used_serials || 0}</div>
                 </div>
               </div>
 
-              <div className="border border-gray-300 rounded bg-white p-4 mb-6">
-                <h4 className="font-bold text-sm mb-4 flex items-center gap-2"><PlusCircle className="h-4 w-4 text-green-600"/> Import More Serials</h4>
-                <div className="flex gap-4 mb-4 border-b pb-2 text-sm">
-                  <button onClick={() => setSerialAddMethod("manual")} className={`pb-2 px-4 transition-all ${serialAddMethod === 'manual' ? 'border-b-2 border-[#e77600] text-[#c45500] font-bold' : 'text-gray-500'}`}>Manual Entry</button>
-                  <button onClick={() => setSerialAddMethod("excel")} className={`pb-2 px-4 transition-all ${serialAddMethod === 'excel' ? 'border-b-2 border-[#e77600] text-[#c45500] font-bold' : 'text-gray-500'}`}>Excel Upload</button>
+              <div className="border border-slate-800 rounded-xl bg-slate-900/30 p-5 shadow-inner">
+                <h4 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2 uppercase tracking-widest text-[12px]">
+                  <PlusCircle className="h-4 w-4 text-cyan-400"/> Batch Import Serials
+                </h4>
+                <div className="flex gap-4 mb-4 border-b border-slate-800 pb-2">
+                  <button 
+                    onClick={() => setSerialAddMethod("manual")} 
+                    className={`pb-2 px-6 text-[11px] font-bold uppercase tracking-widest transition-all ${serialAddMethod === 'manual' ? 'border-b-2 border-cyan-400 text-cyan-400' : 'text-slate-500 hover:text-slate-300'}`}
+                  >
+                    Manual
+                  </button>
+                  <button 
+                    onClick={() => setSerialAddMethod("excel")} 
+                    className={`pb-2 px-6 text-[11px] font-bold uppercase tracking-widest transition-all ${serialAddMethod === 'excel' ? 'border-b-2 border-fuchsia-400 text-fuchsia-400' : 'text-slate-500 hover:text-slate-300'}`}
+                  >
+                    Excel
+                  </button>
                 </div>
 
                 {serialAddMethod === "manual" ? (
-                  <div className="flex flex-col gap-3">
+                  <div className="space-y-4">
                     <textarea 
-                      placeholder="One serial per line..." 
-                      className="w-full p-3 border border-gray-400 rounded focus:border-[#e77600] outline-none text-sm font-mono h-24"
-                      value={newSerials}
-                      onChange={(e) => setNewSerials(e.target.value)}
+                      placeholder="ENTER SERIALS (ONE PER LINE)..." 
+                      className="w-full p-4 bg-[#0a0a0c] border border-slate-800 rounded-xl focus:border-cyan-500/50 outline-none text-xs font-mono h-24 text-cyan-100 placeholder:text-slate-700 transition-all shadow-inner" 
+                      value={newSerials} 
+                      onChange={(e) => setNewSerials(e.target.value)} 
                     />
-                    <button onClick={handleAddNewSerials} className="bg-[#ffd814] border border-[#fcd200] px-6 py-2 rounded text-sm font-bold shadow-sm hover:bg-[#f7ca00]">
-                      Add to Database
+                    <button 
+                      onClick={handleAddNewSerials} 
+                      className="w-full bg-cyan-600 hover:bg-cyan-500 py-2 rounded-lg text-xs font-bold uppercase tracking-widest shadow-lg shadow-cyan-500/20 transition-all active:scale-[0.98]"
+                    >
+                      Process Batch
                     </button>
                   </div>
                 ) : (
-                  <div className="p-8 border-2 border-dashed border-gray-200 rounded flex flex-col items-center justify-center gap-4">
-                    <FileSpreadsheet className="h-12 w-12 text-gray-300" />
-                    <input type="file" accept=".xlsx,.xls" onChange={handleExcelUploadForSerials} className="text-xs" />
+                  <div className="p-8 border-2 border-dashed border-slate-800 rounded-xl flex flex-col items-center justify-center gap-4 bg-[#0a0a0c]/50 hover:border-fuchsia-500/30 transition-all">
+                    <FileSpreadsheet className="h-12 w-12 text-slate-700" />
+                    <input type="file" accept=".xlsx,.xls" onChange={handleExcelUploadForSerials} className="text-[10px] text-slate-500 file:bg-fuchsia-500/10 file:border-0 file:text-fuchsia-400 file:px-4 file:py-1 file:rounded file:mr-4 file:font-bold file:uppercase cursor-pointer" />
                     {bulkSerialPreview.length > 0 && (
-                      <button onClick={confirmBulkAdd} className="bg-[#131921] text-white px-8 py-2 rounded font-bold hover:bg-[#232f3e] transition-colors">
-                        Import {bulkSerialPreview.length} Serials
+                      <button 
+                        onClick={confirmBulkAdd} 
+                        className="bg-fuchsia-600 hover:bg-fuchsia-500 text-white px-8 py-2 rounded-lg font-bold text-xs uppercase tracking-widest shadow-lg shadow-fuchsia-500/20 transition-all"
+                      >
+                        Import {bulkSerialPreview.length} IDs
                       </button>
                     )}
                   </div>
                 )}
               </div>
 
-              <div className="bg-white border border-gray-300 rounded overflow-hidden">
-                <div className="p-3 bg-[#f0f2f2] border-b flex items-center justify-between">
+              <div className="bg-[#0f172a] border border-slate-800 rounded-xl overflow-hidden text-[12px]">
+                <div className="p-3 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between">
                   <div className="relative">
-                    <Search className="absolute left-3 top-2 h-4 w-4 text-gray-400" />
-                    <input type="text" placeholder="Filter list..." className="pl-9 pr-3 py-1 border border-gray-400 rounded text-xs outline-none focus:border-[#e77600]" value={serialSearch} onChange={e => setSerialSearch(e.target.value)} />
+                    <Search className="absolute left-3 top-2 h-4 w-4 text-slate-600" />
+                    <input 
+                      type="text" 
+                      placeholder="FILTER BY SERIAL ID..." 
+                      className="pl-9 pr-4 py-1.5 bg-[#0a0a0c] border border-slate-800 rounded-lg text-[10px] font-bold tracking-widest outline-none focus:border-cyan-500/30 text-slate-300 w-64" 
+                      value={serialSearch} 
+                      onChange={e => setSerialSearch(e.target.value)} 
+                    />
                   </div>
-                  <button onClick={() => loadProductSerials(selectedProduct.id)} className="p-1 hover:rotate-180 transition-all duration-500"><RefreshCw className="h-4 w-4 text-gray-500"/></button>
+                  <button onClick={() => loadProductSerials(selectedProduct.id)} className="p-1.5 hover:rotate-180 transition-all duration-700 text-slate-500 hover:text-cyan-400">
+                    <RefreshCw className="h-4 w-4"/>
+                  </button>
                 </div>
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-slate-800/50 max-h-60 overflow-y-auto custom-scrollbar">
                   {paginatedSerials.map(serial => (
-                    <div key={serial.id} className="p-3 flex items-center justify-between hover:bg-gray-50 text-xs">
-                      <div className="font-mono font-medium">{serial.serial}</div>
+                    <div key={serial.id} className="p-3 flex items-center justify-between hover:bg-cyan-500/[0.03] transition-colors">
+                      <div className="font-mono text-xs font-bold text-slate-300 tracking-tighter">{serial.serial}</div>
                       <div className="flex items-center gap-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${serial.status === 'registered' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}`}>
-                          {serial.status === 'registered' ? 'REGISTERED' : 'AVAILABLE'}
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest ${
+                          serial.status === 'registered' 
+                          ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' 
+                          : 'bg-lime-500/10 text-lime-400 border border-lime-500/20'
+                        }`}>
+                          {serial.status === 'registered' ? 'ASSIGNED' : 'READY'}
                         </span>
                         {serial.status !== 'registered' && (
-                          <button onClick={() => handleDeleteSerial(serial.id, serial.serial)} className="text-red-500 hover:bg-red-50 p-1 rounded"><Trash className="h-3.5 w-3.5"/></button>
+                          <button onClick={() => handleDeleteSerial(serial.id, serial.serial)} className="text-slate-600 hover:text-rose-500 p-1 rounded transition-colors">
+                            <Trash className="h-3.5 w-3.5"/>
+                          </button>
                         )}
                       </div>
                     </div>
                   ))}
+                  {paginatedSerials.length === 0 && (
+                    <div className="p-8 text-center text-slate-600 text-xs uppercase tracking-widest font-bold italic">No matching records</div>
+                  )}
                 </div>
               </div>
             </div>
-
-            <div className="p-4 bg-[#f0f2f2] border-t border-gray-300 flex justify-end">
-              <button onClick={closeSerialModal} className="bg-[#131921] text-white px-8 py-2 rounded font-bold hover:bg-[#232f3e]">Close</button>
+            
+            <div className="p-4 bg-[#0a0a0c] border-t border-slate-800 flex justify-end">
+              <button 
+                onClick={closeSerialModal} 
+                className="px-8 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-lg text-xs font-bold uppercase tracking-widest transition-all"
+              >
+                Close Portal
+              </button>
             </div>
           </div>
         </div>
       )}
 
       <style>{`
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { 
+          from { opacity: 0; transform: translateY(10px); } 
+          to { opacity: 1; transform: translateY(0); } 
+        }
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-4px); }
+          75% { transform: translateX(4px); }
+        }
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #adb1b8; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #888c91; }
+        .animate-shake { animation: shake 0.2s ease-in-out 2; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #334155; }
+        
+        /* Neon text pulse */
+        .neon-pulse { animation: neonPulse 2s infinite alternate; }
+        @keyframes neonPulse {
+          from { text-shadow: 0 0 5px rgba(6,182,212,0.2); }
+          to { text-shadow: 0 0 15px rgba(6,182,212,0.6); }
+        }
       `}</style>
     </div>
   );
