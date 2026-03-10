@@ -4,13 +4,11 @@ import DashboardOverview from "./admin/DashboardOverview";
 import EWarrantyManagement from "./admin/EWarrantyManagement";
 import CategoryManagement from "./admin/CategoryManagement";
 import ProductManagement from "./admin/ProductManagement";
-import ContactManagement from "./admin/ContactManagement";
 import {
   FiHome, FiFileText, FiFolder, FiBox, FiLogOut,
   FiMenu, FiX, FiWifi, FiWifiOff, FiRefreshCw,
   FiMoon, FiSun, FiExternalLink, FiChevronLeft, FiChevronRight,
-  FiMessageSquare,
-} from "react-icons/fi";
+  from "react-icons/fi";
 
 export default function AdminDashboard() {
   const [section, setSection] = useState("dashboard");
@@ -61,8 +59,7 @@ export default function AdminDashboard() {
     { id: "products",   label: "Inventory",  icon: FiBox,           color: "text-purple-400" },
     { id: "categories", label: "Categories", icon: FiFolder,        color: "text-pink-400" },
     { id: "ewarranty",  label: "Warranty",   icon: FiFileText,      color: "text-emerald-400" },
-    { id: "contacts",   label: "Messages",   icon: FiMessageSquare, color: "text-amber-400" },
-  ];
+    
 
   const renderSection = () => {
     const props = { token, isRealTimeSync, setSection };
@@ -71,7 +68,6 @@ export default function AdminDashboard() {
       case "ewarranty":  return <EWarrantyManagement token={token} />;
       case "categories": return <CategoryManagement  token={token} />;
       case "products":   return <ProductManagement   token={token} />;
-      case "contacts":   return <ContactManagement   token={token} />;
       default:           return <DashboardOverview  {...props} />;
     }
   };
