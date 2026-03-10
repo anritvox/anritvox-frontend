@@ -4,11 +4,12 @@ import DashboardOverview from "./admin/DashboardOverview";
 import EWarrantyManagement from "./admin/EWarrantyManagement";
 import CategoryManagement from "./admin/CategoryManagement";
 import ProductManagement from "./admin/ProductManagement";
+import ContactManagement from "./admin/ContactManagement";
 import {
   FiHome, FiFileText, FiFolder, FiBox, FiLogOut,
   FiMenu, FiX, FiWifi, FiWifiOff, FiRefreshCw,
-  FiMoon, FiSun, FiExternalLink, FiChevronLeft, FiChevronRight,
-  from "react-icons/fi";
+  FiMoon, FiSun, FiExternalLink, FiChevronLeft, FiChevronRight, FiMail,
+} from "react-icons/fi";
 
 export default function AdminDashboard() {
   const [section, setSection] = useState("dashboard");
@@ -55,20 +56,22 @@ export default function AdminDashboard() {
   };
 
   const menuItems = [
-    { id: "dashboard",  label: "Overview",   icon: FiHome,          color: "text-cyan-400" },
-    { id: "products",   label: "Inventory",  icon: FiBox,           color: "text-purple-400" },
-    { id: "categories", label: "Categories", icon: FiFolder,        color: "text-pink-400" },
-    { id: "ewarranty",  label: "Warranty",   icon: FiFileText,      color: "text-emerald-400" },
-    
+    { id: "dashboard", label: "Overview", icon: FiHome, color: "text-cyan-400" },
+    { id: "products", label: "Inventory", icon: FiBox, color: "text-purple-400" },
+    { id: "categories", label: "Categories", icon: FiFolder, color: "text-pink-400" },
+    { id: "ewarranty", label: "Warranty", icon: FiFileText, color: "text-emerald-400" },
+    { id: "contacts", label: "Messages", icon: FiMail, color: "text-yellow-400" },
+  ];
 
   const renderSection = () => {
     const props = { token, isRealTimeSync, setSection };
     switch (section) {
-      case "dashboard":  return <DashboardOverview  {...props} />;
-      case "ewarranty":  return <EWarrantyManagement token={token} />;
-      case "categories": return <CategoryManagement  token={token} />;
-      case "products":   return <ProductManagement   token={token} />;
-      default:           return <DashboardOverview  {...props} />;
+      case "dashboard": return <DashboardOverview {...props} />;
+      case "ewarranty": return <EWarrantyManagement token={token} />;
+      case "categories": return <CategoryManagement token={token} />;
+      case "products": return <ProductManagement token={token} />;
+      case "contacts": return <ContactManagement token={token} />;
+      default: return <DashboardOverview {...props} />;
     }
   };
 
@@ -76,7 +79,6 @@ export default function AdminDashboard() {
 
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? "bg-[#080a0f] text-white" : "bg-gray-50 text-gray-900"}`}>
-
       {/* Top Navbar */}
       <header className={`h-14 border-b ${darkMode ? "border-white/5 bg-[#0d0f14]" : "border-gray-200 bg-white"} flex items-center justify-between px-4 shrink-0 z-20`}>
         <button
@@ -85,16 +87,13 @@ export default function AdminDashboard() {
         >
           {mobileMenuOpen ? <FiX size={18} /> : <FiMenu size={18} />}
         </button>
-
         <div onClick={() => navigate("/")} className="flex items-center gap-2 cursor-pointer group">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs">A</div>
           <span className={`font-bold text-sm tracking-widest ${darkMode ? "text-white" : "text-gray-900"}`}>Anritvox <span className="text-cyan-400">OS</span></span>
         </div>
-
         <div className="flex items-center gap-2">
           {isOnline ? <FiWifi size={14} className="text-emerald-400" /> : <FiWifiOff size={14} className="text-red-400" />}
           <span className={`text-xs hidden sm:inline ${isOnline ? "text-emerald-400" : "text-red-400"}`}>{isOnline ? "Online" : "Offline"}</span>
-
           <button
             onClick={() => setIsRealTimeSync(!isRealTimeSync)}
             className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${
@@ -103,19 +102,15 @@ export default function AdminDashboard() {
           >
             {isRealTimeSync ? "Live" : "Manual"}
           </button>
-
           <span className="text-xs text-gray-600 hidden sm:inline">Synced {lastSync.toLocaleTimeString()}</span>
-
           <button onClick={() => setDarkMode(!darkMode)} className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-yellow-400 transition-colors">
             {darkMode ? <FiSun size={14} /> : <FiMoon size={14} />}
           </button>
-
           <button onClick={handleLogout} className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 px-2 py-1 hover:bg-red-500/10 rounded-lg transition-all">
             <FiLogOut size={13} /> Exit
           </button>
         </div>
       </header>
-
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <aside className={`
@@ -131,7 +126,6 @@ export default function AdminDashboard() {
             {sidebarCollapsed ? <FiChevronRight size={16} /> : <FiChevronLeft size={16} />}
             {!sidebarCollapsed && <span className="text-xs uppercase tracking-widest text-gray-600 mr-auto ml-1">Core Modules</span>}
           </button>
-
           {menuItems.map(item => (
             <button
               key={item.id}
@@ -146,7 +140,6 @@ export default function AdminDashboard() {
               {!sidebarCollapsed && <span>{item.label}</span>}
             </button>
           ))}
-
           <div className="mt-auto">
             <a
               href="https://www.anritvox.com"
@@ -159,7 +152,6 @@ export default function AdminDashboard() {
             </a>
           </div>
         </aside>
-
         {/* Mobile overlay */}
         {mobileMenuOpen && (
           <div className="sm:hidden fixed inset-0 z-30">
@@ -182,7 +174,6 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
-
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto">
           {renderSection()}
