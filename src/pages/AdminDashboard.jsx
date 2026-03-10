@@ -4,10 +4,12 @@ import DashboardOverview from "./admin/DashboardOverview";
 import EWarrantyManagement from "./admin/EWarrantyManagement";
 import CategoryManagement from "./admin/CategoryManagement";
 import ProductManagement from "./admin/ProductManagement";
+import ContactManagement from "./admin/ContactManagement";
 import {
   FiHome, FiFileText, FiFolder, FiBox, FiLogOut,
   FiMenu, FiX, FiWifi, FiWifiOff, FiRefreshCw,
   FiMoon, FiSun, FiExternalLink, FiChevronLeft, FiChevronRight,
+  FiMessageSquare,
 } from "react-icons/fi";
 
 export default function AdminDashboard() {
@@ -55,19 +57,21 @@ export default function AdminDashboard() {
   };
 
   const menuItems = [
-    { id: "dashboard",  label: "Overview",   icon: FiHome,     color: "text-cyan-400" },
-    { id: "products",   label: "Inventory",  icon: FiBox,      color: "text-purple-400" },
-    { id: "categories", label: "Categories", icon: FiFolder,   color: "text-pink-400" },
-    { id: "ewarranty",  label: "Warranty",   icon: FiFileText, color: "text-emerald-400" },
+    { id: "dashboard",  label: "Overview",   icon: FiHome,          color: "text-cyan-400" },
+    { id: "products",   label: "Inventory",  icon: FiBox,           color: "text-purple-400" },
+    { id: "categories", label: "Categories", icon: FiFolder,        color: "text-pink-400" },
+    { id: "ewarranty",  label: "Warranty",   icon: FiFileText,      color: "text-emerald-400" },
+    { id: "contacts",   label: "Messages",   icon: FiMessageSquare, color: "text-amber-400" },
   ];
 
   const renderSection = () => {
-    const props = { token, isRealTimeSync };
+    const props = { token, isRealTimeSync, setSection };
     switch (section) {
       case "dashboard":  return <DashboardOverview  {...props} />;
-      case "ewarranty":  return <EWarrantyManagement {...props} />;
-      case "categories": return <CategoryManagement  {...props} />;
-      case "products":   return <ProductManagement   {...props} />;
+      case "ewarranty":  return <EWarrantyManagement token={token} />;
+      case "categories": return <CategoryManagement  token={token} />;
+      case "products":   return <ProductManagement   token={token} />;
+      case "contacts":   return <ContactManagement   token={token} />;
       default:           return <DashboardOverview  {...props} />;
     }
   };
@@ -75,95 +79,86 @@ export default function AdminDashboard() {
   if (!token) return null;
 
   return (
-    <div className={`min-h-screen font-sans ${darkMode ? "bg-[#0a0a0f] text-white" : "bg-gray-100 text-gray-900"} flex flex-col`}>
+    <div className={`min-h-screen flex flex-col ${darkMode ? "bg-[#080a0f] text-white" : "bg-gray-50 text-gray-900"}`}>
 
       {/* Top Navbar */}
-      <header className={`flex items-center justify-between px-4 py-3 border-b ${
-        darkMode ? "bg-[#0d1117] border-cyan-500/20" : "bg-white border-gray-200"
-      } sticky top-0 z-50 shadow-lg`}>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="sm:hidden p-2 text-cyan-400 hover:bg-cyan-500/10 rounded-lg">
-            <FiMenu className="h-5 w-5" />
-          </button>
-          <div onClick={() => navigate("/")} className="flex items-center gap-2 cursor-pointer group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center font-black text-black text-sm">A</div>
-            <span className="font-bold text-lg tracking-tight">
-              Anritvox<span className="text-cyan-400">OS</span>
-            </span>
-          </div>
+      <header className={`h-14 border-b ${darkMode ? "border-white/5 bg-[#0d0f14]" : "border-gray-200 bg-white"} flex items-center justify-between px-4 shrink-0 z-20`}>
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="sm:hidden p-2 text-cyan-400 hover:bg-cyan-500/10 rounded-lg"
+        >
+          {mobileMenuOpen ? <FiX size={18} /> : <FiMenu size={18} />}
+        </button>
+
+        <div onClick={() => navigate("/")} className="flex items-center gap-2 cursor-pointer group">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs">A</div>
+          <span className={`font-bold text-sm tracking-widest ${darkMode ? "text-white" : "text-gray-900"}`}>Anritvox <span className="text-cyan-400">OS</span></span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
-            isOnline ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"
-          }`}>
-            {isOnline ? <FiWifi className="h-3 w-3" /> : <FiWifiOff className="h-3 w-3" />}
-            <span>{isOnline ? "Online" : "Offline"}</span>
-          </div>
-          <button onClick={() => setIsRealTimeSync(!isRealTimeSync)} className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${
-            isRealTimeSync ? "bg-cyan-500/10 text-cyan-400" : "bg-gray-500/10 text-gray-400"
-          }`}>
-            <FiRefreshCw className={`h-3 w-3 ${isSyncing ? "animate-spin" : ""}`} />
+        <div className="flex items-center gap-2">
+          {isOnline ? <FiWifi size={14} className="text-emerald-400" /> : <FiWifiOff size={14} className="text-red-400" />}
+          <span className={`text-xs hidden sm:inline ${isOnline ? "text-emerald-400" : "text-red-400"}`}>{isOnline ? "Online" : "Offline"}</span>
+
+          <button
+            onClick={() => setIsRealTimeSync(!isRealTimeSync)}
+            className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${
+              isRealTimeSync ? "bg-cyan-500/10 text-cyan-400" : "bg-gray-500/10 text-gray-400"
+            }`}
+          >
             {isRealTimeSync ? "Live" : "Manual"}
           </button>
-          <span className="text-xs text-gray-500 hidden md:block">
-            Synced {lastSync.toLocaleTimeString()}
-          </span>
+
+          <span className="text-xs text-gray-600 hidden sm:inline">Synced {lastSync.toLocaleTimeString()}</span>
+
           <button onClick={() => setDarkMode(!darkMode)} className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-yellow-400 transition-colors">
-            {darkMode ? <FiSun className="h-4 w-4" /> : <FiMoon className="h-4 w-4" />}
+            {darkMode ? <FiSun size={14} /> : <FiMoon size={14} />}
           </button>
-          <button onClick={handleLogout} className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition-colors">
-            <FiLogOut className="h-4 w-4" /> Exit
+
+          <button onClick={handleLogout} className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 px-2 py-1 hover:bg-red-500/10 rounded-lg transition-all">
+            <FiLogOut size={13} /> Exit
           </button>
         </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <aside className={`${
-          mobileMenuOpen ? "flex" : "hidden sm:flex"
-        } flex-col ${
-          sidebarCollapsed ? "w-16" : "w-56"
-        } transition-all duration-300 ${
-          darkMode ? "bg-[#0d1117] border-r border-cyan-500/10" : "bg-white border-r border-gray-200"
-        } p-3 gap-1 fixed sm:relative inset-y-0 left-0 top-16 z-40 pt-4`}>
-
+        <aside className={`
+          hidden sm:flex flex-col
+          ${sidebarCollapsed ? "w-16" : "w-52"}
+          ${darkMode ? "bg-[#0d0f14] border-r border-white/5" : "bg-white border-r border-gray-200"}
+          shrink-0 transition-all duration-300 p-3
+        `}>
           <button
             onClick={() => { setSidebarCollapsed(!sidebarCollapsed); setMobileMenuOpen(false); }}
-            className="hidden sm:flex items-center justify-end mb-4 pr-1 text-gray-500 hover:text-white"
+            className="flex items-center justify-end mb-4 pr-1 text-gray-500 hover:text-white"
           >
-            {sidebarCollapsed ? <FiChevronRight /> : <FiChevronLeft />}
+            {sidebarCollapsed ? <FiChevronRight size={16} /> : <FiChevronLeft size={16} />}
+            {!sidebarCollapsed && <span className="text-xs uppercase tracking-widest text-gray-600 mr-auto ml-1">Core Modules</span>}
           </button>
-
-          {!sidebarCollapsed && (
-            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest px-3 mb-2">Core Modules</p>
-          )}
 
           {menuItems.map(item => (
             <button
               key={item.id}
               onClick={() => { setSection(item.id); setMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all ${
+              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all mb-1 ${
                 section === item.id
                   ? "bg-gradient-to-r from-cyan-500/15 to-transparent text-cyan-400 border border-cyan-500/20"
                   : `${darkMode ? "text-gray-500 hover:text-gray-200 hover:bg-white/5" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"}`
               }`}
             >
-              <item.icon className={`h-5 w-5 flex-shrink-0 ${section === item.id ? "text-cyan-400" : item.color}`} />
+              <item.icon size={16} className={section === item.id ? "text-cyan-400" : item.color} />
               {!sidebarCollapsed && <span>{item.label}</span>}
             </button>
           ))}
 
           <div className="mt-auto">
             <a
-              href="https://anritvox-frontend.vercel.app"
+              href="https://www.anritvox.com"
               target="_blank"
-              rel="noreferrer"
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition-all ${
-                darkMode ? "text-gray-500 hover:text-gray-200 hover:bg-white/5" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
-              }`}
+              rel="noopener noreferrer"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-600 hover:text-cyan-400 hover:bg-white/5 transition-all"
             >
-              <FiExternalLink className="h-5 w-5 flex-shrink-0" />
+              <FiExternalLink size={13} />
               {!sidebarCollapsed && <span>View Store</span>}
             </a>
           </div>
@@ -171,14 +166,29 @@ export default function AdminDashboard() {
 
         {/* Mobile overlay */}
         {mobileMenuOpen && (
-          <div
-            className="fixed inset-0 bg-black/50 z-30 sm:hidden"
-            onClick={() => setMobileMenuOpen(false)}
-          />
+          <div className="sm:hidden fixed inset-0 z-30">
+            <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenuOpen(false)} />
+            <div className={`absolute left-0 top-14 bottom-0 w-56 ${darkMode ? "bg-[#0d0f14]" : "bg-white"} p-3 z-40`}>
+              {menuItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => { setSection(item.id); setMobileMenuOpen(false); }}
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all mb-1 ${
+                    section === item.id
+                      ? "bg-gradient-to-r from-cyan-500/15 to-transparent text-cyan-400 border border-cyan-500/20"
+                      : "text-gray-500 hover:text-gray-200 hover:bg-white/5"
+                  }`}
+                >
+                  <item.icon size={16} className={item.color} />
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto">
           {renderSection()}
         </main>
       </div>
