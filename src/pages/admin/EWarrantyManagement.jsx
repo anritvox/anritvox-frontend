@@ -129,8 +129,7 @@ export default function EWarrantyManagement({ token }) {
       ].join(","));
     });
 
-    const csvContent = csvRows.join("
-");
+    const csvContent = csvRows.join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
