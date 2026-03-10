@@ -8,7 +8,7 @@ import {
   Loader2, Search, Trash2, Edit3, CheckCircle, Clock, XCircle,
   QrCode, Printer, Download, Upload, Plus, Package,
   FileBarChart, Filter, RefreshCw, X, Save, AlertCircle,
-  Sparkles, Zap, ShieldCheck, Hash, Copy, Check
+  Sparkles, Zap, ShieldCheck, Hash, Copy, Check, ArrowUpRight, SearchCode
 } from "lucide-react";
 import QRCode from "qrcode";
 
@@ -53,9 +53,12 @@ export default function EWarrantyManagement({ token }) {
     setLoading(true);
     try {
       const data = await fetchWarrantyAdmin(token);
-      setWarranties(data || []);
+      // Normalize: API might return { warranties: [...] } or direct array
+      const normalizedData = Array.isArray(data) ? data : (data.warranties || []);
+      setWarranties(normalizedData);
     } catch (err) {
       console.error("Warranty load error:", err);
+      setWarranties([]);
     } finally {
       setLoading(false);
     }
@@ -64,9 +67,11 @@ export default function EWarrantyManagement({ token }) {
   const loadProductsData = async () => {
     try {
       const data = await fetchProductsAdmin(token);
-      setProducts(data || []);
+      const normalizedData = Array.isArray(data) ? data : (data.products || []);
+      setProducts(normalizedData);
     } catch (err) {
       console.error("Products load error:", err);
+      setProducts([]);
     }
   };
 
@@ -77,6 +82,7 @@ export default function EWarrantyManagement({ token }) {
       setProductSerials(data.serials || []);
     } catch (err) {
       console.error("Serials load error:", err);
+      setProductSerials([]);
     } finally {
       setSerialsLoading(false);
     }
@@ -176,12 +182,11 @@ export default function EWarrantyManagement({ token }) {
         </body>
       </html>
     `);
-
     const labelsDiv = printWindow.document.getElementById('labels');
     
     for (const serialObj of serialsToPrint) {
       const serial = typeof serialObj === 'string' ? serialObj : serialObj.serial;
-      const qrDataUrl = await QRCode.toDataURL(`${window.location.origin}/e-warranty?serial=${serial}`, {
+      const qrDataUrl = await QRCode.toDataURL(\`\${window.location.origin}/e-warranty?serial=\${serial}\`, {
         margin: 1,
         width: 300,
         color: { dark: '#000000', light: '#ffffff' }
@@ -189,15 +194,14 @@ export default function EWarrantyManagement({ token }) {
 
       const label = printWindow.document.createElement('div');
       label.className = 'label';
-      label.innerHTML = `
+      label.innerHTML = \`
         <div class="brand">Anritvox India</div>
-        <img class="qr" src="${qrDataUrl}" />
-        <div class="serial">${serial}</div>
-        <div class="product">${selectedProduct ? selectedProduct.name : 'Authentic Product'}</div>
-      `;
+        <img class="qr" src="\${qrDataUrl}" />
+        <div class="serial">\${serial}</div>
+        <div class="product">\${selectedProduct ? selectedProduct.name : 'Authentic Product'}</div>
+      \`;
       labelsDiv.appendChild(label);
     }
-
     printWindow.document.close();
     setTimeout(() => {
       printWindow.print();
@@ -206,8 +210,8 @@ export default function EWarrantyManagement({ token }) {
 
   const filteredWarranties = warranties.filter(w => {
     const matchesSearch = w.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         w.serial_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         w.customer_email?.toLowerCase().includes(searchTerm.toLowerCase());
+                          w.serial_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          w.customer_email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || w.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -252,13 +256,13 @@ export default function EWarrantyManagement({ token }) {
       <div className="flex p-1 bg-white/5 rounded-2xl w-fit">
         <button 
           onClick={() => setActiveTab("warranties")}
-          className={`px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === 'warranties' ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20' : 'text-gray-500 hover:text-gray-300'}`}
+          className={`px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 \${activeTab === 'warranties' ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20' : 'text-gray-500 hover:text-gray-300'}`}
         >
           <FileBarChart size={14} /> Registered Units
         </button>
         <button 
           onClick={() => setActiveTab("serials")}
-          className={`px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === 'serials' ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20' : 'text-gray-500 hover:text-gray-300'}`}
+          className={`px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 \${activeTab === 'serials' ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20' : 'text-gray-500 hover:text-gray-300'}`}
         >
           <Hash size={14} /> Serial Inventory
         </button>
@@ -273,7 +277,7 @@ export default function EWarrantyManagement({ token }) {
               { label: 'Pending Review', val: stats.pending, icon: Clock, color: 'text-amber-400', bg: 'bg-amber-500/5', border: 'border-amber-500/10' },
               { label: 'Terminated', val: stats.expired, icon: XCircle, color: 'text-rose-400', bg: 'bg-rose-500/5', border: 'border-rose-500/10' }
             ].map((stat, i) => (
-              <div key={i} className={`${stat.bg} ${stat.border} border rounded-2xl p-4 animate-fade-in`} style={{ animationDelay: `${i * 100}ms` }}>
+              <div key={i} className={`\${stat.bg} \${stat.border} border rounded-2xl p-4 animate-fade-in`} style={{ animationDelay: \`\${i * 100}ms\` }}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-600">Sector 0{i+1}</span>
                   <stat.icon size={16} className={stat.color} />
@@ -339,11 +343,11 @@ export default function EWarrantyManagement({ token }) {
                         <div className="text-[10px] text-gray-600 mt-1 uppercase tracking-tighter">Registered: {new Date(w.purchase_date).toLocaleDateString()}</div>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest \${
                           w.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
                           w.status === 'pending' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
                           'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                        }`}>
+                        }\`}>
                           {w.status}
                         </span>
                       </td>
@@ -390,10 +394,10 @@ export default function EWarrantyManagement({ token }) {
                   <button
                     key={p.id}
                     onClick={() => setSelectedProduct(p)}
-                    className={`w-full text-left px-4 py-3 rounded-xl text-sm transition-all flex items-center justify-between group ${selectedProduct?.id === p.id ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20' : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'}`}
+                    className={`w-full text-left px-4 py-3 rounded-xl text-sm transition-all flex items-center justify-between group \${selectedProduct?.id === p.id ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20' : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'}`}
                   >
                     <span className="truncate">{p.name}</span>
-                    <ArrowUpRight size={12} className={`opacity-0 group-hover:opacity-100 transition-opacity ${selectedProduct?.id === p.id ? 'opacity-100' : ''}`} />
+                    <ArrowUpRight size={12} className={`opacity-0 group-hover:opacity-100 transition-opacity \${selectedProduct?.id === p.id ? 'opacity-100' : ''}`} />
                   </button>
                 ))}
               </div>
@@ -448,7 +452,7 @@ export default function EWarrantyManagement({ token }) {
                     {productSerials.map(s => (
                       <div 
                         key={s.id}
-                        className={`p-4 rounded-2xl border transition-all flex flex-col gap-3 group relative ${selectedSerials.includes(s) ? 'bg-purple-500/10 border-purple-500/50' : 'bg-white/2 border-white/5 hover:border-white/10'}`}
+                        className={`p-4 rounded-2xl border transition-all flex flex-col gap-3 group relative \${selectedSerials.includes(s) ? 'bg-purple-500/10 border-purple-500/50' : 'bg-white/2 border-white/5 hover:border-white/10'}`}
                       >
                         <div className="flex items-center justify-between">
                           <code className="text-sm font-bold text-white font-mono">{s.serial}</code>
@@ -463,7 +467,7 @@ export default function EWarrantyManagement({ token }) {
                           />
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className={`text-[9px] font-bold uppercase tracking-widest ${s.is_registered ? 'text-emerald-400' : 'text-gray-600'}`}>
+                          <span className={`text-[9px] font-bold uppercase tracking-widest \${s.is_registered ? 'text-emerald-400' : 'text-gray-600'}`}>
                             {s.is_registered ? 'Registered' : 'Available'}
                           </span>
                           <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -523,7 +527,7 @@ export default function EWarrantyManagement({ token }) {
                 <X size={24} />
               </button>
             </div>
-
+            
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -552,13 +556,13 @@ export default function EWarrantyManagement({ token }) {
                 <div className="grid grid-cols-2 gap-2">
                   <button 
                     onClick={() => setSerialFormat("numeric")}
-                    className={`px-4 py-3 rounded-xl text-xs font-bold transition-all border ${serialFormat === 'numeric' ? 'bg-purple-500/10 border-purple-500 text-purple-400' : 'bg-black/40 border-white/10 text-gray-500'}`}
+                    className={`px-4 py-3 rounded-xl text-xs font-bold transition-all border \${serialFormat === 'numeric' ? 'bg-purple-500/10 border-purple-500 text-purple-400' : 'bg-black/40 border-white/10 text-gray-500'}`}
                   >
                     Numeric Only
                   </button>
                   <button 
                     onClick={() => setSerialFormat("alphanumeric")}
-                    className={`px-4 py-3 rounded-xl text-xs font-bold transition-all border ${serialFormat === 'alphanumeric' ? 'bg-purple-500/10 border-purple-500 text-purple-400' : 'bg-black/40 border-white/10 text-gray-500'}`}
+                    className={`px-4 py-3 rounded-xl text-xs font-bold transition-all border \${serialFormat === 'alphanumeric' ? 'bg-purple-500/10 border-purple-500 text-purple-400' : 'bg-black/40 border-white/10 text-gray-500'}`}
                   >
                     Alpha-Numeric
                   </button>
@@ -639,7 +643,7 @@ export default function EWarrantyManagement({ token }) {
         </div>
       )}
 
-      <style>{`
+      <style>{\`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
@@ -647,7 +651,7 @@ export default function EWarrantyManagement({ token }) {
         .animate-fade-in {
           animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-      `}</style>
+      \`}</style>
     </div>
   );
 }
