@@ -28,7 +28,6 @@ export default function EWarranty() {
     const pre = searchParams.get("serial");
     if (pre) {
       setSerial(pre.trim().toUpperCase());
-      // Auto-validate if serial is provided in URL
       setTimeout(() => {
         handleValidate(pre.trim().toUpperCase());
       }, 500);
@@ -38,7 +37,7 @@ export default function EWarranty() {
   const handleValidate = async (forcedSerial) => {
     const s = forcedSerial || serial;
     if (!s) return;
-    
+
     setLoading(true);
     setError("");
     setSuccessMsg("");
@@ -99,20 +98,19 @@ export default function EWarranty() {
       </div>
 
       <div className="relative group">
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
-        <div className="relative bg-[#0d0f14] border border-white/10 rounded-2xl overflow-hidden flex items-center p-1">
+        <div className="relative bg-[#0a0f14] border border-white/10 rounded-2xl overflow-hidden flex items-center p-1">
           <div className="pl-4 text-gray-600">
             <Search size={20} />
           </div>
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="AX-8800-XXXX-XXXX"
             value={serial}
             onChange={(e) => setSerial(e.target.value.toUpperCase())}
             onKeyPress={(e) => e.key === 'Enter' && handleValidate()}
             className="flex-1 bg-transparent border-none px-4 py-4 text-white font-mono tracking-widest outline-none placeholder:text-gray-700"
           />
-          <button 
+          <button
             onClick={() => handleValidate()}
             disabled={loading || !serial}
             className="px-6 py-4 bg-purple-500 hover:bg-purple-600 disabled:opacity-50 text-white font-bold rounded-xl transition-all flex items-center gap-2"
@@ -167,32 +165,31 @@ export default function EWarranty() {
       </div>
 
       <form onSubmit={handleRegister} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 ml-1">Full Name</label>
-            <div className="relative">
-              <User size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" />
-              <input 
-                type="text" 
-                value={form.user_name}
-                onChange={(e) => setForm({...form, user_name: e.target.value})}
-                className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3.5 text-sm text-white focus:ring-2 focus:ring-purple-500/50 outline-none transition-all"
-                placeholder="John Doe"
-              />
-            </div>
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 ml-1">Full Name</label>
+          <div className="relative">
+            <User size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" />
+            <input
+              type="text"
+              value={form.user_name}
+              onChange={(e) => setForm({...form, user_name: e.target.value})}
+              className="w-full bg-white/5 border border-white/10 rounded-xl p1-10 pr-4 py-3.5 text-sm text-white focus:ring-2 focus:ring-purple-500/50 outline-none transition-all"
+              placeholder="John Doe"
+            />
           </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 ml-1">Email Address</label>
-            <div className="relative">
-              <Mail size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" />
-              <input 
-                type="email" 
-                value={form.user_email}
-                onChange={(e) => setForm({...form, user_email: e.target.value})}
-                className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3.5 text-sm text-white focus:ring-2 focus:ring-purple-500/50 outline-none transition-all"
-                placeholder="john@example.com"
-              />
-            </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 ml-1">Email Address</label>
+          <div className="relative">
+            <Mail size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" />
+            <input
+              type="email"
+              value={form.user_email}
+              onChange={(e) => setForm({...form, user_email: e.target.value})}
+              className="w-full bg-white/5 border border-white/10 rounded-xl p1-10 pr-4 py-3.5 text-sm text-white focus:ring-2 focus:ring-purple-500/50 outline-none transition-all"
+              placeholder="john@example.com"
+            />
           </div>
         </div>
 
@@ -204,7 +201,7 @@ export default function EWarranty() {
                 key={loc}
                 type="button"
                 onClick={() => setForm({...form, purchase_location: loc})}
-                className={`py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${form.purchase_location === loc ? 'bg-purple-500/20 border-purple-500/50 text-purple-400' : 'bg-white/5 border-white/5 text-gray-500 hover:bg-white/10'}`}
+                className={`py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${form.purchase_location === loc ? 'bg-purple-500 border-purple-500 text-white' : 'border-white/10 text-gray-500 hover:border-white/20'}`}
               >
                 {loc}
               </button>
@@ -212,9 +209,9 @@ export default function EWarranty() {
           </div>
         </div>
 
-        <button 
+        <button
           disabled={loading}
-          className="w-full py-4 bg-purple-500 hover:bg-purple-600 disabled:opacity-50 text-white font-bold rounded-2xl transition-all shadow-xl shadow-purple-500/20 flex items-center justify-center gap-2 mt-6"
+          className="w-full py-4 bg-purple-500 hover:bg-purple-600 disabled:opacity-50 text-white font-bold rounded-2xl transition-all shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2 mt-4"
         >
           {loading ? <Loader2 className="animate-spin" size={20} /> : <Shield size={20} />}
           Activate Lifetime Warranty
@@ -236,38 +233,38 @@ export default function EWarranty() {
       </div>
 
       <div className="space-y-2">
-        <h2 className="text-3xl font-bold text-white tracking-tight">Hardware Verified</h2>
+        <h2 className="text-3xl font-bold text-white tracking-tight">Authenticated</h2>
         <p className="text-gray-400 text-sm">Your product is officially protected under the Anritvox ecosystem.</p>
       </div>
 
       <div className="bg-white/5 border border-white/10 rounded-3xl p-6 space-y-6 text-left relative overflow-hidden">
         <div className="absolute top-0 right-0 p-4 opacity-5">
-           <Sparkles size={100} />
+          <Sparkles size={100} />
         </div>
         
         <div className="space-y-1">
-           <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-600">Registered Owner</label>
-           <div className="text-lg font-bold text-white">{info.customer_name || form.user_name}</div>
+          <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-600">Registered Owner</label>
+          <div className="text-lg font-bold text-white">{info.customer_name || form.user_name}</div>
         </div>
 
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-1">
-             <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-600">Hardware ID</label>
-             <div className="text-sm font-mono text-purple-400">#{info.serial_number}</div>
+            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-600">Hardware ID</label>
+            <div className="text-sm font-mono text-purple-400">#{info.serial_number}</div>
           </div>
           <div className="space-y-1 text-right">
-             <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-600">Status</label>
-             <div className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Active Protection</div>
+            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-600">Status</label>
+            <div className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Active Protection</div>
           </div>
         </div>
 
         <div className="pt-6 border-t border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-             <Calendar size={16} className="text-gray-600" />
-             <div>
-               <div className="text-[9px] font-bold text-gray-600 uppercase">Protection Since</div>
-               <div className="text-xs text-white">{new Date(info.purchase_date || new Date()).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
-             </div>
+            <Calendar size={16} className="text-gray-600" />
+            <div>
+              <div className="text-[9px] font-bold text-gray-600 uppercase tracking-wider">Protection Since</div>
+              <div className="text-xs text-white">{new Date(info.purchase_date || new Date()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+            </div>
           </div>
           <button onClick={() => window.print()} className="p-3 bg-white/5 hover:bg-white/10 rounded-xl text-gray-400 transition-all">
              <ExternalLink size={16} />
@@ -275,12 +272,11 @@ export default function EWarranty() {
         </div>
       </div>
 
-      <button 
+      <button
         onClick={() => navigate('/shop')}
         className="w-full py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl transition-all border border-white/10 flex items-center justify-center gap-2"
       >
-        <Sparkles size={18} className="text-purple-400" />
-        Explore More Hardware
+        <Sparkles size={18} className="text-purple-400" /> Explore More Hardware
       </button>
     </div>
   );
@@ -291,7 +287,10 @@ export default function EWarranty() {
         {/* Progress Dots */}
         <div className="flex items-center justify-center gap-2 mb-12">
           {[1, 2, 3].map(i => (
-            <div key={i} className={`h-1 rounded-full transition-all duration-500 ${step === i ? 'w-8 bg-purple-500' : 'w-2 bg-white/10'}`}></div>
+            <div
+              key={i}
+              className={`h-1 rounded-full transition-all duration-500 ${step === i ? 'w-8 bg-purple-500' : 'w-2 bg-white/10'}`}
+            ></div>
           ))}
         </div>
 
@@ -299,13 +298,19 @@ export default function EWarranty() {
         {error && (
           <div className="mb-8 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center gap-3 animate-shake">
             <AlertCircle className="text-rose-500 shrink-0" size={18} />
- 
-REDESIGN: Advanced Hardware Authentication Gateway - EWarranty Customer PortalREDESIGN: Advanced Hardware Authentication Gateway - EWarranty Customer PortalREDESIGN: Advanced Hardware Authentication Gateway - EWarranty Customer PortalREDESIGN: Advanced Hardware Authentication Gateway - EWarranty Customer Portal        <div className="relative">
+            <p className="text-xs text-rose-200">{error}</p>
+          </div>
+        )}
+
+        <div className="relative">
           {step === 1 && renderStep1()}
           {step === 2 && renderStep2()}
           {step === 3 && renderStep3()}
         </div>
-        {/* Footer Info */}        <div className="mt-16 text-center">          <div className="flex items-center justify-center gap-6 mb-4 opacity-30 grayscale">
+
+        {/* Footer Info */}
+        <div className="mt-16 text-center">
+          <div className="flex items-center justify-center gap-6 mb-4 opacity-30 grayscale">
             <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" alt="Amazon" className="h-4 invert" />
             <img src="https://upload.wikimedia.org/wikipedia/commons/2/24/Flipkart_logo.png" alt="Flipkart" className="h-5" />
           </div>
@@ -313,7 +318,7 @@ REDESIGN: Advanced Hardware Authentication Gateway - EWarranty Customer PortalRE
         </div>
       </div>
 
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(20px); filter: blur(10px); }
           to { opacity: 1; transform: translateY(0); filter: blur(0); }
@@ -325,7 +330,7 @@ REDESIGN: Advanced Hardware Authentication Gateway - EWarranty Customer PortalRE
         }
         .animate-fade-in { animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .animate-shake { animation: shake 0.4s ease-in-out; }
-      `}</style>
+      ` }} />
     </div>
   );
 }
