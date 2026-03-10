@@ -76,8 +76,7 @@ export default function EWarrantyManagement({ token }) {
       w.status
     ]);
     
-    const csvContent = [headers, ...csvData].map(e => e.join(",")).join("
-");
+    const csvContent = [headers, ...csvData].map(e => e.join(",")).join("\n");
         const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
