@@ -387,7 +387,7 @@ export default function EWarrantyManagement({ token }) {
       )}
 
       <style>
-        {\`
+                  {`
           @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -395,7 +395,7 @@ export default function EWarrantyManagement({ token }) {
           .animate-fade-in {
             animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
           }
-        \`}
+                  `}
       </style>
     </div>
   );
