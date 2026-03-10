@@ -60,16 +60,23 @@ export default function DashboardOverview({ token, isRealTimeSync }) {
     else setRefreshing(true);
     
     try {
-      const [w, c, p, contacts] = await Promise.all([
+      const [wData, cData, pData, contactsData] = await Promise.all([
         fetchWarrantyAdmin(token),
         fetchCategories(token),
         fetchProductsAdmin(token),
         fetchContactsAdmin(token),
       ]);
+
+      // Normalize data as API might return { warranties: [...] } or direct array
+      const warranties = Array.isArray(wData) ? wData : (wData.warranties || []);
+      const categories = Array.isArray(cData) ? cData : (cData.categories || []);
+      const products = Array.isArray(pData) ? pData : (pData.products || []);
+      const contacts = Array.isArray(contactsData) ? contactsData : (contactsData.contacts || contactsData.messages || []);
+
       setStats({
-        warranties: w.length,
-        categories: c.length,
-        products: p.length,
+        warranties: warranties.length,
+        categories: categories.length,
+        products: products.length,
         contacts: contacts.length,
         recentContacts: contacts.slice(0, 5),
       });
@@ -210,7 +217,6 @@ export default function DashboardOverview({ token, isRealTimeSync }) {
           </div>
         </div>
       </div>
-
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
