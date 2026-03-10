@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { fetchWarrantyAdmin, updateWarrantyStatusAdmin, deleteWarrantyAdmin } from "../../services/api";
+  const [error, setError] = useState(null);
 import { 
   Loader2, Search, Trash2, Edit3, CheckCircle, Clock, XCircle, 
   ChevronDown, Filter, FileText, Download, User, ShieldCheck, 
@@ -20,21 +21,24 @@ export default function EWarrantyManagement({ token }) {
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 8;
 
-  const loadData = async () => {
+   const loadData = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await fetchWarrantyAdmin(token);
       setWarranties(data || []);
     } catch (err) {
       console.error("Warranty load error:", err);
+      setError(err.message || "Failed to load warranty data");
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadData();
   }, [token]);
+
+
+    useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this warranty record?")) {
@@ -106,7 +110,16 @@ export default function EWarrantyManagement({ token }) {
     expired: warranties.filter(w => w.status === 'expired').length,
   };
 
-  if (loading) return (
+  if (error) return (
+    <div className="flex flex-col items-center justify-center h-64 gap-4 p-6">
+      <div className="text-red-400 font-mono text-sm text-center">{error}</div>
+      <button onClick={loadData} className="px-6 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-400 font-bold rounded-2xl transition-all flex items-center gap-2">
+        <RefreshCw size={16} /> Retry
+      </button>
+    </div>
+  );
+
+    if (loading) return (
     <div className="min-h-screen bg-[#050608] flex items-center justify-center">
       <div className="relative">
         <div className="absolute inset-0 bg-purple-500/20 blur-3xl rounded-full animate-pulse" />
