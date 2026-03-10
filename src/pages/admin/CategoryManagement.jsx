@@ -376,14 +376,14 @@ export default function CategoryManagement({ token }) {
         </div>
       </div>
 
-      <style>{\`
+              <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #374151; }
-      \`}</style>
+              `}</style>
     </div>
   );
 }
