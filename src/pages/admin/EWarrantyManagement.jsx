@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { fetchWarrantyAdmin, updateWarrantyAdmin, deleteWarrantyAdmin } from "../../services/api";
+import { fetchWarrantyAdmin, updateWarrantyStatusAdmin, deleteWarrantyAdmin } from "../../services/api";
 import { 
   Loader2, Search, Trash2, Edit3, CheckCircle, Clock, XCircle, 
   ChevronDown, Filter, FileText, Download, User, ShieldCheck, 
@@ -39,7 +39,7 @@ export default function EWarrantyManagement({ token }) {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this warranty record?")) {
       try {
-        await deleteWarrantyAdmin(id, token);
+                  await deleteWarrantyAdmin(token, id);
         loadData();
       } catch (err) {
         alert("Failed to delete record.");
@@ -56,7 +56,7 @@ export default function EWarrantyManagement({ token }) {
     if (!selectedWarranty) return;
     setIsUpdating(true);
     try {
-      await updateWarrantyAdmin(selectedWarranty.id, selectedWarranty, token);
+                await updateWarrantyStatusAdmin(token, selectedWarranty.id, selectedWarranty.status);
       setIsEditModalOpen(false);
       loadData();
     } catch (err) {
