@@ -11,6 +11,7 @@ const EWarranty = lazy(() => import("./pages/EWarranty"));
 const Contact = lazy(() => import("./pages/Contact"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const Cart = lazy(() => import("./pages/Cart"));
 
 import "./index.css";
 
@@ -25,20 +26,19 @@ function AppContent() {
   const isAdminPath = location.pathname.startsWith("/admin");
 
   return (
-    <>
+    <>Add Cart route to App.jsx
       {!isAdminPath && <Navbar />}
       <main>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/shop" element={<Shop />} />
-            <Route path="/shop/:id" element={<ProductDetail />} />
-            <Route path="/ewarranty" element={<EWarranty />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/cart" element={<Cart />} />
             <Route path="/e-warranty" element={<EWarranty />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/*" element={<AdminDashboard />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
@@ -48,10 +48,12 @@ function AppContent() {
   );
 }
 
-export default function App() {
+function App() {
   return (
     <BrowserRouter>
       <AppContent />
     </BrowserRouter>
   );
 }
+
+export default App;
