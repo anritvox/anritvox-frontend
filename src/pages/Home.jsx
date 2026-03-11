@@ -1,25 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { fetchProducts } from "../services/api";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Star,
-  ArrowRight,
-  ShieldCheck,
-  Headphones,
-  Truck,
-  Zap,
-  ShoppingBag,
-  Award,
-  Globe,
-  ChevronUp,
-  Flame,
-  CheckCircle2,
-  Cpu,
-  Smartphone,
-  Sparkles,
-  MousePointer2
+import { 
+  ChevronLeft, ChevronRight, Star, ArrowRight, ShieldCheck, Headphones, Truck, Zap, 
+  ShoppingBag, Award, Globe, ChevronUp, Flame, CheckCircle2, Cpu, Smartphone, 
+  Sparkles, MousePointer2, LayoutGrid, Search, Menu, X, User, ShoppingCart, Percent
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -28,16 +13,20 @@ import heroImage1 from "../assets/images/Home1.webp";
 import heroImage2 from "../assets/images/Home2.webp";
 import heroImage3 from "../assets/images/Home3.webp";
 import heroImage4 from "../assets/images/Home4.webp";
+import heroImage5 from "../assets/images/Home5.webp";
+import heroImage6 from "../assets/images/Home6.webp";
+import heroImage7 from "../assets/images/Home7.webp";
+import heroImage8 from "../assets/images/Home8.webp";
 
-const heroImages = [heroImage1, heroImage2, heroImage3, heroImage4];
+const heroImages = [heroImage1, heroImage2, heroImage3, heroImage4, heroImage5, heroImage6, heroImage7, heroImage8];
 
 const categories = [
-  { name: "Android Stereo", icon: <Cpu size={24} />, path: "/shop?category=stereo" },
-  { name: "LED Lighting", icon: <Zap size={24} />, path: "/shop?category=lighting" },
-  { name: "Interior", icon: <ShoppingBag size={24} />, path: "/shop?category=Interior" },
-  { name: "Exterior", icon: <Globe size={24} />, path: "/shop?category=Exterior" },
-  { name: "Dash Cams", icon: <ShieldCheck size={24} />, path: "/shop?category=dashcam" },
-  { name: "Accessories", icon: <Smartphone size={24} />, path: "/shop?category=Accessories" },
+  { name: "Android Stereo", icon: <Cpu />, path: "/shop?category=stereo", color: "bg-blue-500" },
+  { name: "LED Lighting", icon: <Zap />, path: "/shop?category=lighting", color: "bg-yellow-500" },
+  { name: "Interior", icon: <LayoutGrid />, path: "/shop?category=Interior", color: "bg-purple-500" },
+  { name: "Exterior", icon: <Globe />, path: "/shop?category=Exterior", color: "bg-green-500" },
+  { name: "Dash Cams", icon: <ShieldCheck />, path: "/shop?category=dashcam", color: "bg-red-500" },
+  { name: "Accessories", icon: <Smartphone />, path: "/shop?category=Accessories", color: "bg-orange-500" },
 ];
 
 export default function Home() {
@@ -46,6 +35,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [activeTab, setActiveTab] = useState("featured");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -62,7 +52,7 @@ export default function Home() {
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % heroImages.length);
-    }, 8000);
+    }, 5000);
 
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 400);
@@ -80,221 +70,280 @@ export default function Home() {
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   return (
-    <div className="bg-gray-50 min-h-screen font-sans pb-20 selection:bg-blue-100 selection:text-blue-900">
-      <div className="bg-white border-b border-gray-100 sticky top-16 z-40 overflow-hidden shadow-sm">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-2 sm:py-3 flex items-center justify-between overflow-x-auto no-scrollbar gap-4">
-          <div className="flex items-center gap-4 sm:gap-8">
-            {categories.map((cat, idx) => (
-              <Link key={idx} to={cat.path} className="flex items-center gap-2 group cursor-pointer whitespace-nowrap py-1.5 sm:py-2 relative">
-                <div className="p-1.5 rounded-lg bg-blue-600 text-white shadow-sm group-hover:scale-110 transition-all duration-300">
-                  {React.cloneElement(cat.icon, { size: 18 })}
-                </div>
-                <span className="text-xs sm:text-sm font-medium text-gray-600 group-hover:text-blue-600 transition-colors">
-                  {cat.name}
-                </span>
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full" />
-              </Link>
-            ))}
+    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 overflow-x-hidden">
+      {/* Mobile-Friendly Search Bar (Amazon/Flipkart Style) */}
+      <div className="sticky top-0 z-50 bg-white shadow-md lg:hidden">
+        <div className="flex items-center gap-3 p-3">
+          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2">
+            <Menu size={24} />
+          </button>
+          <div className="flex-1 relative">
+            <input 
+              type="text" 
+              placeholder="Search items..." 
+              className="w-full bg-gray-100 border-none rounded-lg py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-blue-500"
+            />
+            <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
           </div>
-          <div className="hidden lg:flex items-center gap-4 border-l pl-8">
-            <div className="flex items-center gap-2 text-rose-500 font-bold text-sm animate-pulse">
-              <Flame size={18} />
-              <span>LIVE OFFERS</span>
-            </div>
+          <Link to="/cart" className="p-2 relative">
+            <ShoppingCart size={24} />
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">0</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Desktop Navigation Highlights */}
+      <div className="hidden lg:block bg-blue-700 text-white py-2 px-4">
+        <div className="max-w-7xl mx-auto flex justify-between items-center text-sm font-medium">
+          <div className="flex gap-6">
+            <span className="flex items-center gap-1"><Truck size={14} /> Free Shipping Over ₹4999</span>
+            <span className="flex items-center gap-1"><ShieldCheck size={14} /> 2 Year Warranty</span>
+          </div>
+          <div className="flex gap-4">
+            <Link to="/support" className="hover:underline">Support</Link>
+            <Link to="/track-order" className="hover:underline">Track Order</Link>
           </div>
         </div>
       </div>
 
-      <div className="max-w-[1600px] mx-auto">
-        <div className="relative h-[450px] sm:h-[600px] md:h-[750px] overflow-hidden group bg-black">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentIndex}
-              initial={{ opacity: 0, scale: 1.1 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1.2, ease: "easeOut" }}
-              className="absolute inset-0"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent z-10" />
-              <img src={heroImages[currentIndex]} className="w-full h-full object-cover" alt="Premium Car Tech" />
-              <div className="absolute top-1/2 left-4 sm:left-12 md:left-24 -translate-y-1/2 z-20 max-w-3xl pr-4">
-                <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4, duration: 0.8 }}>
-                  <div className="flex items-center gap-2 mb-4 sm:mb-6">
-                    <span className="w-12 h-[2px] bg-blue-500 rounded-full" />
-                    <span className="text-blue-400 font-black tracking-[0.3em] text-[10px] sm:text-xs uppercase">The Future of Car Tech</span>
-                  </div>
-                  <h1 className="text-3xl sm:text-5xl md:text-8xl font-black text-white leading-tight mb-4 sm:mb-6 tracking-tight">
-                    ELEVATE YOUR <br />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">DRIVING EXPERIENCE</span>
-                  </h1>
-                  <p className="text-sm sm:text-lg md:text-xl text-gray-300 mb-6 sm:mb-10 max-w-xl leading-relaxed font-light">
-                    Experience premium Android infotainment and precision lighting engineered specifically for Indian road conditions.
-                  </p>
-                  <div className="flex flex-wrap gap-3 sm:gap-5">
-                    <Link to="/shop" className="group relative bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-10 py-3 sm:py-4 rounded-full text-sm sm:text-base font-bold transition-all overflow-hidden shadow-[0_0_30px_rgba(37,99,235,0.4)]">
-                      <span className="relative z-10 flex items-center gap-2">Explore Collections <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" /></span>
-                    </Link>
-                    <Link to="/ewarranty" className="bg-white/10 backdrop-blur-xl border border-white/20 text-white px-6 sm:px-10 py-3 sm:py-4 rounded-full text-sm sm:text-base font-bold hover:bg-white/20 transition-all flex items-center gap-2">
-                      <ShieldCheck size={20} className="text-blue-400" /> E-Warranty
-                    </Link>
-                  </div>
+      {/* Hero Section (Mix of Amazon Slider & Flipkart Banners) */}
+      <div className="relative w-full h-[300px] md:h-[500px] lg:h-[600px] bg-gray-200 overflow-hidden group">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentIndex}
+            initial={{ opacity: 0, x: 100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -100 }}
+            transition={{ duration: 0.6 }}
+            className="absolute inset-0"
+          >
+            <img 
+              src={heroImages[currentIndex]} 
+              alt={`Promotion ${currentIndex + 1}`}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.src = "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=1200";
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent flex items-center px-6 md:px-20">
+              <div className="max-w-2xl text-white space-y-4">
+                <motion.span 
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  className="inline-block bg-blue-600 px-4 py-1 rounded-full text-xs font-bold tracking-widest uppercase"
+                >
+                  Premium Exclusive
+                </motion.span>
+                <motion.h1 
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-4xl md:text-6xl font-black leading-tight"
+                >
+                  THE FUTURE OF <br /> <span className="text-blue-400">CAR TECH</span>
+                </motion.h1>
+                <motion.p 
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-lg md:text-xl text-gray-200 max-w-lg"
+                >
+                  Experience premium Android infotainment and precision lighting engineered specifically for Indian roads.
+                </motion.p>
+                <motion.div 
+                   initial={{ y: 20, opacity: 0 }}
+                   animate={{ y: 0, opacity: 1 }}
+                   transition={{ delay: 0.4 }}
+                   className="flex gap-4 pt-4"
+                >
+                  <Link to="/shop" className="bg-white text-blue-900 px-8 py-3 rounded-xl font-bold hover:bg-blue-50 transition-colors shadow-lg">Shop Now</Link>
+                  <Link to="/e-warranty" className="bg-transparent border-2 border-white/50 text-white px-8 py-3 rounded-xl font-bold hover:bg-white/10 transition-colors backdrop-blur-sm">E-Warranty</Link>
                 </motion.div>
               </div>
-            </motion.div>
-          </AnimatePresence>
-          <div className="absolute bottom-6 sm:bottom-12 right-6 sm:right-12 z-30 flex items-center gap-3 sm:gap-4">
-            <div className="flex gap-1.5 sm:gap-2 mr-4 sm:mr-6">
-              {heroImages.map((_, i) => (
-                <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${i === currentIndex ? "w-8 sm:w-10 bg-blue-500" : "w-2 bg-white/30"}`} />
-              ))}
             </div>
-            <button onClick={prevHero} className="p-2.5 sm:p-4 border border-white/20 bg-white/5 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all active:scale-90"><ChevronLeft size={20} /></button>
-            <button onClick={nextHero} className="p-2.5 sm:p-4 border border-white/20 bg-white/5 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all active:scale-90"><ChevronRight size={20} /></button>
-          </div>
-        </div>
+          </motion.div>
+        </AnimatePresence>
 
-        <div className="px-4 sm:px-6 -mt-12 sm:-mt-24 relative z-30 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-          {[
-            { title: "Android Infotainment", desc: "Ultra HD screens with Wireless CarPlay & Octa-core speed.", icon: <Smartphone size={32} className="text-blue-500" />, tag: "Best Seller" },
-            { title: "Precision LED Pro", desc: "Night-piercing illumination with 2-year warranty coverage.", icon: <Sparkles size={32} className="text-amber-500" />, tag: "Trending" },
-            { title: "Intelligent Dash Cams", desc: "4K loop recording with Sony IMX sensors for evidence-grade video.", icon: <ShieldCheck size={32} className="text-emerald-500" />, tag: "New Arrival" }
-          ].map((item, i) => (
-            <motion.div key={i} whileHover={{ y: -10 }} className="bg-white/80 backdrop-blur-2xl p-6 sm:p-8 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-white/50 group">
-              <div className="flex justify-between items-start mb-6">
-                <div className="p-4 bg-gray-50 rounded-2xl group-hover:bg-blue-50 transition-colors">{item.icon}</div>
-                <span className="px-3 py-1 bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest rounded-full">{item.tag}</span>
-              </div>
-              <h3 className="text-xl sm:text-2xl font-black text-gray-900 mb-3">{item.title}</h3>
-              <p className="text-gray-500 text-sm sm:text-base leading-relaxed mb-6">{item.desc}</p>
-              <Link to="/shop" className="flex items-center gap-2 text-blue-600 font-bold group/link text-sm sm:text-base">View Series <ArrowRight size={18} className="group-hover/link:translate-x-1 transition-transform" /></Link>
-            </motion.div>
+        {/* Slider Controls */}
+        <button 
+          onClick={prevHero}
+          className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 p-3 rounded-full backdrop-blur-md transition-all hidden group-hover:block"
+        >
+          <ChevronLeft className="text-white" size={32} />
+        </button>
+        <button 
+          onClick={nextHero}
+          className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 p-3 rounded-full backdrop-blur-md transition-all hidden group-hover:block"
+        >
+          <ChevronRight className="text-white" size={32} />
+        </button>
+
+        {/* Indicators */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3 z-10">
+          {heroImages.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentIndex(i)}
+              className={`h-2 rounded-full transition-all duration-300 ${currentIndex === i ? "w-10 bg-blue-500" : "w-2 bg-white/50"}`}
+            />
           ))}
         </div>
+      </div>
 
-        <div className="mt-16 sm:mt-24 px-4 sm:px-6">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-12 gap-6">
-            <div>
-              <div className="flex items-center gap-2 text-blue-600 font-bold mb-2 tracking-widest uppercase text-[10px] sm:text-xs">
-                <CheckCircle2 size={16} /> Verified Performance
+      {/* Meesho Style Circular Categories (Best for Mobile) */}
+      <div className="max-w-7xl mx-auto px-4 py-8 overflow-x-auto scrollbar-hide">
+        <div className="flex lg:grid lg:grid-cols-6 gap-6 min-w-max lg:min-w-0">
+          {categories.map((cat, idx) => (
+            <Link 
+              key={idx} 
+              to={cat.path} 
+              className="group flex flex-col items-center gap-3 transition-transform hover:scale-110"
+            >
+              <div className={`${cat.color} w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center text-white shadow-lg group-hover:rotate-6 transition-transform`}>
+                {React.cloneElement(cat.icon, { size: 32 })}
               </div>
-              <h2 className="text-3xl sm:text-5xl font-black text-gray-900">Curated Collection</h2>
-            </div>
-            <div className="flex bg-white p-1.5 rounded-2xl shadow-inner border border-gray-100 overflow-x-auto no-scrollbar">
-              {[{ label: "Featured", id: "featured" }, { label: "Newest", id: "new" }, { label: "Best Value", id: "value" }].map((tab) => (
-                <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl font-bold transition-all whitespace-nowrap text-sm sm:text-base ${activeTab === tab.id ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-105" : "text-gray-500 hover:text-gray-800"}`}>
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
-            {loading ? (
-              [1, 2, 3, 4].map((n) => <div key={n} className="h-[350px] sm:h-[450px] bg-white rounded-3xl animate-pulse border border-gray-100" />)
-            ) : (
-              products.slice(0, 8).map((product) => (
-                <Link key={product.id} to={'/shop/' + product.id} className="group bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border border-gray-100 hover:border-blue-200 hover:shadow-[0_30px_60px_rgba(0,0,0,0.08)] transition-all duration-500 flex flex-col">
-                  <div className="relative aspect-square mb-4 sm:mb-6 overflow-hidden rounded-xl sm:rounded-2xl bg-gray-50 flex items-center justify-center p-4 sm:p-8">
-                    <img src={(product.images && product.images[0]) || "https://via.placeholder.com/300?text=ANRITVOX"} className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700" alt={product.name} />
-                    <div className="absolute top-2 sm:top-4 right-2 sm:right-4">
-                      <div className="bg-white/90 backdrop-blur p-2 sm:p-2.5 rounded-full text-gray-400 hover:text-red-500 transition-colors shadow-sm"><Star size={16} sm:size={20} /></div>
-                    </div>
-                  </div>
-                  <div className="px-1 flex-grow">
-                    <div className="flex items-center gap-1 mb-1 sm:mb-2">
-                      <div className="flex text-amber-400"><Star size={10} sm:size={14} fill="currentColor" /><Star size={10} sm:size={14} fill="currentColor" /><Star size={10} sm:size={14} fill="currentColor" /><Star size={10} sm:size={14} fill="currentColor" /><Star size={10} sm:size={14} fill="currentColor" /></div>
-                      <span className="text-[8px] sm:text-[10px] text-gray-400 font-bold ml-1">(240+)</span>
-                    </div>
-                    <h3 className="font-bold text-gray-900 text-sm sm:text-lg line-clamp-2 mb-2 sm:mb-3 leading-snug group-hover:text-blue-600 transition-colors">{product.name}</h3>
-                    <div className="flex items-center justify-between mt-auto">
-                      <div>
-                        <span className="text-base sm:text-2xl font-black text-gray-900">₹{Number(product.price).toLocaleString()}</span>
-                        <div className="flex items-center gap-1 sm:gap-2">
-                          <span className="text-gray-400 text-[10px] sm:text-sm line-through">₹{(product.price * 1.3).toFixed(0)}</span>
-                          <span className="text-emerald-500 text-[9px] sm:text-xs font-black">30% OFF</span>
-                        </div>
-                      </div>
-                      <button className="p-2 sm:p-3 bg-gray-900 text-white rounded-xl sm:rounded-2xl group-hover:bg-blue-600 transition-colors shadow-xl"><ShoppingBag size={16} sm:size={20} /></button>
-                    </div>
-                  </div>
-                </Link>
-              ))
-            )}
-          </div>
-          <div className="mt-12 sm:mt-16 text-center">
-            <Link to="/shop" className="inline-flex items-center gap-2 sm:gap-3 px-8 sm:px-12 py-4 sm:py-5 bg-white border-2 border-gray-100 rounded-full font-black text-xs sm:text-sm md:text-base text-gray-900 hover:bg-gray-50 hover:border-gray-200 transition-all shadow-sm">
-              BROWSE ALL PRODUCTS <MousePointer2 size={20} className="text-blue-600" />
+              <span className="text-sm font-bold text-gray-700">{cat.name}</span>
             </Link>
-          </div>
-        </div>
-
-        <div className="mt-20 sm:mt-32 mx-4 sm:mx-6">
-          <div className="rounded-3xl sm:rounded-[40px] overflow-hidden bg-gray-950 relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 to-transparent z-10" />
-            <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[150%] bg-blue-600/10 blur-[120px] rounded-full" />
-            <div className="flex flex-col lg:flex-row items-center relative z-20">
-              <div className="p-8 sm:p-12 md:p-24 lg:w-3/5">
-                <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] sm:text-xs font-black tracking-widest uppercase mb-6 sm:mb-8">Premium Exclusive</span>
-                <h2 className="text-3xl sm:text-5xl md:text-7xl font-black text-white italic tracking-tighter mb-6 sm:mb-8">THE <span className="text-blue-500">ELITE</span> SERIES</h2>
-                <p className="text-gray-400 text-sm sm:text-lg md:text-xl max-w-xl leading-relaxed mb-10 sm:mb-12">Engineered with military-grade components and the latest Android architecture. Elevate your cockpit with wireless seamlessness.</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 mb-10 sm:mb-12 border-t border-white/10 pt-8 sm:pt-12">
-                  {[{ label: "Memory", val: "8GB RAM" }, { label: "Display", val: "4K QLED" }, { label: "Sound", val: "DSP 32EQ" }].map((spec, i) => (
-                    <div key={i}>
-                      <p className="text-gray-500 text-[10px] sm:text-xs uppercase font-bold tracking-widest mb-1">{spec.label}</p>
-                      <p className="text-white font-black text-sm sm:text-lg">{spec.val}</p>
-                    </div>
-                  ))}
-                </div>
-                <Link to="/shop" className="inline-block bg-white text-black px-8 sm:px-12 py-3.5 sm:py-5 rounded-full font-black text-xs sm:text-sm uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all transform hover:scale-105">Unlock the technology</Link>
-              </div>
-              <div className="lg:w-2/5 p-8 sm:p-12 flex justify-center">
-                <motion.div initial={{ rotate: 10, y: 50 }} whileInView={{ rotate: -5, y: 0 }} transition={{ duration: 1 }} className="relative">
-                  <div className="absolute inset-0 bg-blue-500/20 blur-[80px] rounded-full" />
-                  <img src={heroImage2} alt="Promo Infotainment" className="max-h-[250px] sm:max-h-[400px] drop-shadow-[0_50px_100px_rgba(0,0,0,0.8)] relative z-10" />
-                </motion.div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-20 sm:mt-32 border-y border-gray-100 py-10 sm:py-16 bg-white">
-          <div className="px-4 sm:px-6 grid grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12">
-            {[
-              { icon: <Award className="text-blue-600" />, title: "ISO Certified", desc: "Global quality standards" },
-              { icon: <Truck className="text-blue-600" />, title: "Express Shipping", desc: "PAN India delivery" },
-              { icon: <CheckCircle2 className="text-blue-600" />, title: "Tested for India", desc: "High heat endurance" },
-              { icon: <Headphones className="text-blue-600" />, title: "24/7 Concierge", desc: "Priority WhatsApp support" }
-            ].map((feature, i) => (
-              <div key={i} className="flex flex-col items-center text-center">
-                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-blue-50 rounded-2xl sm:rounded-3xl">{feature.icon}</div>
-                <h4 className="font-black text-gray-900 mb-1 sm:mb-2 text-sm sm:text-base">{feature.title}</h4>
-                <p className="text-gray-500 text-[10px] sm:text-sm">{feature.desc}</p>
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
 
+      {/* Featured Products (Flipkart Grid Style) */}
+      <section className="max-w-7xl mx-auto px-4 py-12">
+        <div className="flex items-center justify-between mb-8 border-b border-gray-200 pb-4">
+          <div className="space-y-1">
+            <h2 className="text-2xl md:text-3xl font-black flex items-center gap-2">
+              <Flame className="text-orange-500 fill-orange-500" /> DEALS OF THE DAY
+            </h2>
+            <p className="text-gray-500 text-sm font-medium">Top picks hand-curated for you</p>
+          </div>
+          <Link to="/shop" className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors">View All</Link>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          {loading ? (
+            Array(4).fill(0).map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl h-80 animate-pulse border border-gray-100 shadow-sm"></div>
+            ))
+          ) : (
+            products.slice(0, 8).map((product) => (
+              <motion.div 
+                whileHover={{ y: -5 }}
+                key={product._id || product.id} 
+                className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all relative group"
+              >
+                {/* Badge */}
+                <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
+                  <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1">
+                    <Percent size={10} /> 30% OFF
+                  </span>
+                  <span className="bg-green-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md">
+                    TRENDING
+                  </span>
+                </div>
+
+                <div className="aspect-square relative overflow-hidden bg-gray-50">
+                  <img 
+                    src={product.image || product.images?.[0] || "https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&q=80&w=400"} 
+                    alt={product.name}
+                    className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-500"
+                    onError={(e) => {
+                      e.target.src = "https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&q=80&w=400";
+                    }}
+                  />
+                </div>
+                
+                <div className="p-4 space-y-2">
+                  <div className="flex items-center gap-1 text-yellow-400">
+                    <Star size={12} fill="currentColor" />
+                    <Star size={12} fill="currentColor" />
+                    <Star size={12} fill="currentColor" />
+                    <Star size={12} fill="currentColor" />
+                    <Star size={12} fill="currentColor" />
+                    <span className="text-gray-400 text-[10px] font-bold ml-1">(4.9)</span>
+                  </div>
+                  <h3 className="font-bold text-gray-800 text-sm line-clamp-2 min-h-[40px] leading-tight">
+                    {product.name}
+                  </h3>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl font-black text-gray-900">₹{Number(product.price).toLocaleString()}</span>
+                    <span className="text-xs text-gray-400 line-through">₹{(product.price * 1.3).toFixed(0)}</span>
+                  </div>
+                  <button className="w-full bg-blue-600 text-white py-2 rounded-xl text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity shadow-lg shadow-blue-500/20">
+                    Add to Cart
+                  </button>
+                </div>
+              </motion.div>
+            ))
+          )}
+        </div>
+      </section>
+
+      {/* Amazon Style Banner Grid */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[
+            { title: "Android Infotainment", desc: "Ultra HD Screens", img: "https://images.unsplash.com/photo-1593642532842-98d0fd5ebc1a?auto=format&fit=crop&q=80&w=600", color: "bg-blue-900" },
+            { title: "Precision LED", desc: "Night-Piercing Light", img: "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&q=80&w=600", color: "bg-indigo-900" },
+            { title: "4K Dash Cams", desc: "Evidence-Grade Video", img: "https://images.unsplash.com/photo-1502877338535-766e1452684a?auto=format&fit=crop&q=80&w=600", color: "bg-gray-900" }
+          ].map((banner, i) => (
+            <div key={i} className={`relative h-[200px] rounded-3xl overflow-hidden group ${banner.color}`}>
+              <img src={banner.img} alt={banner.title} className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:scale-105 transition-transform duration-700" />
+              <div className="relative z-10 p-6 h-full flex flex-col justify-end text-white">
+                <h4 className="text-2xl font-black">{banner.title}</h4>
+                <p className="text-gray-300 font-medium">{banner.desc}</p>
+                <Link to="/shop" className="mt-4 flex items-center gap-2 text-sm font-bold group-hover:gap-4 transition-all">
+                  Shop Series <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Trust Badges (Meesho/Flipkart Style) */}
+      <div className="bg-white border-y border-gray-200 mt-12 py-12 px-4">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8">
+          {[
+            { icon: <ShieldCheck />, title: "ISO Certified", desc: "Global Quality" },
+            { icon: <Truck />, title: "Free Delivery", desc: "Pan India Support" },
+            { icon: <CheckCircle2 />, title: "Tested for India", desc: "High Heat Endurance" },
+            { icon: <Headphones />, title: "24/7 Concierge", desc: "Priority Support" }
+          ].map((item, i) => (
+            <div key={i} className="flex flex-col items-center text-center space-y-3">
+              <div className="text-blue-600 bg-blue-50 p-4 rounded-2xl">{item.icon}</div>
+              <h5 className="font-bold text-gray-900">{item.title}</h5>
+              <p className="text-sm text-gray-500">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Scroll to Top */}
       {showScrollTop && (
-        <button onClick={scrollToTop} className="fixed bottom-6 sm:bottom-10 right-6 sm:right-10 z-50 bg-gray-900 hover:bg-blue-600 text-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl shadow-2xl transition-all active:scale-95 group">
-          <ChevronUp size={20} sm:size={24} className="group-hover:-translate-y-1 transition-transform" />
+        <button 
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 bg-blue-600 text-white p-4 rounded-full shadow-2xl z-50 hover:bg-blue-700 transition-all animate-bounce"
+        >
+          <ChevronUp size={24} />
         </button>
       )}
 
-      <footer className="mt-20 sm:mt-32 border-t border-gray-100 pt-16 sm:pt-20 pb-8 sm:pb-10 px-4 sm:px-6 text-center">
-        <div className="flex items-center justify-center gap-2 mb-6 sm:mb-8">
-          <div className="w-9 sm:w-10 h-9 sm:h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black">A</div>
-          <span className="text-xl sm:text-2xl font-black tracking-tighter text-gray-900 uppercase">ANRITVOX</span>
-        </div>
-        <p className="text-gray-400 text-xs sm:text-sm max-w-md mx-auto leading-relaxed">Redefining automotive electronics through innovation and reliability. The premier choice for Indian automotive enthusiasts.</p>
-        <div className="mt-8 sm:mt-12 flex justify-center gap-6 sm:gap-8 text-[10px] sm:text-xs font-bold text-gray-400">
-          <span className="hover:text-blue-600 cursor-pointer transition-colors">PRIVACY</span>
-          <span className="hover:text-blue-600 cursor-pointer transition-colors">TERMS</span>
-          <span className="hover:text-blue-600 cursor-pointer transition-colors">SUPPORT</span>
-        </div>
-        <p className="mt-8 sm:mt-12 text-gray-300 text-[9px] sm:text-[10px] uppercase tracking-widest font-black">© 2026 ANRITVOX GLOBAL. ALL RIGHTS RESERVED.</p>
-      </footer>
+      {/* Mobile Footer (Meesho Style Bottom Nav) */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around items-center py-3 z-50">
+        <Link to="/" className="flex flex-col items-center gap-1 text-blue-600">
+          <Zap size={20} />
+          <span className="text-[10px] font-bold">Explore</span>
+        </Link>
+        <Link to="/shop" className="flex flex-col items-center gap-1 text-gray-400">
+          <LayoutGrid size={20} />
+          <span className="text-[10px] font-bold">Categories</span>
+        </Link>
+        <Link to="/account" className="flex flex-col items-center gap-1 text-gray-400">
+          <User size={20} />
+          <span className="text-[10px] font-bold">Account</span>
+        </Link>
+      </div>
     </div>
   );
 }
