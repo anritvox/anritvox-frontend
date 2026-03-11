@@ -30,7 +30,7 @@ export default function OrderManagement({ token }) {
   const filteredOrders = orders.filter(o => {
     const matchesFilter = filter === "all" || o.status === filter;
     const matchesSearch = o.id.toLowerCase().includes(search.toLowerCase()) || 
-                         o.customerName?.toLowerCase().includes(search.toLowerCase());
+      o.customerName?.toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -118,7 +118,7 @@ export default function OrderManagement({ token }) {
                     <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                       order.status === "delivered" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
                       order.status === "shipped" ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" :
-                      Create OrderManagement.jsx for Admin"bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+                      "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
                     }`}>
                       {order.status}
                     </span>
