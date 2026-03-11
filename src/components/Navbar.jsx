@@ -2,24 +2,19 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/images/logo.webp";
 import { ShoppingCart, Search, Menu, X, ChevronDown, User, Package } from "lucide-react";
+import { useCart } from "../context/CartContext";
 
 export default function NavBar() {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState(null);
-  const [cartCount, setCartCount] = useState(0);
+  const { cartCount } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Read user from localStorage if logged in
     try {
       const stored = localStorage.getItem("user");
       if (stored) setUser(JSON.parse(stored));
-    } catch {}
-    // Read cart count
-    try {
-      const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-      setCartCount(cart.reduce((sum, item) => sum + (item.qty || 1), 0));
     } catch {}
   }, []);
 
@@ -33,16 +28,11 @@ export default function NavBar() {
 
   return (
     <nav className="bg-[#131921] text-white font-sans antialiased sticky top-0 z-50">
-
-      {/* Top Bar */}
       <div className="max-w-[1500px] mx-auto px-4 py-2 flex items-center gap-4 h-16">
-
-        {/* Logo */}
         <Link to="/" className="flex-shrink-0 border border-transparent hover:border-white p-1 rounded-sm">
           <img src={logo} alt="Anritvox" className="h-8 w-auto invert brightness-0" />
         </Link>
 
-        {/* Deliver to India */}
         <div className="hidden lg:flex items-center gap-1 border border-transparent hover:border-white p-1 rounded-sm cursor-pointer ml-2">
           <svg className="w-5 h-5 mt-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -54,7 +44,6 @@ export default function NavBar() {
           </div>
         </div>
 
-        {/* Search Bar */}
         <form onSubmit={handleSearch} className="flex-1 hidden md:flex bg-white rounded-md overflow-hidden h-10 ml-2">
           <select className="bg-gray-100 text-gray-600 px-3 border-r text-xs outline-none cursor-pointer hover:bg-gray-200">
             <option>All</option>
@@ -75,7 +64,6 @@ export default function NavBar() {
           </button>
         </form>
 
-        {/* Account & Lists */}
         <Link to={user ? "/account" : "/login"} className="hidden md:flex flex-col border border-transparent hover:border-white p-1 rounded-sm cursor-pointer">
           <span className="text-xs text-gray-400 leading-none">
             {user ? `Hello, ${user.name?.split(" ")[0] || "User"}` : "Hello, Sign in"}
@@ -85,13 +73,11 @@ export default function NavBar() {
           </span>
         </Link>
 
-        {/* Returns & Orders */}
         <Link to="/orders" className="hidden md:flex flex-col border border-transparent hover:border-white p-1 rounded-sm cursor-pointer">
           <span className="text-xs text-gray-400 leading-none">Returns</span>
-          <span className="text-sm font-bold leading-none">&amp; Orders</span>
+          <span className="text-sm font-bold leading-none">& Orders</span>
         </Link>
 
-        {/* Cart */}
         <Link to="/cart" className="flex items-end gap-1 border border-transparent hover:border-white p-1 rounded-sm">
           <div className="relative">
             <ShoppingCart className="h-8 w-8" />
@@ -102,13 +88,11 @@ export default function NavBar() {
           <span className="text-sm font-bold hidden sm:block">Cart</span>
         </Link>
 
-        {/* Hamburger for mobile */}
         <button onClick={() => setOpen(!open)} className="md:hidden p-2 hover:bg-white/10 rounded">
           {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
 
-      {/* Bottom Bar */}
       <div className="bg-[#232f3e] px-4 py-1.5 flex items-center gap-2 text-sm overflow-x-auto whitespace-nowrap">
         <button className="flex items-center gap-1 border border-transparent hover:border-white px-2 py-1 rounded-sm font-bold">
           <Menu className="h-4 w-4" /> All
@@ -121,7 +105,6 @@ export default function NavBar() {
         <Link to="/shop?sort=bestsellers" className="border border-transparent hover:border-white px-2 py-1 rounded-sm text-[#39d353] font-bold">Best Sellers</Link>
       </div>
 
-      {/* Mobile Menu */}
       {open && (
         <div className="md:hidden bg-[#232f3e] px-4 py-3 flex flex-col gap-3 border-t border-gray-600">
           <form onSubmit={handleSearch} className="flex bg-white rounded-md overflow-hidden h-10">
