@@ -121,10 +121,10 @@ export default function EWarrantyManagement({ token }) {
     
     warranties.forEach(w => {
       csvRows.push([
-        w.customer_name,
-        w.customer_email,
-        w.serial_number,
-        w.purchase_date,
+        w.user_name,
+        w.user_email,
+        w.serial,
+        w.registered_at,
         w.status
       ].join(","));
     });
@@ -217,17 +217,17 @@ export default function EWarrantyManagement({ token }) {
   };
 
   const filteredWarranties = warranties.filter(w => {
-    const matchesSearch = w.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         w.serial_number?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         w.customer_email?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = w.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         w.serial?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         w.user_email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || w.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const stats = {
-    active: warranties.filter(w => w.status === 'active').length,
+    active: warranties.filter(w => w.status === 'accepted').length,
     pending: warranties.filter(w => w.status === 'pending').length,
-    expired: warranties.filter(w => w.status === 'expired').length,
+    expired: warranties.filter(w => w.status === 'rejected').length,
   };
 
   if (loading) return (
@@ -293,9 +293,9 @@ export default function EWarrantyManagement({ token }) {
                 <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
                 <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full bg-[#0a0c10] border border-white/10 rounded-2xl pl-12 pr-6 py-3.5 outline-none focus:ring-2 focus:ring-purple-500/50 appearance-none text-xs font-bold uppercase tracking-widest transition-all text-gray-300">
                   <option value="all">Global Scan</option>
-                  <option value="active">Active Only</option>
+                  <option value="accepted">Active Only</option>
                   <option value="pending">In Review</option>
-                  <option value="expired">Terminated</option>
+                  <option value="rejected">Terminated</option>
                 </select>
               </div>
             </div>
@@ -314,11 +314,11 @@ export default function EWarrantyManagement({ token }) {
                     {filteredWarranties.map((w) => (
                       <tr key={w.id} className="group hover:bg-white/[0.02] transition-colors">
                         <td className="px-6 py-5">
-                          <div className="font-bold text-white">{w.customer_name}</div>
-                          <div className="text-xs text-gray-500 font-mono mt-0.5">{w.customer_email}</div>
+                          <div className="font-bold text-white">{w.user_name}</div>
+                          <div className="text-xs text-gray-500 font-mono mt-0.5">{w.user_email}</div>
                         </td>
                         <td className="px-6 py-5">
-                          <code className="text-purple-400 font-bold bg-purple-500/5 px-2 py-1 rounded-lg">#{w.serial_number}</code>
+                          <code className="text-purple-400 font-bold bg-purple-500/5 px-2 py-1 rounded-lg">#{w.serial}</code>
                         </td>
                         <td className="px-6 py-5 text-right">
                           <div className="flex items-center justify-end gap-2">
@@ -430,9 +430,9 @@ export default function EWarrantyManagement({ token }) {
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Status</label>
                 <select value={selectedWarranty.status} onChange={(e) => setSelectedWarranty({...selectedWarranty, status: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-purple-500/50 outline-none transition-all appearance-none text-white">
-                  <option value="active">Active</option>
+                  <option value="accepted">Active</option>
                   <option value="pending">Pending</option>
-                  <option value="expired">Expired</option>
+                  <option value="rejected">Expired</option>
                 </select>
               </div>
               <button onClick={handleUpdate} disabled={isUpdating} className="w-full py-4 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-500/50 text-white font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-purple-500/20">
