@@ -5,10 +5,14 @@ import EWarrantyManagement from "./admin/EWarrantyManagement";
 import CategoryManagement from "./admin/CategoryManagement";
 import ProductManagement from "./admin/ProductManagement";
 import ContactManagement from "./admin/ContactManagement";
+import OrderManagement from "./admin/OrderManagement";
+import BannerManagement from "./admin/BannerManagement";
+
 import {
   FiHome, FiFileText, FiFolder, FiBox, FiLogOut,
   FiMenu, FiX, FiWifi, FiWifiOff, FiRefreshCw,
   FiMoon, FiSun, FiExternalLink, FiChevronLeft, FiChevronRight, FiMail,
+  FiShoppingCart, FiLayout, FiSettings
 } from "react-icons/fi";
 
 export default function AdminDashboard() {
@@ -21,7 +25,6 @@ export default function AdminDashboard() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   const navigate = useNavigate();
-
   const token = localStorage.getItem("ms_token");
 
   useEffect(() => {
@@ -59,8 +62,11 @@ export default function AdminDashboard() {
     { id: "dashboard", label: "Overview", icon: FiHome, color: "text-cyan-400" },
     { id: "products", label: "Inventory", icon: FiBox, color: "text-purple-400" },
     { id: "categories", label: "Categories", icon: FiFolder, color: "text-pink-400" },
+    { id: "orders", label: "Orders", icon: FiShoppingCart, color: "text-blue-400" },
+    { id: "banners", label: "Banners", icon: FiLayout, color: "text-orange-400" },
     { id: "ewarranty", label: "Warranty", icon: FiFileText, color: "text-emerald-400" },
     { id: "contacts", label: "Messages", icon: FiMail, color: "text-yellow-400" },
+    { id: "settings", label: "Settings", icon: FiSettings, color: "text-gray-400" },
   ];
 
   const renderSection = () => {
@@ -71,6 +77,15 @@ export default function AdminDashboard() {
       case "categories": return <CategoryManagement token={token} />;
       case "products": return <ProductManagement token={token} />;
       case "contacts": return <ContactManagement token={token} />;
+      case "orders": return <OrderManagement token={token} />;
+      case "banners": return <BannerManagement token={token} />;
+      case "settings": return (
+        <div className="p-6 text-center text-gray-500">
+          <FiSettings size={48} className="mx-auto mb-4 opacity-20" />
+          <h2 className="text-xl font-bold">System Settings</h2>
+          <p>Global site configuration and maintenance controls.</p>
+        </div>
+      );
       default: return <DashboardOverview {...props} />;
     }
   };
@@ -79,7 +94,6 @@ export default function AdminDashboard() {
 
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? "bg-[#080a0f] text-white" : "bg-gray-50 text-gray-900"}`}>
-      {/* Top Navbar */}
       <header className={`h-14 border-b ${darkMode ? "border-white/5 bg-[#0d0f14]" : "border-gray-200 bg-white"} flex items-center justify-between px-4 shrink-0 z-20`}>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -111,8 +125,8 @@ export default function AdminDashboard() {
           </button>
         </div>
       </header>
+
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
         <aside className={`
           hidden sm:flex flex-col
           ${sidebarCollapsed ? "w-16" : "w-52"}
@@ -142,7 +156,7 @@ export default function AdminDashboard() {
           ))}
           <div className="mt-auto">
             <a
-              href="https://www.anritvox.com"
+              href="/"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-600 hover:text-cyan-400 hover:bg-white/5 transition-all"
@@ -152,7 +166,7 @@ export default function AdminDashboard() {
             </a>
           </div>
         </aside>
-        {/* Mobile overlay */}
+
         {mobileMenuOpen && (
           <div className="sm:hidden fixed inset-0 z-30">
             <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenuOpen(false)} />
@@ -174,7 +188,7 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
-        {/* Main Content */}
+
         <main className="flex-1 overflow-y-auto">
           {renderSection()}
         </main>
