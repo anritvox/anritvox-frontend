@@ -419,7 +419,7 @@ export async function fetchAdminUsers(token) {
 }
 
 export async function toggleAdminUser(userId, isActive, token) {
-  const res = await fetch(`${BASE_URL}/api/admin/users/${userId}/toggle`, {
+  const res = await fetch(`${BASE_URL}/api/admin/users/${userId}/status`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...authHeader(token) },
     body: JSON.stringify({ is_active: isActive }),
@@ -430,14 +430,14 @@ export async function toggleAdminUser(userId, isActive, token) {
 }
 
 export async function fetchAdminOrders(token) {
-  const res = await fetch(`${BASE_URL}/api/orders/admin`, { headers: authHeader(token) });
+  const res = await fetch(`${BASE_URL}/api/admin/orders`, { headers: authHeader(token) });
   const body = await res.json();
   if (!res.ok) throw new Error(body.message || 'Failed to fetch orders');
   return body;
 }
 
 export async function updateOrderStatus(orderId, status, token) {
-  const res = await fetch(`${BASE_URL}/api/orders/admin/${orderId}/status`, {
+  const res = await fetch(`${BASE_URL}/api/admin/orders/${orderId}/status`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...authHeader(token) },
     body: JSON.stringify({ status }),
