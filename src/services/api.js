@@ -328,3 +328,121 @@ export async function deleteSubcategory(id, token) {
   });
   if (!res.ok) throw new Error("Delete subcategory failed");
 }
+
+
+// ============ USER AUTH ============
+export async function registerUser(data) {
+  const res = await fetch(`${BASE_URL}/api/users/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Registration failed');
+  return body;
+}
+
+export async function loginUser(data) {
+  const res = await fetch(`${BASE_URL}/api/users/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Login failed');
+  return body;
+}
+
+export async function getMe(token) {
+  const res = await fetch(`${BASE_URL}/api/users/me`, {
+    headers: authHeader(token),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to fetch user');
+  return body;
+}
+
+// ============ ADDRESSES ============
+export async function fetchAddresses(token) {
+  const res = await fetch(`${BASE_URL}/api/addresses`, { headers: authHeader(token) });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to fetch addresses');
+  return body;
+}
+
+export async function saveAddress(data, token) {
+  const res = await fetch(`${BASE_URL}/api/addresses`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeader(token) },
+    body: JSON.stringify(data),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to save address');
+  return body;
+}
+
+export async function deleteAddress(id, token) {
+  const res = await fetch(`${BASE_URL}/api/addresses/${id}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to delete address');
+  return body;
+}
+
+// ============ ORDERS ============
+export async function placeOrder(data, token) {
+  const res = await fetch(`${BASE_URL}/api/orders`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeader(token) },
+    body: JSON.stringify(data),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to place order');
+  return body;
+}
+
+export async function fetchMyOrders(token) {
+  const res = await fetch(`${BASE_URL}/api/orders/my`, { headers: authHeader(token) });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to fetch orders');
+  return body;
+}
+
+// ============ ADMIN USER MANAGEMENT ============
+export async function fetchAdminUsers(token) {
+  const res = await fetch(`${BASE_URL}/api/admin/users`, { headers: authHeader(token) });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to fetch users');
+  return body;
+}
+
+export async function toggleAdminUser(userId, isActive, token) {
+  const res = await fetch(`${BASE_URL}/api/admin/users/${userId}/toggle`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeader(token) },
+    body: JSON.stringify({ is_active: isActive }),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to update user');
+  return body;
+}
+
+export async function fetchAdminOrders(token) {
+  const res = await fetch(`${BASE_URL}/api/orders/admin`, { headers: authHeader(token) });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to fetch orders');
+  return body;
+}
+
+export async function updateOrderStatus(orderId, status, token) {
+  const res = await fetch(`${BASE_URL}/api/orders/admin/${orderId}/status`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeader(token) },
+    body: JSON.stringify({ status }),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to update order status');
+  return body;
+}
