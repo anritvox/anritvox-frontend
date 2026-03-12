@@ -20,7 +20,7 @@ export default function UserManagement({ token }) {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { loadUsers(); }, []);
+  useEffect(() => { loadUsers(); }, [token]);
 
   const toggleStatus = async (id, currentStatus) => {
     try {
