@@ -4,6 +4,8 @@ import {
   fetchCategories,
   fetchProductsAdmin,
   fetchContactsAdmin,
+  fetchAdminUsers,
+  fetchAdminOrders,
 } from "../../services/api";
 import {
   Loader2,
@@ -17,13 +19,17 @@ import {
   Clock,
   ArrowRight,
   RefreshCw,
+  ShoppingCart,
+  Shield,
+  MessageSquare,
+  Tag,
 } from "lucide-react";
 
-const StatCard = ({ title, count, icon: Icon, trend, trendValue, subtitle }) => (
+const StatCard = ({ title, count, icon: Icon, trend, trendValue, subtitle, color = "text-[#232f3e]" }) => (
   <div className="bg-white p-5 rounded-lg border border-[#d5d9d9] shadow-[0_2px_5px_0_rgba(213,217,217,.5)] hover:shadow-md transition-all group cursor-pointer">
     <div className="flex justify-between items-start mb-4">
       <div className="p-2.5 bg-gray-50 rounded-lg group-hover:bg-[#f0f2f2] transition-colors">
-        <Icon className="h-6 w-6 text-[#232f3e]" />
+        <Icon className={`h-6 w-6 ${color}`} />
       </div>
       {trend && (
         <div className={`flex items-center gap-1 text-xs font-bold ${trend === 'up' ? 'text-[#007600]' : 'text-[#af2a2a]'}`}>
@@ -50,6 +56,9 @@ export default function DashboardOverview({ token, isRealTimeSync }) {
     categories: 0,
     warranties: 0,
     contacts: 0,
+    users: 0,
+    orders: 0,
+    pendingOrders: 0,
     recentContacts: [],
   });
   const [loading, setLoading] = useState(true);
@@ -58,26 +67,33 @@ export default function DashboardOverview({ token, isRealTimeSync }) {
   const loadStats = useCallback(async (showLoader = true) => {
     if (showLoader) setLoading(true);
     else setRefreshing(true);
-    
     try {
-      const [wData, cData, pData, contactsData] = await Promise.all([
+      const [wData, cData, pData, contactsData, usersData, ordersData] = await Promise.allSettled([
         fetchWarrantyAdmin(token),
         fetchCategories(token),
         fetchProductsAdmin(token),
         fetchContactsAdmin(token),
+        fetchAdminUsers(token),
+        fetchAdminOrders(token),
       ]);
 
-      // Normalize data as API might return { warranties: [...] } or direct array
-      const warranties = Array.isArray(wData) ? wData : (wData.warranties || []);
-      const categories = Array.isArray(cData) ? cData : (cData.categories || []);
-      const products = Array.isArray(pData) ? pData : (pData.products || []);
-      const contacts = Array.isArray(contactsData) ? contactsData : (contactsData.contacts || contactsData.messages || []);
+      const warranties = wData.status === 'fulfilled' ? (Array.isArray(wData.value) ? wData.value : (wData.value?.warranties || [])) : [];
+      const categories = cData.status === 'fulfilled' ? (Array.isArray(cData.value) ? cData.value : (cData.value?.categories || [])) : [];
+      const products = pData.status === 'fulfilled' ? (Array.isArray(pData.value) ? pData.value : (pData.value?.products || [])) : [];
+      const contacts = contactsData.status === 'fulfilled' ? (Array.isArray(contactsData.value) ? contactsData.value : (contactsData.value?.contacts || contactsData.value?.messages || [])) : [];
+      const users = usersData.status === 'fulfilled' ? (Array.isArray(usersData.value) ? usersData.value : []) : [];
+      const orders = ordersData.status === 'fulfilled' ? (Array.isArray(ordersData.value) ? ordersData.value : []) : [];
+
+      const pendingOrders = orders.filter(o => o.status === 'pending').length;
 
       setStats({
         warranties: warranties.length,
         categories: categories.length,
         products: products.length,
         contacts: contacts.length,
+        users: users.length,
+        orders: orders.length,
+        pendingOrders,
         recentContacts: contacts.slice(0, 5),
       });
     } catch (err) {
@@ -96,131 +112,67 @@ export default function DashboardOverview({ token, isRealTimeSync }) {
     }
   }, [loadStats, isRealTimeSync]);
 
-  if (loading) return (
-    <div className="flex flex-col items-center justify-center py-20">
-      <Loader2 className="h-10 w-10 text-[#c45500] animate-spin mb-4" />
-      <p className="text-gray-500 font-medium">Analyzing dashboard metrics...</p>
-    </div>
-  );
+  if (loading)
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-[#232f3e]" />
+        <span className="ml-3 text-gray-600">Analyzing dashboard metrics...</span>
+      </div>
+    );
 
   return (
-    <div className="space-y-8 animate-fade-in p-2">
+    <div className="space-y-6 animate-fade-in">
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Total Products" 
-          count={stats.products} 
-          icon={Package} 
-          subtitle="Inventory items" 
-          trend="up" 
-          trendValue="+4.2%" 
-        />
-        <StatCard 
-          title="Categories" 
-          count={stats.categories} 
-          icon={Activity} 
-          subtitle="Store departments" 
-        />
-        <StatCard 
-          title="Active Warranties" 
-          count={stats.warranties} 
-          icon={FileText} 
-          subtitle="Customer registrations" 
-          trend="up" 
-          trendValue="+12%" 
-        />
-        <StatCard 
-          title="Customer Enquiries" 
-          count={stats.contacts} 
-          icon={Users} 
-          subtitle="Unresolved messages" 
-          trend="down" 
-          trendValue="-2.5%" 
-        />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <StatCard title="Total Products" count={stats.products} icon={Package} subtitle="IN CATALOG" color="text-purple-600" />
+        <StatCard title="Categories" count={stats.categories} icon={Tag} subtitle="ACTIVE" color="text-pink-600" />
+        <StatCard title="Total Users" count={stats.users} icon={Users} subtitle="REGISTERED" color="text-teal-600" />
+        <StatCard title="Total Orders" count={stats.orders} icon={ShoppingCart} subtitle="ALL TIME" color="text-blue-600" />
+        <StatCard title="Pending Orders" count={stats.pendingOrders} icon={Clock} subtitle="NEEDS ACTION" color="text-orange-600" trend={stats.pendingOrders > 0 ? 'up' : undefined} trendValue={stats.pendingOrders > 0 ? `${stats.pendingOrders} new` : ''} />
+        <StatCard title="Warranties" count={stats.warranties} icon={Shield} subtitle="REGISTERED" color="text-emerald-600" />
+        <StatCard title="Messages" count={stats.contacts} icon={MessageSquare} subtitle="RECEIVED" color="text-yellow-600" />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        {/* Recent Messages Table */}
-        <div className="xl:col-span-2 bg-white border border-[#d5d9d9] rounded-lg shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-            <h3 className="font-bold text-[#111]">Recent Communications</h3>
-            <button 
-              onClick={() => loadStats(false)} 
-              className="p-1.5 hover:bg-gray-200 rounded-md transition-all"
-            >
-              <RefreshCw className={`h-4 w-4 text-gray-500 ${refreshing ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-[#f0f2f2] text-gray-600 font-bold border-b border-[#e7e9ec]">
-                <tr>
-                  <th className="px-6 py-3">Customer</th>
-                  <th className="px-6 py-3">Subject</th>
-                  <th className="px-6 py-3">Date</th>
-                  <th className="px-6 py-3 text-right">Status</th>
+      {/* Recent Messages Table */}
+      <div className="bg-white rounded-lg border border-[#d5d9d9] shadow-[0_2px_5px_0_rgba(213,217,217,.5)] overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h3 className="font-semibold text-[#0f1111]">Recent Communications</h3>
+          <button onClick={() => loadStats(false)} className="p-1.5 hover:bg-gray-200 rounded-md transition-all" >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-[#f3f3f3] border-b border-gray-200">
+              <tr>
+                <th className="text-left px-5 py-3 font-medium text-gray-600">Customer</th>
+                <th className="text-left px-5 py-3 font-medium text-gray-600">Message</th>
+                <th className="text-left px-5 py-3 font-medium text-gray-600">Date</th>
+                <th className="text-left px-5 py-3 font-medium text-gray-600">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.recentContacts.map((contact, i) => (
+                <tr key={i} className="border-b border-gray-100 hover:bg-[#f8f8f8]">
+                  <td className="px-5 py-3">
+                    <div className="font-medium text-[#0f1111]">{contact.name}</div>
+                    <div className="text-xs text-gray-500">{contact.email}</div>
+                  </td>
+                  <td className="px-5 py-3 text-gray-600 max-w-xs truncate">{contact.message}</td>
+                  <td className="px-5 py-3 text-gray-500 text-xs">{contact.created_at ? new Date(contact.created_at).toLocaleDateString('en-IN') : 'Today'}</td>
+                  <td className="px-5 py-3"><span className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full text-xs font-bold">Pending</span></td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {stats.recentContacts.map((contact, i) => (
-                  <tr key={i} className="hover:bg-gray-50 transition-colors cursor-pointer group">
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-[#007185] group-hover:text-[#c45500]">{contact.name}</div>
-                      <div className="text-[10px] text-gray-400 font-mono">{contact.email}</div>
-                    </td>
-                    <td className="px-6 py-4 max-w-xs truncate font-medium text-gray-600">{contact.message}</td>
-                    <td className="px-6 py-4 text-xs text-gray-400">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        Today
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <span className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 text-[10px] font-bold border border-yellow-200 uppercase">Pending</span>
-                    </td>
-                  </tr>
-                ))}
-                {stats.recentContacts.length === 0 && (
-                  <tr><td colSpan="4" className="px-6 py-10 text-center text-gray-400 italic">No recent messages found.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          <div className="px-6 py-3 bg-gray-50 border-t border-gray-100 text-center">
-            <button className="text-xs font-bold text-[#007185] hover:underline">View all communications</button>
-          </div>
+              ))}
+              {stats.recentContacts.length === 0 && (
+                <tr><td colSpan={4} className="text-center py-8 text-gray-500">No recent messages found.</td></tr>
+              )}
+            </tbody>
+          </table>
         </div>
-
-        {/* System Activity Sidebar */}
-        <div className="bg-white border border-[#d5d9d9] rounded-lg shadow-sm p-6">
-          <h3 className="font-bold text-[#111] mb-6 flex items-center gap-2 pb-4 border-b">
-            <Clock className="h-5 w-5 text-[#c45500]" /> System Activity
-          </h3>
-          <div className="space-y-6">
-            {[
-              { time: "2 min ago", desc: "Category 'Electronics' updated", type: "system" },
-              { time: "45 min ago", desc: "New product 'RT-100' added", type: "product" },
-              { time: "2 hours ago", desc: "Database backup completed", type: "backup" },
-              { time: "5 hours ago", desc: "Admin login from IP 192.168.1.1", type: "security" },
-            ].map((activity, i) => (
-              <div key={i} className="flex gap-4 items-start relative pb-6 last:pb-0">
-                {i !== 3 && <div className="absolute left-2 top-6 bottom-0 w-0.5 bg-gray-100" />}
-                <div className={`h-4 w-4 rounded-full mt-1 border-2 border-white shadow-sm flex-shrink-0 ${
-                  activity.type === 'security' ? 'bg-red-500' : 'bg-[#c45500]'
-                }`} />
-                <div>
-                  <p className="text-sm font-bold text-gray-800 leading-tight">{activity.desc}</p>
-                  <p className="text-[10px] text-gray-400 font-medium mt-1 uppercase tracking-tighter">{activity.time}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="px-5 py-3 border-t border-gray-200 text-right">
+          <a href="#" className="text-sm text-[#007185] hover:text-[#c45500] font-bold">View all communications</a>
         </div>
       </div>
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
-      `}</style>
     </div>
   );
 }
