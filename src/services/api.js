@@ -446,3 +446,44 @@ export async function updateOrderStatus(orderId, status, token) {
   if (!res.ok) throw new Error(body.message || 'Failed to update order status');
   return body;
 }
+
+
+// ============ ADMIN SETTINGS ============
+export async function changeAdminPassword(currentPassword, newPassword, token) {
+  const res = await fetch(`${BASE_URL}/api/auth/change-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeader(token) },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to change password');
+  return body;
+}
+
+export async function verifyAdminToken(token) {
+  const res = await fetch(`${BASE_URL}/api/auth/me`, {
+    headers: authHeader(token),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Token invalid');
+  return body;
+}
+
+export async function deleteAdminUser(userId, token) {
+  const res = await fetch(`${BASE_URL}/api/admin/users/${userId}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to delete user');
+  return body;
+}
+
+export async function fetchAdminOrderById(orderId, token) {
+  const res = await fetch(`${BASE_URL}/api/admin/orders/${orderId}`, {
+    headers: authHeader(token),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to fetch order');
+  return body;
+}
