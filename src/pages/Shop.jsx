@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { fetchProducts } from "../services/api";
+import { useCart } from "../context/CartContext";
 import { Star, ChevronDown, ChevronRight, ChevronLeft, Filter, LayoutGrid, List, Search, Check, ShoppingCart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -8,7 +9,8 @@ export default function Shop() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  
+  const { addToCart } = useCart();
+
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get("category") || "All");
@@ -19,7 +21,7 @@ export default function Shop() {
   const [addedToCart, setAddedToCart] = useState({});
 
   const categories = ["All", "Interior", "Exterior", "Accessories", "Performance", "Electronics"];
-  const priceRanges = ["All", "Under ₹1,000", "₹1,000 - ₹5,000", "₹5,000 - ₹10,000", "Over ₹10,000"];
+  const priceRanges = ["All", "Under \u20b91,000", "\u20b91,000 - \u20b95,000", "\u20b95,000 - \u20b910,000", "Over \u20b910,000"];
 
   useEffect(() => {
     const cat = searchParams.get("category");
@@ -47,10 +49,10 @@ export default function Shop() {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === "All" || product.category === selectedCategory;
     let matchesPrice = true;
-    if (priceRange === "Under ₹1,000") matchesPrice = product.price < 1000;
-    else if (priceRange === "₹1,000 - ₹5,000") matchesPrice = product.price >= 1000 && product.price <= 5000;
-    else if (priceRange === "₹5,000 - ₹10,000") matchesPrice = product.price >= 5000 && product.price <= 10000;
-    else if (priceRange === "Over ₹10,000") matchesPrice = product.price > 10000;
+    if (priceRange === "Under \u20b91,000") matchesPrice = product.price < 1000;
+    else if (priceRange === "\u20b91,000 - \u20b95,000") matchesPrice = product.price >= 1000 && product.price <= 5000;
+    else if (priceRange === "\u20b95,000 - \u20b910,000") matchesPrice = product.price >= 5000 && product.price <= 10000;
+    else if (priceRange === "Over \u20b910,000") matchesPrice = product.price > 10000;
     return matchesSearch && matchesCategory && matchesPrice;
   });
 
@@ -60,66 +62,61 @@ export default function Shop() {
     return 0;
   });
 
-  const handleAddToCart = (productId) => {
-    setAddedToCart(prev => ({ ...prev, [productId]: true }));
-    setTimeout(() => setAddedToCart(prev => ({ ...prev, [productId]: false })), 2000);
+  const handleAddToCart = async (product) => {
+    const id = product._id || product.id;
+    await addToCart(product, 1);
+    setAddedToCart(prev => ({ ...prev, [id]: true }));
+    setTimeout(() => setAddedToCart(prev => ({ ...prev, [id]: false })), 2000);
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-500 font-medium animate-pulse">Loading results...</p>
+        <div className="text-center">
+          <div className="animate-spin w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-500 font-medium">Loading results...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans pb-20">
-      <div className="bg-white border-b py-8 mb-8">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-            <Link to="/" className="hover:text-blue-600">Home</Link>
-            <ChevronRight size={14} />
-            <span className="text-gray-900 font-medium">Shop</span>
-          </div>
-          <h1 className="text-4xl font-black text-gray-900 mb-2">Explore Collection</h1>
-          <p className="text-gray-500">Discover premium audio gear and car electronics.</p>
-        </div>
+    <div className="min-h-screen bg-gray-50 font-sans">
+      {/* Breadcrumb */}
+      <div className="max-w-7xl mx-auto px-4 py-3 text-xs text-gray-500 flex items-center gap-1">
+        <Link to="/" className="hover:text-[#c45500] hover:underline">Home</Link>
+        <ChevronRight size={12} />
+        <span className="text-gray-400">Shop</span>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <aside className="lg:col-span-1 space-y-8">
-          <div>
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-900">
-              <Filter size={18} /> Categories
-            </h3>
-            <div className="space-y-2">
+      <div className="max-w-7xl mx-auto px-4 pb-12 grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Sidebar Filters */}
+        <aside className="md:col-span-1 space-y-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <h3 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wider">Categories</h3>
+            <div className="space-y-1">
               {categories.map(cat => (
                 <button
                   key={cat}
-                  onClick={() => {
-                    setSelectedCategory(cat);
-                    setSearchParams({ category: cat });
-                  }}
-                  className={`w-full text-left px-4 py-3 rounded-xl transition-all flex items-center justify-between group ${
-                    selectedCategory === cat ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : "bg-white text-gray-600 hover:bg-gray-100"
+                  onClick={() => { setSelectedCategory(cat); setSearchParams({ category: cat }); }}
+                  className={`w-full text-left px-3 py-2 rounded-lg transition-all flex items-center justify-between text-sm ${
+                    selectedCategory === cat
+                      ? "bg-blue-600 text-white font-bold"
+                      : "text-gray-600 hover:bg-gray-100"
                   }`}
                 >
-                  <span className="font-medium">{cat}</span>
-                  {selectedCategory === cat && <Check size={16} />}
+                  {cat}
+                  {selectedCategory === cat && <Check size={14} />}
                 </button>
               ))}
             </div>
           </div>
 
-          <div>
-            <h3 className="text-lg font-bold mb-4 text-gray-900">Price Range</h3>
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <h3 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wider">Price Range</h3>
             <div className="space-y-2">
               {priceRanges.map(range => (
-                <label key={range} className="flex items-center gap-3 p-3 rounded-lg hover:bg-white cursor-pointer group transition-colors">
+                <label key={range} className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-gray-800">
                   <input
                     type="radio"
                     name="price"
@@ -127,35 +124,29 @@ export default function Shop() {
                     onChange={() => setPriceRange(range)}
                     className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                   />
-                  <span className={`text-sm font-medium ${priceRange === range ? "text-blue-600" : "text-gray-600 group-hover:text-gray-900"}`}>{range}</span>
+                  {range}
                 </label>
               ))}
             </div>
           </div>
         </aside>
 
-        <div className="lg:col-span-3">
-          <div className="bg-white p-4 rounded-2xl shadow-sm border mb-8 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex bg-gray-100 p-1 rounded-lg">
-                <button onClick={() => setViewType("grid")} className={`p-2 rounded-md transition-all ${viewType === "grid" ? "bg-white shadow-sm text-blue-600" : "text-gray-400"}`}><LayoutGrid size={20} /></button>
-                <button onClick={() => setViewType("list")} className={`p-2 rounded-md transition-all ${viewType === "list" ? "bg-white shadow-sm text-blue-600" : "text-gray-400"}`}><List size={20} /></button>
-              </div>
-              <span className="text-sm text-gray-500 font-medium">{sortedProducts.length} Products Found</span>
+        {/* Product Grid */}
+        <main className="md:col-span-3">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <button onClick={() => setViewType("grid")} className={`p-2 rounded-md transition-all ${viewType === "grid" ? "bg-white shadow-sm text-blue-600" : "text-gray-400"}`}><LayoutGrid size={18} /></button>
+              <button onClick={() => setViewType("list")} className={`p-2 rounded-md transition-all ${viewType === "list" ? "bg-white shadow-sm text-blue-600" : "text-gray-400"}`}><List size={18} /></button>
+              <span className="text-sm text-gray-500 ml-2">{sortedProducts.length} Products Found</span>
             </div>
-
             <div className="relative">
-              <button onClick={() => setShowSortDropdown(!showSortDropdown)} className="px-6 py-2.5 bg-gray-50 border rounded-xl flex items-center gap-3 text-sm font-bold text-gray-700 hover:bg-gray-100 transition-all">
-                Sort by: {sortOption} <ChevronDown size={16} />
+              <button onClick={() => setShowSortDropdown(!showSortDropdown)} className="px-4 py-2 bg-white border border-gray-200 rounded-xl flex items-center gap-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all">
+                Sort: {sortOption} <ChevronDown size={14} />
               </button>
               {showSortDropdown && (
-                <div className="absolute right-0 mt-2 w-56 bg-white border rounded-xl shadow-2xl z-50 overflow-hidden">
+                <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-10 w-48">
                   {["Featured", "Price: Low to High", "Price: High to Low"].map(opt => (
-                    <button
-                      key={opt}
-                      onClick={() => { setSortOption(opt); setShowSortDropdown(false); }}
-                      className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors ${sortOption === opt ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"}`}
-                    >
+                    <button key={opt} onClick={() => { setSortOption(opt); setShowSortDropdown(false); }} className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors ${sortOption === opt ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"}`}>
                       {opt}
                     </button>
                   ))}
@@ -164,41 +155,63 @@ export default function Shop() {
             </div>
           </div>
 
-          <AnimatePresence mode="popLayout">
-            <motion.div layout className={viewType === "grid" ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6" : "space-y-6"}>
+          {error && <div className="text-red-500 text-center py-8">{error}</div>}
+
+          <AnimatePresence>
+            <div className={`grid gap-4 ${viewType === "grid" ? "grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
               {sortedProducts.map(product => (
                 <motion.div
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   key={product._id || product.id}
-                  className={`group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all overflow-hidden ${viewType === "list" ? "flex gap-6 p-4" : ""}`}
+                  className="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-hidden"
                 >
-                  <div className={`${viewType === "list" ? "w-64 h-48 flex-shrink-0" : "h-64"} relative bg-gray-50 overflow-hidden`}>
-                    <img src={product.images?.[0] || product.image} alt={product.name} className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-500" />
+                  <div className={`${viewType === "list" ? "w-48 h-36 flex-shrink-0" : "h-48"} relative bg-gray-50 overflow-hidden`}>
+                    <img
+                      src={product.images?.[0] || product.image}
+                      alt={product.name}
+                      className="w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-300"
+                    />
                   </div>
-                  <div className="p-6 flex-1 flex flex-col">
-                    <div className="flex gap-1 mb-2">
-                      {[1, 2, 3, 4, 5].map(s => <Star key={s} size={12} className="fill-yellow-400 text-yellow-400" />)}
+                  <div className="p-4 flex flex-col gap-2">
+                    <div className="flex gap-1 mb-1">
+                      {[1, 2, 3, 4, 5].map(s => <Star key={s} size={11} className="fill-yellow-400 text-yellow-400" />)}
                     </div>
-                    <h3 className="font-bold text-gray-900 text-lg mb-1">{product.name}</h3>
-                    <p className="text-sm text-gray-500 mb-4">{product.category}</p>
-                    <div className="mt-auto flex items-center justify-between">
-                      <span className="text-2xl font-black text-blue-600">₹{product.price.toLocaleString()}</span>
+                    <h3 className="font-semibold text-gray-800 text-sm line-clamp-2">{product.name}</h3>
+                    <p className="text-xs text-gray-500">{product.category}</p>
+                    <div className="flex items-center justify-between mt-auto pt-2">
+                      <span className="text-lg font-bold text-[#232f3e]">{product.price?.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}</span>
                       <div className="flex gap-2">
-                        <Link to={`/shop/${product._id || product.id}`} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-bold hover:bg-gray-50 transition-all">Details</Link>
-                        <button onClick={() => handleAddToCart(product._id || product.id)} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${addedToCart[product._id || product.id] ? "bg-green-600 text-white" : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200"}`}>
-                          {addedToCart[product._id || product.id] ? <><Check size={16} /> Added</> : <><ShoppingCart size={16} /> Add</>}
+                        <Link to={`/shop/${product._id || product.id}`} className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 transition-all">
+                          Details
+                        </Link>
+                        <button
+                          onClick={() => handleAddToCart(product)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
+                            addedToCart[product._id || product.id]
+                              ? 'bg-green-600 text-white'
+                              : 'bg-[#ffd814] hover:bg-[#f7ca00] text-[#0f1111]'
+                          }`}
+                        >
+                          {addedToCart[product._id || product.id] ? <><Check size={13} /> Added</> : <><ShoppingCart size={13} /> Add</>}
                         </button>
                       </div>
                     </div>
                   </div>
                 </motion.div>
               ))}
-            </motion.div>
+            </div>
           </AnimatePresence>
-        </div>
+
+          {sortedProducts.length === 0 && !loading && (
+            <div className="text-center py-16 text-gray-400">
+              <Search size={48} className="mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium">No products found</p>
+              <p className="text-sm mt-1">Try adjusting your search or filters</p>
+            </div>
+          )}
+        </main>
       </div>
     </div>
   );
