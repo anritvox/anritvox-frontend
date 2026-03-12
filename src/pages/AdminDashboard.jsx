@@ -7,12 +7,12 @@ import ProductManagement from "./admin/ProductManagement";
 import ContactManagement from "./admin/ContactManagement";
 import OrderManagement from "./admin/OrderManagement";
 import BannerManagement from "./admin/BannerManagement";
-
+import UserManagement from "./admin/UserManagement";
 import {
   FiHome, FiFileText, FiFolder, FiBox, FiLogOut,
   FiMenu, FiX, FiWifi, FiWifiOff, FiRefreshCw,
   FiMoon, FiSun, FiExternalLink, FiChevronLeft, FiChevronRight, FiMail,
-  FiShoppingCart, FiLayout, FiSettings
+  FiShoppingCart, FiLayout, FiSettings, FiUsers
 } from "react-icons/fi";
 
 export default function AdminDashboard() {
@@ -63,6 +63,7 @@ export default function AdminDashboard() {
     { id: "products", label: "Inventory", icon: FiBox, color: "text-purple-400" },
     { id: "categories", label: "Categories", icon: FiFolder, color: "text-pink-400" },
     { id: "orders", label: "Orders", icon: FiShoppingCart, color: "text-blue-400" },
+    { id: "users", label: "Users", icon: FiUsers, color: "text-teal-400" },
     { id: "banners", label: "Banners", icon: FiLayout, color: "text-orange-400" },
     { id: "ewarranty", label: "Warranty", icon: FiFileText, color: "text-emerald-400" },
     { id: "contacts", label: "Messages", icon: FiMail, color: "text-yellow-400" },
@@ -79,11 +80,28 @@ export default function AdminDashboard() {
       case "contacts": return <ContactManagement token={token} />;
       case "orders": return <OrderManagement token={token} />;
       case "banners": return <BannerManagement token={token} />;
+      case "users": return <UserManagement token={token} />;
       case "settings": return (
-        <div className="p-6 text-center text-gray-500">
-          <FiSettings size={48} className="mx-auto mb-4 opacity-20" />
-          <h2 className="text-xl font-bold">System Settings</h2>
-          <p>Global site configuration and maintenance controls.</p>
+        <div className="p-6 max-w-2xl mx-auto">
+          <h2 className="text-xl font-bold text-cyan-400 mb-6 flex items-center gap-2"><FiSettings /> System Settings</h2>
+          <div className="space-y-4">
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+              <h3 className="font-semibold text-white mb-2">Site Information</h3>
+              <p className="text-sm text-gray-400">Site Name: <span className="text-white">Anritvox</span></p>
+              <p className="text-sm text-gray-400 mt-1">Domain: <span className="text-white">anritvox.com</span></p>
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+              <h3 className="font-semibold text-white mb-2">Order Settings</h3>
+              <p className="text-sm text-gray-400">Payment Method: <span className="text-white">Cash on Delivery (COD)</span></p>
+              <p className="text-sm text-gray-400 mt-1">Delivery Types: <span className="text-white">Standard, Express</span></p>
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+              <h3 className="font-semibold text-white mb-2">Admin Controls</h3>
+              <button onClick={triggerSync} className="flex items-center gap-2 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-4 py-2 rounded-lg text-sm hover:bg-cyan-500/20">
+                <FiRefreshCw size={14} className={isSyncing ? "animate-spin" : ""} /> Sync Data
+              </button>
+            </div>
+          </div>
         </div>
       );
       default: return <DashboardOverview {...props} />;
@@ -125,7 +143,6 @@ export default function AdminDashboard() {
           </button>
         </div>
       </header>
-
       <div className="flex flex-1 overflow-hidden">
         <aside className={`
           hidden sm:flex flex-col
@@ -166,7 +183,6 @@ export default function AdminDashboard() {
             </a>
           </div>
         </aside>
-
         {mobileMenuOpen && (
           <div className="sm:hidden fixed inset-0 z-30">
             <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenuOpen(false)} />
@@ -188,7 +204,6 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
-
         <main className="flex-1 overflow-y-auto">
           {renderSection()}
         </main>
