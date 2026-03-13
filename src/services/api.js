@@ -487,3 +487,55 @@ export async function fetchAdminOrderById(orderId, token) {
   if (!res.ok) throw new Error(body.message || 'Failed to fetch order');
   return body;
 }
+
+// ============ PUBLIC BANNERS ============
+export async function fetchActiveBanners(position) {
+  const url = position
+    ? `${BASE_URL}/api/banners?position=${position}`
+    : `${BASE_URL}/api/banners`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Failed to fetch banners');
+  return res.json();
+}
+
+// ============ ADMIN BANNERS CRUD ============
+export async function fetchBannersAdmin(token) {
+  const res = await fetch(`${BASE_URL}/api/banners/admin/all`, {
+    headers: authHeader(token),
+  });
+  if (!res.ok) throw new Error('Failed to fetch banners');
+  return res.json();
+}
+
+export async function createBannerAdmin(data, token) {
+  const res = await fetch(`${BASE_URL}/api/banners`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeader(token) },
+    body: JSON.stringify(data),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to create banner');
+  return body;
+}
+
+export async function updateBannerAdmin(id, data, token) {
+  const res = await fetch(`${BASE_URL}/api/banners/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeader(token) },
+    body: JSON.stringify(data),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to update banner');
+  return body;
+}
+
+export async function deleteBannerAdmin(id, token) {
+  const res = await fetch(`${BASE_URL}/api/banners/${id}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Failed to delete banner');
+  }
+}
