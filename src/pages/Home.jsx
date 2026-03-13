@@ -33,6 +33,8 @@ const categories = [
 export default function Home() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [products, setProducts] = useState([]);
+  const { addToCart } = useCart();
+  const [addedToCart, setAddedToCart] = useState({});
   const [loading, setLoading] = useState(true);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [activeTab, setActiveTab] = useState("featured");
@@ -228,8 +230,9 @@ export default function Home() {
             ))
           ) : (
             products.slice(0, 8).map((product) => (
-              <motion.div 
-                whileHover={{ y: -5 }}
+              <Link
+              to={`/product/${product._id || product.id}`}
+              key={product._id || product.id}               whileHover={{ y: -5 }}
                 key={product._id || product.id} 
                 className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all relative group"
               >
@@ -270,12 +273,21 @@ export default function Home() {
                     <span className="text-xl font-black text-gray-900">₹{Number(product.price).toLocaleString()}</span>
                     <span className="text-xs text-gray-400 line-through">₹{(product.price * 1.3).toFixed(0)}</span>
                   </div>
-                  <button className="w-full bg-blue-600 text-white py-2 rounded-xl text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity shadow-lg shadow-blue-500/20">
-                    Add to Cart
-                  </button>
-                </div>
-              </motion.div>
-            ))
+                  <button
+                onClick={async (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const id = product._id || product.id;
+                  await addToCart(product, 1);
+                  setAddedToCart(prev => ({ ...prev, [id]: true }));
+                  setTimeout(() => setAddedToCart(prev => ({ ...prev, [id]: false })), 2000);
+                }}
+                className={`w-full py-2 rounded-xl text-sm font-bold opacity-0 group-hover:opacity-100 transition-all ${addedToCart[product._id || product.id] ? 'bg-green-600 text-white' : 'bg-blue-600 text-white'}`}
+              >
+                {addedToCart[product._id || product.id] ? '✓ Added' : 'Add to Cart'}
+              </button>
+            </div>            </div>
+              </Link>        ))
           )}
         </div>
       </section>
