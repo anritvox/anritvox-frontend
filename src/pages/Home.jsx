@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { fetchProducts } from "../services/api";
+import { useCart } from "../context/CartContext";
 import { 
   ChevronLeft, ChevronRight, Star, ArrowRight, ShieldCheck, Headphones, Truck, Zap, 
   ShoppingBag, Award, Globe, ChevronUp, Flame, CheckCircle2, Cpu, Smartphone, 
