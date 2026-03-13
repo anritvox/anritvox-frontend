@@ -231,10 +231,10 @@ export default function Home() {
           ) : (
             products.slice(0, 8).map((product) => (
               <Link
-              to={`/product/${product._id || product.id}`}
-              key={product._id || product.id}               whileHover={{ y: -5 }}
-                key={product._id || product.id} 
-                className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all relative group"
+                          key={product._id || product.id}               233
+                to={`/product/${product._id || product.id}`}
+              key={product._id || product.id}
+              className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all relative group"
               >
                 {/* Badge */}
                 <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
