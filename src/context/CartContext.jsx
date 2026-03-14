@@ -1,8 +1,8 @@
 // src/context/CartContext.jsx
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-const BASE_URL = import.meta.env.VITE_BASE_URL;
-const CartContext = createContext();
+import { fetchCart, addToCartAPI, removeFromCartAPI, clearCartAPI } from '../services/api';
 
+const CartContext = createContext();
 export const useCart = () => useContext(CartContext);
 
 export const CartProvider = ({ children }) => {
@@ -17,17 +17,14 @@ export const CartProvider = ({ children }) => {
     if (token) {
       try {
         setCartLoading(true);
-        const res = await fetch(`${BASE_URL}/api/cart`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          // FIX: Extract .items from the backend response
-          setCart(data.items || []);
-          return;
-        }
-      } catch {}
-      finally { setCartLoading(false); }
+        const data = await fetchCart(token);
+        setCart(data.items || []);
+        return;
+      } catch (error) {
+        console.error("Cart fetch error:", error);
+      } finally { 
+        setCartLoading(false); 
+      }
     }
     // Guest fallback
     try {
@@ -47,35 +44,56 @@ export const CartProvider = ({ children }) => {
     }
   }, [cart]);
 
+  // SYNC GUEST CART: Call this exactly when the user logs in
+  const syncGuestCart = useCallback(async (token) => {
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      try {
+        const guestItems = JSON.parse(savedCart);
+        if (guestItems.length > 0) {
+          setCartLoading(true);
+          // Sync each item to the backend cart
+          for (const item of guestItems) {
+            const pId = item.id || item.product_id;
+            await addToCartAPI(token, pId, item.quantity || 1);
+          }
+          // Clear local storage so it doesn't duplicate on next login
+          localStorage.removeItem('cart');
+        }
+      } catch (err) {
+        console.error("Failed to sync guest cart:", err);
+      } finally {
+        loadCart(); // Fetch the newly merged cart
+      }
+    } else {
+      loadCart(); // No local cart, just load their database cart
+    }
+  }, [loadCart]);
+
   const addToCart = useCallback(async (product, quantity = 1) => {
     const token = getToken();
+    const pId = product.id || product.product_id;
+    
     if (token) {
       try {
-        const res = await fetch(`${BASE_URL}/api/cart`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ productId: product.id, quantity }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          // FIX: Extract .items from the backend response
-          setCart(data.items || []);
-          return;
-        }
-      } catch {}
+        const data = await addToCartAPI(token, pId, quantity);
+        setCart(data.items || []);
+        return;
+      } catch (error) { console.error(error); }
     }
+    
     // Guest fallback
     setCart(prev => {
       const safePrev = Array.isArray(prev) ? prev : [];
-      const existing = safePrev.find(i => i.id === product.id || i.product_id === product.id);
+      const existing = safePrev.find(i => (i.id === pId || i.product_id === pId));
       if (existing) {
         return safePrev.map(i =>
-          (i.id === product.id || i.product_id === product.id)
+          (i.id === pId || i.product_id === pId)
             ? { ...i, quantity: (i.quantity || i.qty || 1) + quantity }
             : i
         );
       }
-      return [...safePrev, { ...product, product_id: product.id, quantity }];
+      return [...safePrev, { ...product, product_id: pId, quantity }];
     });
   }, []);
 
@@ -84,18 +102,10 @@ export const CartProvider = ({ children }) => {
     const token = getToken();
     if (token) {
       try {
-        const res = await fetch(`${BASE_URL}/api/cart`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ productId, quantity }),
-        });
-        if (res.ok) { 
-          const data = await res.json();
-          // FIX: Extract .items from the backend response
-          setCart(data.items || []); 
-          return; 
-        }
-      } catch {}
+        const data = await addToCartAPI(token, productId, quantity);
+        setCart(data.items || []); 
+        return; 
+      } catch (error) { console.error(error); }
     }
     setCart(prev => {
       const safePrev = Array.isArray(prev) ? prev : [];
@@ -109,17 +119,10 @@ export const CartProvider = ({ children }) => {
     const token = getToken();
     if (token) {
       try {
-        const res = await fetch(`${BASE_URL}/api/cart/${productId}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) { 
-          const data = await res.json();
-          // FIX: Extract .items from the backend response
-          setCart(data.items || []); 
-          return; 
-        }
-      } catch {}
+        const data = await removeFromCartAPI(token, productId);
+        setCart(data.items || []); 
+        return; 
+      } catch (error) { console.error(error); }
     }
     setCart(prev => {
       const safePrev = Array.isArray(prev) ? prev : [];
@@ -130,18 +133,12 @@ export const CartProvider = ({ children }) => {
   const clearCart = useCallback(async () => {
     const token = getToken();
     if (token) {
-      try {
-        await fetch(`${BASE_URL}/api/cart`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      } catch {}
+      try { await clearCartAPI(token); } catch (error) { console.error(error); }
     }
     setCart([]);
     localStorage.removeItem('cart');
   }, []);
 
-  // FIX: Defensive fallback to guarantee reduce is always called on an array
   const safeCart = Array.isArray(cart) ? cart : [];
   const cartCount = safeCart.reduce((s, i) => s + (i.quantity || 1), 0);
   const cartTotal = safeCart.reduce((s, i) => s + parseFloat(i.price || 0) * (i.quantity || 1), 0);
@@ -149,7 +146,7 @@ export const CartProvider = ({ children }) => {
   return (
     <CartContext.Provider value={{
       cart: safeCart, cartCount, cartTotal, cartLoading,
-      addToCart, removeFromCart, updateQuantity, clearCart, loadCart
+      addToCart, removeFromCart, updateQuantity, clearCart, loadCart, syncGuestCart
     }}>
       {children}
     </CartContext.Provider>
