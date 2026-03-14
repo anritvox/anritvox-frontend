@@ -1,4 +1,4 @@
-/* ProductDetail.jsx - Amazon Style Redesign with Fixed Fetching Logic */
+/* src/pages/ProductDetail.jsx - Amazon Style Redesign with Fixed Fetching Logic */
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { fetchProductById } from '../services/api';
@@ -39,18 +39,38 @@ export default function ProductDetail() {
           return;
         }
 
-        // 2. Safely parse images (MySQL often sends them as strings)
+        // 🔴 FIX: Bulletproof Image Parser 
         let processedImages = [];
-        if (Array.isArray(data.images)) {
-          processedImages = data.images;
-        } else if (typeof data.images === 'string') {
-          try {
-            processedImages = JSON.parse(data.images);
-          } catch (e) {
-            processedImages = [data.images]; // Fallback to single string URL
+        const rawImages = data.images || data.image || [];
+        const imageArray = Array.isArray(rawImages) ? rawImages : [rawImages];
+
+        imageArray.forEach(img => {
+          if (!img) return;
+          let cleanImg = typeof img === 'string' ? img : String(img);
+          
+          // Step A: If the database saved it as a JSON string, extract the URL
+          if (cleanImg.startsWith('[')) {
+            try {
+              const parsed = JSON.parse(cleanImg);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                cleanImg = parsed[0]; // Grab the first string out of the array
+              }
+            } catch(e) {}
           }
-        } else if (data.image) {
-          processedImages = [data.image];
+          
+          // Step B: Fix broken backend URLs (Removes 'undefined/' if env variable was missing)
+          if (cleanImg.includes('undefined/http')) {
+            cleanImg = cleanImg.substring(cleanImg.indexOf('http'));
+          } else if (cleanImg.startsWith('undefined/')) {
+            cleanImg = cleanImg.replace('undefined/', '');
+          }
+
+          if (cleanImg) processedImages.push(cleanImg);
+        });
+
+        // Step C: Provide a guaranteed fallback if absolutely no images exist
+        if (processedImages.length === 0) {
+          processedImages = ["https://via.placeholder.com/600?text=No+Image+Available"];
         }
 
         setProduct({ ...data, images: processedImages });
