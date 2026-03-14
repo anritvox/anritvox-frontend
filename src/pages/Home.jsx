@@ -231,7 +231,7 @@ export default function Home() {
           ) : (
             products.slice(0, 8).map((product) => (
               <Link
-                          key={product._id || product.id}               233
+                          key={product._id || product.id}
                 to={`/product/${product._id || product.id}`}
               className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all relative group"
               >
