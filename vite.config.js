@@ -7,6 +7,19 @@ export default defineConfig({
   build: {
     rollupOptions: {
       external: [],
+      output: {
+        manualChunks(id) {
+          if (id.includes('lucide-react')) {
+            return 'lucide-icons';
+          }
+          if (id.includes('framer-motion') || id.includes('motion-utils')) {
+            return 'framer-motion';
+          }
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
+        },
+      },
     },
   },
   optimizeDeps: {
