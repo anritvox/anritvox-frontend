@@ -423,3 +423,23 @@ export async function checkSerialAvailability(serial) {
   if (!res.ok) throw new Error('Failed to check serial availability');
   return res.json();
 }
+
+
+// ─── Admin: Banner Aliases & Update ────────────────────────────────────────
+export const createBannerAdmin = createBanner;
+export const deleteBannerAdmin = deleteBanner;
+export async function updateBannerAdmin(token, id, formData) {
+  const res = await fetch(`${BASE_URL}/api/banners/${id}`, {
+    method: 'PUT',
+    headers: authHeader(token),
+    body: formData,
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to update banner');
+  return body;
+}
+
+// ─── Admin: Password Change Alias ───────────────────────────────────────
+export async function changeAdminPassword(currentPassword, newPassword, token) {
+  return changePassword(token, currentPassword, newPassword);
+}
