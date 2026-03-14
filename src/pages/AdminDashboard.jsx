@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import DashboardOverview from "./admin/DashboardOverview";
 import EWarrantyManagement from "./admin/EWarrantyManagement";
 import CategoryManagement from "./admin/CategoryManagement";
@@ -108,7 +108,7 @@ export default function AdminDashboard() {
     }
   };
 
-  if (!token) return null;
+  if (!token) return <Navigate to="/admin/login" replace />;
 
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? "bg-[#080a0f] text-white" : "bg-gray-50 text-gray-900"}`}>
