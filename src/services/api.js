@@ -54,24 +54,16 @@ export async function submitContact(message) {
 }
 
 // ─── Admin: Authentication ───────────────────────────────────────────────────
-export const adminLogin = async (credentials) => {
-  const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/users/admin-login`, { // <-- Verify this URL matches your backend route
-    method: "POST",
-    headers: {
-      // THIS IS CRITICAL: Without this, Express ignores the body
-      "Content-Type": "application/json", 
-    },
-    body: JSON.stringify(credentials), // credentials already contains { email, password }
+export async function adminLogin(credentials) {
+  const res = await fetch(`${BASE_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(credentials), // Now it properly stringifies the object
   });
-
-  const data = await res.json();
-  
-  if (!res.ok) {
-    throw new Error(data.message || "Invalid Authentication Credentials");
-  }
-  
-  return data;
-};
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Login failed');
+  return body;
+}
 
 // ─── Admin: Products ─────────────────────────────────────────────────────────
 export async function fetchProductsAdmin(token) {
