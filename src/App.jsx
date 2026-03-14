@@ -64,7 +64,8 @@ function AppContent() {
             <Route path="/my-orders" element={
               <ProtectedRoute><Profile /></ProtectedRoute>
             } />
-            <Route path="/admin/login" element={<AdminLogin />} />
+<Route path="/admin" element={<Navigate to="/admin/login" replace />} />
+                            <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/*" element={<AdminDashboard />} />
             <Route path="*" element={<Navigate to="/" replace />} />
