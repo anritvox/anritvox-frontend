@@ -5,9 +5,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 // =====================================================================
 // ⚠️ IMPORTANT: UNCOMMENT THESE 3 LINES WHEN PASTING INTO YOUR PROJECT
 // =====================================================================
-// import { fetchProductById } from '../services/api';
-// import { useCart } from '../context/CartContext';
-// const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
+import { fetchProductById } from '../services/api';
+import { useCart } from '../context/CartContext';
+const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
 
 // =====================================================================
 // PREVIEW MOCKS (Delete these 3 lines in your actual local code)
