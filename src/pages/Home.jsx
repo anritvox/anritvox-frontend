@@ -233,7 +233,6 @@ export default function Home() {
               <Link
                           key={product._id || product.id}               233
                 to={`/product/${product._id || product.id}`}
-              key={product._id || product.id}
               className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all relative group"
               >
                 {/* Badge */}
