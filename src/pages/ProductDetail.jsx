@@ -10,6 +10,9 @@ const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
 const ImageZoom = ({ src, alt }) => {
   const [position, setPosition] = useState('0% 0%');
   const [showZoom, setShowZoom] = useState(false);
+  
+  // Guard against undefined src
+  const safeSrc = src || "https://via.placeholder.com/600?text=No+Image";
 
   const handleMouseMove = (e) => {
     const { left, top, width, height } = e.target.getBoundingClientRect();
@@ -25,19 +28,17 @@ const ImageZoom = ({ src, alt }) => {
       onMouseLeave={() => setShowZoom(false)}
       onMouseMove={handleMouseMove}
     >
-      {/* Standard Image */}
       <img
-        src={src}
-        alt={alt}
+        src={safeSrc}
+        alt={alt || "Product Image"}
         className={`w-full h-full object-contain transition-opacity duration-200 ${showZoom ? 'opacity-0' : 'opacity-100'}`}
       />
       
-      {/* Zoomed Magnifier Overlay */}
       {showZoom && (
         <div
           className="absolute inset-0 z-10 pointer-events-none bg-white"
           style={{
-            backgroundImage: `url("${src}")`,
+            backgroundImage: `url("${safeSrc}")`,
             backgroundPosition: position,
             backgroundSize: '250%', 
             backgroundRepeat: 'no-repeat',
@@ -149,8 +150,20 @@ export default function ProductDetail() {
     </div>
   );
 
-  const images = product.images || [];
-  const discount = product.mrp ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
+  // 🔴 FIXED SAFE VARIABLES (Prevents Fatal React Crashes)
+  const images = Array.isArray(product.images) ? product.images : [];
+  
+  // Safe Pricing Logic (Matches Database)
+  const originalPrice = Number(product.price || 0);
+  const sellingPrice = product.discount_price ? Number(product.discount_price) : originalPrice;
+  const discountPercentage = product.discount_price && originalPrice > 0 
+    ? Math.round(((originalPrice - sellingPrice) / originalPrice) * 100) 
+    : 0;
+
+  // Safe Description Logic
+  const descriptionLines = (product.description || '')
+    .split('\n')
+    .filter(line => line.trim().length > 0);
 
   return (
     <div className="bg-white min-h-screen pb-12 font-sans antialiased">
@@ -160,7 +173,7 @@ export default function ProductDetail() {
         <span className="text-gray-400">/</span>
         <Link to="/shop" className="hover:text-[#c45500] hover:underline">Shop</Link>
         <span className="text-gray-400">/</span>
-        <span className="text-gray-400 truncate max-w-[200px]">{product.name}</span>
+        <span className="text-gray-400 truncate max-w-[200px]">{product.name || 'Product'}</span>
       </div>
 
       <div className="max-w-[1500px] mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-[380px_1fr_300px] gap-6 lg:gap-12">
@@ -189,8 +202,12 @@ export default function ProductDetail() {
         {/* Center: Product Info */}
         <div className="space-y-4">
           <div>
-            <h1 className="text-xl md:text-2xl font-medium text-[#0f1111] leading-tight mb-1">{product.name}</h1>
-            <p className="text-sm text-[#007185] hover:text-[#c7511f] cursor-pointer">Visit the Anritvox Store</p>
+            <h1 className="text-xl md:text-2xl font-medium text-[#0f1111] leading-tight mb-1">
+              {product.name || 'Unknown Product'}
+            </h1>
+            <p className="text-sm text-[#007185] hover:text-[#c7511f] cursor-pointer">
+              Visit the {product.brand || 'Anritvox'} Store
+            </p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -204,15 +221,19 @@ export default function ProductDetail() {
 
           <div className="space-y-1">
             <div className="flex items-baseline gap-2">
-              {discount > 0 && <span className="text-[#cc0c39] text-2xl font-light">-{discount}%</span>}
+              {discountPercentage > 0 && (
+                <span className="text-[#cc0c39] text-2xl font-light">-{discountPercentage}%</span>
+              )}
               <div className="flex items-start">
                 <span className="text-sm mt-1 font-medium">₹</span>
-                <span className="text-3xl font-medium text-[#0f1111]">{product.price?.toLocaleString()}</span>
+                <span className="text-3xl font-medium text-[#0f1111]">
+                  {sellingPrice.toLocaleString()}
+                </span>
               </div>
             </div>
-            {product.mrp && (
+            {discountPercentage > 0 && (
               <p className="text-sm text-gray-500">
-                M.R.P.: <span className="line-through">₹{product.mrp?.toLocaleString()}</span>
+                M.R.P.: <span className="line-through">₹{originalPrice.toLocaleString()}</span>
               </p>
             )}
             <p className="text-sm font-medium mt-2">Inclusive of all taxes</p>
@@ -223,9 +244,11 @@ export default function ProductDetail() {
           <div className="space-y-2">
             <h3 className="font-bold text-sm">About this item</h3>
             <ul className="list-disc pl-5 space-y-2 text-sm text-[#0f1111]">
-              {product.description?.split('\n').filter(l => l.trim().length > 0).map((line, i) =>
-                <li key={i} className="leading-relaxed">{line}</li>
-              ) || <li>High-quality premium car accessory.</li>}
+              {descriptionLines.length > 0 ? (
+                descriptionLines.map((line, i) => <li key={i} className="leading-relaxed">{line}</li>)
+              ) : (
+                <li>High-quality premium car accessory designed for durability and performance.</li>
+              )}
             </ul>
           </div>
         </div>
@@ -235,7 +258,7 @@ export default function ProductDetail() {
           <div className="bg-white border border-gray-300 rounded-lg p-5 shadow-sm space-y-4">
             <div className="flex items-start">
               <span className="text-sm mt-1">₹</span>
-              <span className="text-2xl font-medium">{product.price?.toLocaleString()}</span>
+              <span className="text-2xl font-medium">{sellingPrice.toLocaleString()}</span>
             </div>
             
             <p className="text-sm text-[#007600] font-bold">In stock</p>
