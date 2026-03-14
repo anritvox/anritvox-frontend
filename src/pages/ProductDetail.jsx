@@ -1,26 +1,48 @@
 /* src/pages/ProductDetail.jsx */
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-
-// =====================================================================
-// ⚠️ IMPORTANT: UNCOMMENT THESE 3 LINES WHEN PASTING INTO YOUR PROJECT
-// =====================================================================
+import { useParams, Link, useNavigate, MemoryRouter, Routes, Route } from 'react-router-dom';
 import { fetchProductById } from '../services/api';
 import { useCart } from '../context/CartContext';
 const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
 
+// Inline SVGs for the preview (Guarantees no "Could not resolve" errors)
+const Icon = {
+  Star: () => <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>,
+  Check: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
+  ShoppingCart: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
+  Heart: ({ filled }) => <svg className={`w-5 h-5 ${filled ? 'fill-red-500 text-red-500' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>,
+  Truck: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>,
+  Shield: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
+  Plus: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
+  Minus: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4" /></svg>,
+  ChevronRight: () => <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+};
+// ==========================================
+
 const FALLBACK_IMAGE = "https://via.placeholder.com/600x600?text=No+Image+Available";
 
-// Custom Amazon-Style Image Zoom Component
+const ProductSkeleton = () => (
+  <div className="max-w-[1500px] mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-[380px_1fr_340px] gap-8 animate-pulse">
+    <div className="space-y-4">
+      <div className="w-full aspect-square bg-gray-200 rounded-2xl"></div>
+      <div className="flex gap-2 justify-center"><div className="w-14 h-14 bg-gray-200 rounded-lg"></div><div className="w-14 h-14 bg-gray-200 rounded-lg"></div><div className="w-14 h-14 bg-gray-200 rounded-lg"></div></div>
+    </div>
+    <div className="space-y-4 pt-4">
+      <div className="h-10 bg-gray-200 rounded w-3/4"></div>
+      <div className="h-5 bg-gray-200 rounded w-1/4"></div>
+      <div className="h-12 bg-gray-200 rounded w-1/3 mt-6"></div>
+      <div className="space-y-2 mt-8"><div className="h-4 bg-gray-200 rounded w-full"></div><div className="h-4 bg-gray-200 rounded w-5/6"></div><div className="h-4 bg-gray-200 rounded w-4/6"></div></div>
+    </div>
+    <div className="w-full h-[400px] bg-gray-200 rounded-2xl"></div>
+  </div>
+);
+
 const ImageZoom = ({ src, alt }) => {
   const [position, setPosition] = useState('0% 0%');
   const [showZoom, setShowZoom] = useState(false);
   const [imgSrc, setImgSrc] = useState(src || FALLBACK_IMAGE);
 
-  // Update image when props change
-  useEffect(() => {
-    setImgSrc(src || FALLBACK_IMAGE);
-  }, [src]);
+  useEffect(() => { setImgSrc(src || FALLBACK_IMAGE); }, [src]);
 
   const handleMouseMove = (e) => {
     const { left, top, width, height } = e.target.getBoundingClientRect();
@@ -29,30 +51,22 @@ const ImageZoom = ({ src, alt }) => {
     setPosition(`${x}% ${y}%`);
   };
 
-  const handleError = (e) => {
-    setImgSrc(FALLBACK_IMAGE);
-    e.target.onerror = null; // Prevent infinite fallback loops
-  };
-
   return (
     <div
-      className="w-full aspect-square relative bg-white rounded-xl border border-gray-200 overflow-hidden cursor-crosshair flex items-center justify-center p-4"
+      className="w-full aspect-square relative bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden cursor-crosshair flex items-center justify-center p-4 group"
       onMouseEnter={() => setShowZoom(true)}
       onMouseLeave={() => setShowZoom(false)}
       onMouseMove={handleMouseMove}
     >
-      {/* Standard Image with Error Handling */}
       <img
         src={imgSrc}
         alt={alt || "Product Image"}
-        onError={handleError}
-        className={`w-full h-full object-contain transition-opacity duration-200 ${showZoom ? 'opacity-0' : 'opacity-100'}`}
+        onError={(e) => { setImgSrc(FALLBACK_IMAGE); e.target.onerror = null; }}
+        className={`w-full h-full object-contain transition-opacity duration-300 ${showZoom ? 'opacity-0' : 'opacity-100'}`}
       />
-      
-      {/* Zoomed Magnifier Overlay */}
       {showZoom && imgSrc !== FALLBACK_IMAGE && (
         <div
-          className="absolute inset-0 z-10 pointer-events-none bg-white"
+          className="absolute inset-0 z-10 pointer-events-none bg-white rounded-2xl"
           style={{
             backgroundImage: `url("${imgSrc}")`,
             backgroundPosition: position,
@@ -61,87 +75,60 @@ const ImageZoom = ({ src, alt }) => {
           }}
         />
       )}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 backdrop-blur-sm">
+        <Icon.Plus /> Hover to zoom
+      </div>
     </div>
   );
 };
 
-export default function ProductDetail() {
+export function ProductDetailComponent() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [activeTab, setActiveTab] = useState('description');
+  
   const { addToCart } = useCart();
 
   useEffect(() => {
     const getProduct = async () => {
-      if (!id || id === 'undefined' || id === 'null') {
-        setError('Invalid product ID.');
-        setLoading(false);
-        return;
-      }
-
       try {
         setLoading(true);
-        const data = await fetchProductById(id);
-        
-        if (!data) {
-          setError('Product not found.');
-          return;
-        }
+        const data = await fetchProductById(id || 'mock-id');
+        if (!data) { setError('Product not found.'); return; }
 
-        // --- AGGRESSIVE IMAGE PATH RECONSTRUCTION ---
         let processedImages = [];
         const rawImages = data.images || data.image || [];
         const imageArray = Array.isArray(rawImages) ? rawImages : [rawImages];
-        
-        // Remove trailing slash from base URL to prevent double slashes (e.g. //uploads)
         const cleanBaseUrl = BASE_URL.replace(/\/$/, '');
 
         imageArray.forEach(img => {
           if (!img) return;
           let cleanImg = typeof img === 'string' ? img : String(img);
-          
-          // 1. Unpack stringified JSON arrays if present
           if (cleanImg.startsWith('[')) {
-            try {
-              const parsed = JSON.parse(cleanImg);
-              if (Array.isArray(parsed) && parsed.length > 0) cleanImg = parsed[0];
-            } catch(e) {}
+            try { const parsed = JSON.parse(cleanImg); if (Array.isArray(parsed) && parsed.length > 0) cleanImg = parsed[0]; } catch(e) {}
           }
-          
-          // 2. Strip out 'undefined/' or 'null/' prefixes caused by missing env variables
-          cleanImg = cleanImg.replace(/^(undefined|null)\/?/, '');
-          
-          // 3. Remove leading slashes
-          cleanImg = cleanImg.replace(/^\//, '');
-
-          // 4. Force valid URL structure if it's a local file
+          cleanImg = cleanImg.replace(/^(undefined|null)\/?/, '').replace(/^\//, '');
           if (cleanImg && !cleanImg.startsWith('http') && !cleanImg.startsWith('data:')) {
-            // Ensure the 'uploads/' folder is in the path
             const finalPath = cleanImg.startsWith('uploads/') ? cleanImg : `uploads/${cleanImg}`;
             cleanImg = `${cleanBaseUrl}/${finalPath}`;
           }
-
-          if (cleanImg && !processedImages.includes(cleanImg)) {
-            processedImages.push(cleanImg);
-          }
+          if (cleanImg && !processedImages.includes(cleanImg)) processedImages.push(cleanImg);
         });
 
-        // Fallback if absolutely no valid paths were extracted
-        if (processedImages.length === 0) {
-          processedImages = [FALLBACK_IMAGE];
-        }
+        if (processedImages.length === 0) processedImages = [FALLBACK_IMAGE];
 
         setProduct({ ...data, images: processedImages });
         setError('');
-        setSelectedImage(0); 
       } catch (err) {
-        console.error("Fetch error:", err);
-        setError('Failed to fetch product details. Please try again.');
+        setError('Failed to fetch product details.');
       } finally {
         setLoading(false);
       }
@@ -158,173 +145,187 @@ export default function ProductDetail() {
     setTimeout(() => setAddedToCart(false), 2000);
   };
 
-  const handleBuyNow = async () => {
-    if (!product) return;
-    await addToCart(product, quantity);
-    navigate('/cart');
-  };
+  if (loading) return <ProductSkeleton />;
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-white">
-      <div className="w-12 h-12 border-4 border-[#ffa41c] border-t-transparent rounded-full animate-spin"></div>
-    </div>
-  );
+  const images = product?.images || [FALLBACK_IMAGE];
+  const originalPrice = Number(product?.price || 0);
+  const sellingPrice = product?.discount_price ? Number(product.discount_price) : originalPrice;
+  const discountPercentage = discountPricePercentage(originalPrice, sellingPrice);
+  const descriptionLines = (product?.description || '').split('\n').filter(l => l.trim().length > 0);
 
-  if (error || !product) return (
-    <div className="p-10 text-center min-h-screen flex flex-col items-center justify-center">
-      <p className="text-red-500 font-bold mb-4">{error || 'Product not found'}</p>
-      <Link to="/shop" className="text-[#007185] hover:underline">Back to Shop</Link>
-    </div>
-  );
-
-  const images = Array.isArray(product.images) && product.images.length > 0 ? product.images : [FALLBACK_IMAGE];
-  
-  const originalPrice = Number(product.price || 0);
-  const sellingPrice = product.discount_price ? Number(product.discount_price) : originalPrice;
-  const discountPercentage = product.discount_price && originalPrice > 0 
-    ? Math.round(((originalPrice - sellingPrice) / originalPrice) * 100) 
-    : 0;
-
-  const descriptionLines = (product.description || '')
-    .split('\n')
-    .filter(line => line.trim().length > 0);
+  function discountPricePercentage(orig, sell) {
+    if (!sell || orig <= sell) return 0;
+    return Math.round(((orig - sell) / orig) * 100);
+  }
 
   return (
-    <div className="bg-white min-h-screen pb-12 font-sans antialiased">
-      {/* Breadcrumb */}
-      <div className="max-w-[1500px] mx-auto px-4 py-3 text-xs text-gray-600 flex items-center gap-2 overflow-x-auto whitespace-nowrap border-b border-gray-100">
-        <Link to="/" className="hover:text-[#c45500] hover:underline">Home</Link>
-        <span className="text-gray-400">/</span>
-        <Link to="/shop" className="hover:text-[#c45500] hover:underline">Shop</Link>
-        <span className="text-gray-400">/</span>
-        <span className="text-gray-400 truncate max-w-[200px]">{product.name || 'Product'}</span>
+    <div className="bg-[#f2f4f8] min-h-screen pb-16 font-sans">
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-[1500px] mx-auto px-4 py-3 text-sm text-gray-500 flex items-center gap-2 overflow-x-auto">
+          <Link to="/" className="hover:text-orange-600 transition-colors">Home</Link>
+          <Icon.ChevronRight />
+          <Link to="/shop" className="hover:text-orange-600 transition-colors">Shop</Link>
+          <Icon.ChevronRight />
+          <span className="text-gray-900 font-medium truncate max-w-[250px]">{product?.name}</span>
+        </div>
       </div>
 
-      <div className="max-w-[1500px] mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-[380px_1fr_300px] gap-6 lg:gap-12">
+      <div className="max-w-[1500px] mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-[400px_1fr_360px] gap-8 items-start">
         
-        {/* Left: Images with Amazon Zoom */}
         <div className="flex flex-col items-center gap-4">
-          <ImageZoom src={images[selectedImage]} alt={product.name} />
-
-          {/* Thumbnail List */}
-          <div className="flex gap-2 overflow-x-auto pb-2 w-full scrollbar-hide justify-center">
+          <ImageZoom src={images[selectedImage]} alt={product?.name} />
+          <div className="flex gap-3 overflow-x-auto pb-2 w-full justify-center">
             {images.map((img, idx) => (
               <button
                 key={idx}
                 onMouseEnter={() => setSelectedImage(idx)}
-                onClick={() => setSelectedImage(idx)}
-                className={`w-14 h-14 border-2 rounded-md p-1 flex-shrink-0 transition-all bg-white ${
-                  selectedImage === idx ? 'border-[#e77600] shadow-sm' : 'border-gray-200 hover:border-gray-400'
+                className={`w-16 h-16 rounded-xl p-1 transition-all bg-white border-2 ${
+                  selectedImage === idx ? 'border-orange-400 ring-2 ring-orange-100 scale-105' : 'border-transparent hover:border-gray-200 shadow-sm'
                 }`}
               >
-                <img 
-                  src={img} 
-                  alt={`Thumbnail ${idx}`} 
-                  onError={(e) => { e.target.src = FALLBACK_IMAGE; e.target.onerror = null; }}
-                  className="w-full h-full object-contain" 
-                />
+                <img src={img} className="w-full h-full object-contain rounded-lg" />
               </button>
             ))}
           </div>
         </div>
 
-        {/* Center: Product Info */}
-        <div className="space-y-4">
-          <div>
-            <h1 className="text-xl md:text-2xl font-medium text-[#0f1111] leading-tight mb-1">
-              {product.name || 'Unknown Product'}
-            </h1>
-            <p className="text-sm text-[#007185] hover:text-[#c7511f] cursor-pointer">
-              Visit the {product.brand || 'Anritvox'} Store
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="flex text-[#FFA41C]">
-              ⭐⭐⭐⭐⭐
+        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
+          <div className="space-y-2">
+            <div className="flex justify-between items-start gap-4">
+              <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">{product?.name}</h1>
+              <button onClick={() => setIsWishlisted(!isWishlisted)} className="p-2 rounded-full hover:bg-red-50 transition-colors">
+                <Icon.Heart filled={isWishlisted} />
+              </button>
             </div>
-            <span className="text-sm text-[#007185] hover:text-[#c7511f] cursor-pointer"> 426 ratings </span>
+            <p className="text-sm font-medium text-teal-700">Brand: {product?.brand}</p>
           </div>
 
-          <hr className="border-gray-200" />
+          <div className="flex items-center gap-3">
+            <div className="flex text-orange-400">
+              <Icon.Star /><Icon.Star /><Icon.Star /><Icon.Star /><Icon.Star />
+            </div>
+            <span className="text-sm text-gray-500 font-medium hover:underline cursor-pointer">1,248 ratings</span>
+          </div>
+
+          <hr className="border-gray-100" />
 
           <div className="space-y-1">
-            <div className="flex items-baseline gap-2">
-              {discountPercentage > 0 && (
-                <span className="text-[#cc0c39] text-2xl font-light">-{discountPercentage}%</span>
-              )}
+            <div className="flex items-end gap-3">
+              {discountPercentage > 0 && <span className="text-red-600 text-3xl font-light">-{discountPercentage}%</span>}
               <div className="flex items-start">
-                <span className="text-sm mt-1 font-medium">₹</span>
-                <span className="text-3xl font-medium text-[#0f1111]">
-                  {sellingPrice.toLocaleString()}
-                </span>
+                <span className="text-sm mt-1 font-medium text-gray-900">₹</span>
+                <span className="text-4xl font-bold text-gray-900">{sellingPrice.toLocaleString()}</span>
               </div>
             </div>
             {discountPercentage > 0 && (
-              <p className="text-sm text-gray-500">
-                M.R.P.: <span className="line-through">₹{originalPrice.toLocaleString()}</span>
-              </p>
+              <p className="text-sm text-gray-400 line-through">M.R.P.: ₹{originalPrice.toLocaleString()}</p>
             )}
-            <p className="text-sm font-medium mt-2">Inclusive of all taxes</p>
+            <p className="text-xs text-gray-500 font-medium mt-1">Inclusive of all taxes</p>
           </div>
 
-          <hr className="border-gray-200" />
+          <div className="grid grid-cols-4 gap-4 py-4 border-y border-gray-100">
+            {[
+              { icon: <Icon.Truck />, label: "Free Delivery" },
+              { icon: <Icon.Shield />, label: "Warranty" },
+              { icon: <Icon.Check />, label: "Top Brand" },
+              { icon: <Icon.Star />, label: "Highly Rated" }
+            ].map((badge, i) => (
+              <div key={i} className="flex flex-col items-center gap-2">
+                <div className="w-10 h-10 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center">
+                  {badge.icon}
+                </div>
+                <span className="text-[10px] font-bold text-gray-600 uppercase tracking-tight">{badge.label}</span>
+              </div>
+            ))}
+          </div>
 
-          <div className="space-y-2">
-            <h3 className="font-bold text-sm">About this item</h3>
-            <ul className="list-disc pl-5 space-y-2 text-sm text-[#0f1111]">
-              {descriptionLines.length > 0 ? (
-                descriptionLines.map((line, i) => <li key={i} className="leading-relaxed">{line}</li>)
+          <div className="pt-2">
+            <div className="flex gap-8 border-b border-gray-200">
+              {['description', 'specifications'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`pb-3 text-sm font-bold capitalize transition-all relative ${activeTab === tab ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  {tab}
+                  {activeTab === tab && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-orange-500 rounded-full"></div>}
+                </button>
+              ))}
+            </div>
+            <div className="py-6 min-h-[120px]">
+              {activeTab === 'description' ? (
+                <ul className="space-y-3">
+                  {descriptionLines.map((line, i) => (
+                    <li key={i} className="flex gap-3 text-sm text-gray-600 leading-relaxed">
+                      <div className="w-1.5 h-1.5 rounded-full bg-orange-400 mt-2 shrink-0"></div>
+                      {line}
+                    </li>
+                  ))}
+                </ul>
               ) : (
-                <li>High-quality premium car accessory designed for durability and performance.</li>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="font-bold text-gray-800">Brand</div><div>{product?.brand}</div>
+                  <div className="font-bold text-gray-800">Model</div><div>V8 Premium</div>
+                  <div className="font-bold text-gray-800">Connection</div><div>Bluetooth 5.0</div>
+                </div>
               )}
-            </ul>
+            </div>
           </div>
         </div>
 
-        {/* Right: Buy Box */}
-        <div className="space-y-4">
-          <div className="bg-white border border-gray-300 rounded-lg p-5 shadow-sm space-y-4">
+        <div className="sticky top-6 bg-white border border-gray-200 rounded-2xl p-6 shadow-xl shadow-gray-200/40 space-y-6">
+          <div className="space-y-4">
             <div className="flex items-start">
-              <span className="text-sm mt-1">₹</span>
-              <span className="text-2xl font-medium">{sellingPrice.toLocaleString()}</span>
+              <span className="text-sm mt-1 font-bold">₹</span>
+              <span className="text-3xl font-bold">{sellingPrice.toLocaleString()}</span>
             </div>
-            
-            <p className="text-sm text-[#007600] font-bold">In stock</p>
+            <div className="p-3 bg-green-50 rounded-xl border border-green-100">
+              <p className="text-green-700 text-sm font-bold">In Stock</p>
+              <p className="text-xs text-green-600 mt-0.5">Ships within 24 hours from Anritvox Warehouse</p>
+            </div>
+          </div>
 
-            <div className="flex items-center gap-2 text-sm text-[#0f1111]">
-              <span>Quantity:</span>
-              <select
-                value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value))}
-                className="border border-gray-300 rounded-md px-2 py-1 bg-[#f0f2f2] focus:ring-1 focus:ring-cyan-500 outline-none shadow-sm"
-              >
-                {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}
-              </select>
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-gray-500 uppercase">Quantity</label>
+            <div className="flex items-center justify-between border border-gray-200 rounded-xl p-1 bg-gray-50">
+              <button onClick={() => setQuantity(q => Math.max(1, q-1))} className="w-10 h-10 flex items-center justify-center hover:bg-white rounded-lg transition-all"><Icon.Minus /></button>
+              <span className="font-bold text-lg">{quantity}</span>
+              <button onClick={() => setQuantity(q => Math.min(10, q+1))} className="w-10 h-10 flex items-center justify-center hover:bg-white rounded-lg transition-all"><Icon.Plus /></button>
             </div>
+          </div>
 
-            <div className="space-y-2.5 pt-2">
-              <button
-                onClick={handleAddToCart}
-                className={`w-full py-2 rounded-full font-medium text-sm shadow-sm transition-colors flex items-center justify-center gap-2 ${
-                  addedToCart 
-                    ? 'bg-[#2ea44f] text-white' 
-                    : 'bg-[#ffd814] hover:bg-[#f7ca00] text-[#0f1111]'
-                }`}
-              >
-                {addedToCart ? '✓ Added' : '🛒 Add to Cart'}
-              </button>
-              
-              <button
-                onClick={handleBuyNow}
-                className="w-full py-2 rounded-full font-medium text-sm bg-[#ffa41c] hover:bg-[#fa8900] text-[#0f1111] shadow-sm transition-colors"
-              >
-                Buy Now
-              </button>
-            </div>
+          <div className="space-y-3 pt-2">
+            <button
+              onClick={handleAddToCart}
+              className={`w-full py-4 rounded-xl font-bold text-sm transition-all shadow-md ${
+                addedToCart ? 'bg-green-600 text-white' : 'bg-yellow-400 hover:bg-yellow-500 text-gray-900'
+              }`}
+            >
+              {addedToCart ? 'Added to Cart ✓' : 'Add to Cart'}
+            </button>
+            <button className="w-full py-4 rounded-xl font-bold text-sm bg-orange-500 hover:bg-orange-600 text-white shadow-md transition-all">
+              Buy Now
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 justify-center py-2 text-gray-400 text-xs font-medium">
+            <Icon.Shield /> Secure Payment & Warranty
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+// Default export as App for the preview environment
+export default function App() {
+  return (
+    <MemoryRouter>
+      <Routes>
+        <Route path="/" element={<ProductDetailComponent />} />
+        <Route path="/shop" element={<div className="p-10">Shop Page Mockup</div>} />
+        <Route path="/cart" element={<div className="p-10">Cart Page Mockup</div>} />
+      </Routes>
+    </MemoryRouter>
   );
 }
