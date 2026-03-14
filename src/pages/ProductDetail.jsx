@@ -1,4 +1,4 @@
-/* src/pages/ProductDetail.jsx - Amazon Style Redesign with Fixed Fetching Logic */
+/* src/pages/ProductDetail.jsx */
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { fetchProductById } from '../services/api';
@@ -9,6 +9,50 @@ import {
   FiCheck as Check, 
   FiShoppingCart as ShoppingCart 
 } from 'react-icons/fi';
+
+const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
+
+// Custom Amazon-Style Image Zoom Component
+const ImageZoom = ({ src, alt }) => {
+  const [position, setPosition] = useState('0% 0%');
+  const [showZoom, setShowZoom] = useState(false);
+
+  const handleMouseMove = (e) => {
+    const { left, top, width, height } = e.target.getBoundingClientRect();
+    const x = ((e.clientX - left) / width) * 100;
+    const y = ((e.clientY - top) / height) * 100;
+    setPosition(`${x}% ${y}%`);
+  };
+
+  return (
+    <div
+      className="w-full aspect-square relative bg-white rounded-xl border border-gray-200 overflow-hidden cursor-crosshair flex items-center justify-center p-4"
+      onMouseEnter={() => setShowZoom(true)}
+      onMouseLeave={() => setShowZoom(false)}
+      onMouseMove={handleMouseMove}
+    >
+      {/* Standard Image (Fades out on hover) */}
+      <img
+        src={src}
+        alt={alt}
+        className={`w-full h-full object-contain transition-opacity duration-200 ${showZoom ? 'opacity-0' : 'opacity-100'}`}
+      />
+      
+      {/* Zoomed Magnifier Overlay (Appears on hover) */}
+      {showZoom && (
+        <div
+          className="absolute inset-0 z-10 pointer-events-none bg-white"
+          style={{
+            backgroundImage: `url("${src}")`,
+            backgroundPosition: position,
+            backgroundSize: '250%', // Adjust this percentage to increase/decrease zoom level
+            backgroundRepeat: 'no-repeat',
+          }}
+        />
+      )}
+    </div>
+  );
+};
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -23,7 +67,6 @@ export default function ProductDetail() {
 
   useEffect(() => {
     const getProduct = async () => {
-      // 1. Guard against 'undefined' or missing ID in URL
       if (!id || id === 'undefined' || id === 'null') {
         setError('Invalid product ID.');
         setLoading(false);
@@ -39,7 +82,7 @@ export default function ProductDetail() {
           return;
         }
 
-        // 🔴 FIX: Bulletproof Image Parser 
+        // --- BULLETPROOF IMAGE REPAIR LOGIC ---
         let processedImages = [];
         const rawImages = data.images || data.image || [];
         const imageArray = Array.isArray(rawImages) ? rawImages : [rawImages];
@@ -48,33 +91,35 @@ export default function ProductDetail() {
           if (!img) return;
           let cleanImg = typeof img === 'string' ? img : String(img);
           
-          // Step A: If the database saved it as a JSON string, extract the URL
+          // 1. Unpack stringified JSON arrays
           if (cleanImg.startsWith('[')) {
             try {
               const parsed = JSON.parse(cleanImg);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                cleanImg = parsed[0]; // Grab the first string out of the array
-              }
+              if (Array.isArray(parsed) && parsed.length > 0) cleanImg = parsed[0];
             } catch(e) {}
           }
           
-          // Step B: Fix broken backend URLs (Removes 'undefined/' if env variable was missing)
-          if (cleanImg.includes('undefined/http')) {
-            cleanImg = cleanImg.substring(cleanImg.indexOf('http'));
-          } else if (cleanImg.startsWith('undefined/')) {
-            cleanImg = cleanImg.replace('undefined/', '');
+          // 2. Remove broken "undefined/" backend prefixes
+          cleanImg = cleanImg.replace(/^undefined\//, '');
+
+          // 3. Attach backend URL if the image path is local (e.g. 'uploads/file.jpg')
+          if (!cleanImg.startsWith('http') && !cleanImg.startsWith('data:')) {
+            cleanImg = cleanImg.replace(/^\//, ''); // remove leading slash if any
+            cleanImg = `${BASE_URL}/${cleanImg}`;
           }
 
-          if (cleanImg) processedImages.push(cleanImg);
+          if (cleanImg && !processedImages.includes(cleanImg)) {
+            processedImages.push(cleanImg);
+          }
         });
 
-        // Step C: Provide a guaranteed fallback if absolutely no images exist
         if (processedImages.length === 0) {
           processedImages = ["https://via.placeholder.com/600?text=No+Image+Available"];
         }
 
         setProduct({ ...data, images: processedImages });
         setError('');
+        setSelectedImage(0); // Reset to first image on load
       } catch (err) {
         console.error("Fetch error:", err);
         setError('Failed to fetch product details. Please try again.');
@@ -127,26 +172,28 @@ export default function ProductDetail() {
         <span className="text-gray-400 truncate max-w-[200px]">{product.name}</span>
       </div>
 
-      <div className="max-w-[1500px] mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-[340px_1fr_300px] gap-6 lg:gap-12">
+      <div className="max-w-[1500px] mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-[380px_1fr_300px] gap-6 lg:gap-12">
         
-        {/* Left: Images */}
+        {/* Left: Images with Amazon Zoom */}
         <div className="flex flex-col items-center gap-4">
-          <div className="w-full aspect-square bg-white rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center relative">
-            <img
-              src={images[selectedImage] || "https://via.placeholder.com/400?text=No+Image"}
-              alt={product.name}
-              className="w-full h-full object-contain p-2 hover:scale-105 transition-transform cursor-zoom-in"
-            />
-          </div>
+          
+          <ImageZoom 
+            src={images[selectedImage]} 
+            alt={product.name} 
+          />
+
+          {/* Thumbnail List */}
           <div className="flex gap-2 overflow-x-auto pb-2 w-full scrollbar-hide justify-center">
             {images.map((img, idx) => (
               <button
                 key={idx}
                 onMouseEnter={() => setSelectedImage(idx)}
                 onClick={() => setSelectedImage(idx)}
-                className={`w-14 h-14 border-2 rounded-md p-1 flex-shrink-0 transition-all ${selectedImage === idx ? 'border-[#e77600] shadow-sm' : 'border-gray-200 hover:border-gray-400'}`}
+                className={`w-14 h-14 border-2 rounded-md p-1 flex-shrink-0 transition-all ${
+                  selectedImage === idx ? 'border-[#e77600] shadow-sm' : 'border-gray-200 hover:border-gray-400'
+                }`}
               >
-                <img src={img} alt="" className="w-full h-full object-contain" />
+                <img src={img} alt={`Thumbnail ${idx}`} className="w-full h-full object-contain" />
               </button>
             ))}
           </div>
