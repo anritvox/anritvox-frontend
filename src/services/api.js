@@ -289,3 +289,137 @@ export async function updateInventory(token, id, stock) {
   if (!res.ok) throw new Error(body.message || 'Failed to update inventory');
   return body;
 }
+
+// ─── Aliases & Missing Functions ───────────────────────────────────────────
+
+// Aliases for DashboardOverview
+export const fetchWarrantyAdmin = fetchWarrantiesAdmin;
+export const fetchCategories = fetchCategoriesAdmin;
+export const fetchAdminUsers = fetchUsersAdmin;
+export const fetchAdminOrders = fetchOrdersAdmin;
+
+// ─── Admin: Category Update ─────────────────────────────────────────────────
+export async function updateCategory(token, id, data) {
+  const res = await fetch(`${BASE_URL}/api/categories/${id}`, {
+    method: 'PUT',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to update category');
+  return body;
+}
+
+// ─── Admin: Subcategories ────────────────────────────────────────────────────
+export async function fetchSubcategories(token) {
+  const res = await fetch(`${BASE_URL}/api/subcategories`, {
+    headers: authHeader(token),
+  });
+  if (!res.ok) throw new Error('Failed to load subcategories');
+  const data = await res.json();
+  return Array.isArray(data) ? data : (data.subcategories || data.data || []);
+}
+export async function createSubcategory(token, data) {
+  const res = await fetch(`${BASE_URL}/api/subcategories`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to create subcategory');
+  return body;
+}
+export async function updateSubcategory(token, id, data) {
+  const res = await fetch(`${BASE_URL}/api/subcategories/${id}`, {
+    method: 'PUT',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to update subcategory');
+  return body;
+}
+export async function deleteSubcategory(token, id) {
+  const res = await fetch(`${BASE_URL}/api/subcategories/${id}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to delete subcategory');
+  return body;
+}
+
+// ─── Admin: Warranty Management ──────────────────────────────────────────────
+export async function updateWarrantyStatusAdmin(token, id, status) {
+  const res = await fetch(`${BASE_URL}/api/warranty/${id}/status`, {
+    method: 'PUT',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to update warranty status');
+  return body;
+}
+export async function deleteWarrantyAdmin(token, id) {
+  const res = await fetch(`${BASE_URL}/api/warranty/${id}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to delete warranty');
+  return body;
+}
+
+// ─── Admin: Product Serials ──────────────────────────────────────────────────
+export async function fetchProductSerials(token, productId) {
+  const res = await fetch(`${BASE_URL}/api/products/${productId}/serials`, {
+    headers: authHeader(token),
+  });
+  if (!res.ok) throw new Error('Failed to load product serials');
+  const data = await res.json();
+  return Array.isArray(data) ? data : (data.serials || data.data || []);
+}
+export async function addProductSerials(token, productId, serials) {
+  const res = await fetch(`${BASE_URL}/api/products/${productId}/serials`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ serials }),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to add serials');
+  return body;
+}
+export async function bulkAddProductSerials(token, data) {
+  const res = await fetch(`${BASE_URL}/api/products/serials/bulk`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to bulk add serials');
+  return body;
+}
+export async function updateProductSerial(token, id, data) {
+  const res = await fetch(`${BASE_URL}/api/serials/${id}`, {
+    method: 'PUT',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to update serial');
+  return body;
+}
+export async function deleteProductSerial(token, id) {
+  const res = await fetch(`${BASE_URL}/api/serials/${id}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to delete serial');
+  return body;
+}
+export async function checkSerialAvailability(serial) {
+  const res = await fetch(`${BASE_URL}/api/serials/check/${serial}`);
+  if (!res.ok) throw new Error('Failed to check serial availability');
+  return res.json();
+}
