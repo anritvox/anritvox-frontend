@@ -2,15 +2,13 @@ import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { fetchProducts } from "../services/api";
 import { useCart } from "../context/CartContext";
-import { Star, ChevronDown, ChevronRight, ChevronLeft, Filter, LayoutGrid, List, Search, Check, ShoppingCart } from "lucide-react";
+import { FiStar as Star, FiChevronDown as ChevronDown, FiChevronRight as ChevronRight, FiChevronLeft as ChevronLeft, FiFilter as Filter, FiGrid as LayoutGrid, FiList as List, FiSearch as Search, FiCheck as Check, FiShoppingCart as ShoppingCart } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
-
 export default function Shop() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const { addToCart } = useCart();
-
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get("category") || "All");
@@ -19,17 +17,14 @@ export default function Shop() {
   const [viewType, setViewType] = useState("grid");
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [addedToCart, setAddedToCart] = useState({});
-
   const categories = ["All", "Interior", "Exterior", "Accessories", "Performance", "Electronics"];
-  const priceRanges = ["All", "Under \u20b91,000", "\u20b91,000 - \u20b95,000", "\u20b95,000 - \u20b910,000", "Over \u20b910,000"];
-
+  const priceRanges = ["All", "Under ₹1,000", "₹1,000 - ₹5,000", "₹5,000 - ₹10,000", "Over ₹10,000"];
   useEffect(() => {
     const cat = searchParams.get("category");
     if (cat) setSelectedCategory(cat);
     const search = searchParams.get("search");
     if (search) setSearchTerm(search);
   }, [searchParams]);
-
   useEffect(() => {
     const loadProducts = async () => {
       try {
@@ -44,31 +39,27 @@ export default function Shop() {
     };
     loadProducts();
   }, []);
-
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === "All" || product.category === selectedCategory;
     let matchesPrice = true;
-    if (priceRange === "Under \u20b91,000") matchesPrice = product.price < 1000;
-    else if (priceRange === "\u20b91,000 - \u20b95,000") matchesPrice = product.price >= 1000 && product.price <= 5000;
-    else if (priceRange === "\u20b95,000 - \u20b910,000") matchesPrice = product.price >= 5000 && product.price <= 10000;
-    else if (priceRange === "Over \u20b910,000") matchesPrice = product.price > 10000;
+    if (priceRange === "Under ₹1,000") matchesPrice = product.price < 1000;
+    else if (priceRange === "₹1,000 - ₹5,000") matchesPrice = product.price >= 1000 && product.price <= 5000;
+    else if (priceRange === "₹5,000 - ₹10,000") matchesPrice = product.price >= 5000 && product.price <= 10000;
+    else if (priceRange === "Over ₹10,000") matchesPrice = product.price > 10000;
     return matchesSearch && matchesCategory && matchesPrice;
   });
-
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     if (sortOption === "Price: Low to High") return a.price - b.price;
     if (sortOption === "Price: High to Low") return b.price - a.price;
     return 0;
   });
-
   const handleAddToCart = async (product) => {
     const id = product._id || product.id;
     await addToCart(product, 1);
     setAddedToCart(prev => ({ ...prev, [id]: true }));
     setTimeout(() => setAddedToCart(prev => ({ ...prev, [id]: false })), 2000);
   };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -79,18 +70,14 @@ export default function Shop() {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-      {/* Breadcrumb */}
       <div className="max-w-7xl mx-auto px-4 py-3 text-xs text-gray-500 flex items-center gap-1">
         <Link to="/" className="hover:text-[#c45500] hover:underline">Home</Link>
         <ChevronRight size={12} />
         <span className="text-gray-400">Shop</span>
       </div>
-
       <div className="max-w-7xl mx-auto px-4 pb-12 grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Sidebar Filters */}
         <aside className="md:col-span-1 space-y-6">
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <h3 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wider">Categories</h3>
@@ -111,7 +98,6 @@ export default function Shop() {
               ))}
             </div>
           </div>
-
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <h3 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wider">Price Range</h3>
             <div className="space-y-2">
@@ -130,8 +116,6 @@ export default function Shop() {
             </div>
           </div>
         </aside>
-
-        {/* Product Grid */}
         <main className="md:col-span-3">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -154,9 +138,7 @@ export default function Shop() {
               )}
             </div>
           </div>
-
           {error && <div className="text-red-500 text-center py-8">{error}</div>}
-
           <AnimatePresence>
             <div className={`grid gap-4 ${viewType === "grid" ? "grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
               {sortedProducts.map(product => (
@@ -203,7 +185,6 @@ export default function Shop() {
               ))}
             </div>
           </AnimatePresence>
-
           {sortedProducts.length === 0 && !loading && (
             <div className="text-center py-16 text-gray-400">
               <Search size={48} className="mx-auto mb-4 opacity-50" />
