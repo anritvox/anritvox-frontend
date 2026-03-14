@@ -3,13 +3,11 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft } from 'lucide-react';
-
+import { FiTrash2 as Trash2, FiPlus as Plus, FiMinus as Minus, FiShoppingBag as ShoppingBag, FiArrowLeft as ArrowLeft } from 'react-icons/fi';
 export default function Cart() {
   const { cart, removeFromCart, updateQuantity, cartTotal, cartCount } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
-
   if (cart.length === 0) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 bg-gray-50 font-sans">
@@ -26,7 +24,6 @@ export default function Cart() {
       </div>
     );
   }
-
   const handleCheckout = () => {
     if (!user) {
       navigate('/login', { state: { from: '/checkout' } });
@@ -34,7 +31,6 @@ export default function Cart() {
       navigate('/checkout');
     }
   };
-
   return (
     <div className="min-h-screen bg-gray-50 py-10 px-4">
       <div className="max-w-5xl mx-auto">
@@ -53,60 +49,25 @@ export default function Cart() {
                     <p className="font-semibold text-gray-800 line-clamp-2">{item.name}</p>
                     <p className="text-[#39d353] font-bold text-lg">₹{parseFloat(item.price).toLocaleString()}</p>
                     <div className="flex items-center gap-2 mt-2">
-                      <button
-                        onClick={() => updateQuantity(id, qty - 1)}
-                        className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300"
-                      >
-                        <Minus size={14} />
-                      </button>
-                      <span className="w-8 text-center font-bold">{qty}</span>
-                      <button
-                        onClick={() => updateQuantity(id, qty + 1)}
-                        className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300"
-                      >
-                        <Plus size={14} />
-                      </button>
+                      <button onClick={() => updateQuantity(id, qty - 1)} className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300" ><Minus size={14} /></button>
+                      <span> {qty} </span>
+                      <button onClick={() => updateQuantity(id, qty + 1)} className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300" ><Plus size={14} /></button>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-gray-800">₹{(parseFloat(item.price) * qty).toLocaleString()}</p>
-                    <button
-                      onClick={() => removeFromCart(id)}
-                      className="text-red-400 hover:text-red-600 mt-2 flex items-center gap-1 text-sm"
-                    >
-                      <Trash2 size={14} /> Remove
-                    </button>
+                    <p className="text-gray-700 font-semibold mt-1">₹{(parseFloat(item.price) * qty).toLocaleString()}</p>
+                    <button onClick={() => removeFromCart(id)} className="text-red-400 hover:text-red-600 mt-2 flex items-center gap-1 text-sm" ><Trash2 size={14} /> Remove</button>
                   </div>
                 </div>
               );
             })}
           </div>
           {/* Summary */}
-          <div className="bg-white rounded-xl shadow p-6 h-fit sticky top-4">
-            <h2 className="text-lg font-bold mb-4 border-b pb-4">Price Details</h2>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span>Items ({cartCount})</span>
-                <span>₹{cartTotal.toFixed(0)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Delivery</span>
-                <span className="text-green-600">FREE</span>
-              </div>
-              <div className="flex justify-between font-bold text-base border-t pt-3">
-                <span>Total Amount</span>
-                <span>₹{cartTotal.toFixed(0)}</span>
-              </div>
-            </div>
-            <button
-              onClick={handleCheckout}
-              className="w-full mt-6 bg-[#f0c040] text-black py-3 rounded-lg font-bold hover:bg-yellow-400 transition-colors"
-            >
-              {user ? 'Proceed to Checkout' : 'Login & Checkout'}
-            </button>
-            <Link to="/shop" className="block text-center text-sm text-blue-600 hover:underline mt-3">
-              Continue Shopping
-            </Link>
+          <div className="bg-white rounded-xl shadow p-6 h-fit space-y-4">
+            <h2 className="font-bold text-lg border-b pb-2">Price Details</h2>
+            <div className="flex justify-between text-sm"><span> Items ({cartCount}) </span><span> ₹{cartTotal.toFixed(0)} </span></div>
+            <div className="flex justify-between text-sm"><span> Delivery </span><span className="text-green-600"> FREE </span></div>
+            <div className="flex justify-between font-bold border-t pt-2"><span> Total Amount </span><span> ₹{cartTotal.toFixed(0)} </span></div>
+            <button onClick={handleCheckout} className="w-full bg-[#ffd814] hover:bg-[#f7ca00] text-[#0f1111] font-bold py-3 rounded-lg transition">{user ? 'Proceed to Checkout' : 'Login & Checkout'}</button>
+            <Link to="/shop" className="block text-center text-blue-600 hover:underline text-sm"> Continue Shopping</Link>
           </div>
         </div>
       </div>
