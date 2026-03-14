@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { fetchProducts } from "../services/api";
 import { useCart } from "../context/CartContext";
 import { 
-  ChevronLeft, ChevronRight, Star, ArrowRight, ShieldCheck, Headphones, Truck, Zap, 
-  ShoppingBag, Award, Globe, ChevronUp, Flame, CheckCircle2, Cpu, Smartphone, 
-  Sparkles, MousePointer2, LayoutGrid, Search, Menu, X, User, ShoppingCart, Percent
+  ChevronLeft, ChevronRight, Star, ArrowRight, ShieldCheck, 
+  Headphones, Truck, Zap, Globe, ChevronUp, Flame, 
+  CheckCircle2, Cpu, Smartphone, LayoutGrid, Search, 
+  Menu, User, ShoppingCart, Percent
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -37,8 +38,6 @@ export default function Home() {
   const [addedToCart, setAddedToCart] = useState({});
   const [loading, setLoading] = useState(true);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  // activeTab is declared but not used in the current UI, keeping it in case you need it later
-  const [activeTab, setActiveTab] = useState("featured"); 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -234,19 +233,19 @@ export default function Home() {
               <Link
                 key={product._id || product.id}
                 to={`/product/${product._id || product.id}`}
-                className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all relative group"
+                className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all relative group flex flex-col"
               >
                 {/* Badge */}
                 <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
-                  <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1">
+                  <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
                     <Percent size={10} /> 30% OFF
                   </span>
-                  <span className="bg-green-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md">
+                  <span className="bg-green-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-sm w-fit">
                     TRENDING
                   </span>
                 </div>
 
-                <div className="aspect-square relative overflow-hidden bg-gray-50">
+                <div className="aspect-square relative overflow-hidden bg-gray-50 flex-shrink-0">
                   <img 
                     src={product.image || product.images?.[0] || "https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&q=80&w=400"} 
                     alt={product.name}
@@ -257,21 +256,23 @@ export default function Home() {
                   />
                 </div>
                 
-                <div className="p-4 space-y-2">
-                  <div className="flex items-center gap-1 text-yellow-400">
-                    <Star size={12} fill="currentColor" />
-                    <Star size={12} fill="currentColor" />
-                    <Star size={12} fill="currentColor" />
-                    <Star size={12} fill="currentColor" />
-                    <Star size={12} fill="currentColor" />
-                    <span className="text-gray-400 text-[10px] font-bold ml-1">(4.9)</span>
-                  </div>
-                  <h3 className="font-bold text-gray-800 text-sm line-clamp-2 min-h-[40px] leading-tight">
-                    {product.name}
-                  </h3>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-xl font-black text-gray-900">₹{Number(product.price).toLocaleString()}</span>
-                    <span className="text-xs text-gray-400 line-through">₹{(product.price * 1.3).toFixed(0)}</span>
+                <div className="p-4 flex flex-col flex-grow justify-between space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1 text-yellow-400">
+                      <Star size={12} fill="currentColor" />
+                      <Star size={12} fill="currentColor" />
+                      <Star size={12} fill="currentColor" />
+                      <Star size={12} fill="currentColor" />
+                      <Star size={12} fill="currentColor" />
+                      <span className="text-gray-400 text-[10px] font-bold ml-1">(4.9)</span>
+                    </div>
+                    <h3 className="font-bold text-gray-800 text-sm line-clamp-2 min-h-[40px] leading-tight">
+                      {product.name}
+                    </h3>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-xl font-black text-gray-900">₹{Number(product.price).toLocaleString()}</span>
+                      <span className="text-xs text-gray-400 line-through">₹{(product.price * 1.3).toFixed(0)}</span>
+                    </div>
                   </div>
                   <button
                     onClick={async (e) => {
@@ -282,7 +283,7 @@ export default function Home() {
                       setAddedToCart(prev => ({ ...prev, [id]: true }));
                       setTimeout(() => setAddedToCart(prev => ({ ...prev, [id]: false })), 2000);
                     }}
-                    className={`w-full py-2 rounded-xl text-sm font-bold opacity-0 group-hover:opacity-100 transition-all ${addedToCart[product._id || product.id] ? 'bg-green-600 text-white' : 'bg-blue-600 text-white'}`}
+                    className={`w-full py-2 mt-auto rounded-xl text-sm font-bold opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all shadow-sm hover:shadow-md ${addedToCart[product._id || product.id] ? 'bg-green-600 text-white' : 'bg-blue-600 text-white'}`}
                   >
                     {addedToCart[product._id || product.id] ? '✓ Added' : 'Add to Cart'}
                   </button>
@@ -306,7 +307,7 @@ export default function Home() {
               <div className="relative z-10 p-6 h-full flex flex-col justify-end text-white">
                 <h4 className="text-2xl font-black">{banner.title}</h4>
                 <p className="text-gray-300 font-medium">{banner.desc}</p>
-                <Link to="/shop" className="mt-4 flex items-center gap-2 text-sm font-bold group-hover:gap-4 transition-all">
+                <Link to="/shop" className="mt-4 flex items-center gap-2 text-sm font-bold group-hover:gap-4 transition-all w-fit">
                   Shop Series <ArrowRight size={16} />
                 </Link>
               </div>
@@ -319,10 +320,10 @@ export default function Home() {
       <div className="bg-white border-y border-gray-200 mt-12 py-12 px-4">
         <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8">
           {[
-            { icon: <ShieldCheck />, title: "ISO Certified", desc: "Global Quality" },
-            { icon: <Truck />, title: "Free Delivery", desc: "Pan India Support" },
-            { icon: <CheckCircle2 />, title: "Tested for India", desc: "High Heat Endurance" },
-            { icon: <Headphones />, title: "24/7 Concierge", desc: "Priority Support" }
+            { icon: <ShieldCheck size={28} />, title: "ISO Certified", desc: "Global Quality" },
+            { icon: <Truck size={28} />, title: "Free Delivery", desc: "Pan India Support" },
+            { icon: <CheckCircle2 size={28} />, title: "Tested for India", desc: "High Heat Endurance" },
+            { icon: <Headphones size={28} />, title: "24/7 Concierge", desc: "Priority Support" }
           ].map((item, i) => (
             <div key={i} className="flex flex-col items-center text-center space-y-3">
               <div className="text-blue-600 bg-blue-50 p-4 rounded-2xl">{item.icon}</div>
@@ -337,14 +338,14 @@ export default function Home() {
       {showScrollTop && (
         <button 
           onClick={scrollToTop}
-          className="fixed bottom-8 right-8 bg-blue-600 text-white p-4 rounded-full shadow-2xl z-50 hover:bg-blue-700 transition-all animate-bounce"
+          className="fixed bottom-24 lg:bottom-8 right-4 lg:right-8 bg-blue-600 text-white p-3 lg:p-4 rounded-full shadow-2xl z-50 hover:bg-blue-700 transition-all animate-bounce"
         >
           <ChevronUp size={24} />
         </button>
       )}
 
       {/* Mobile Footer (Meesho Style Bottom Nav) */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around items-center py-3 z-50">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around items-center py-3 z-50 pb-safe">
         <Link to="/" className="flex flex-col items-center gap-1 text-blue-600">
           <Zap size={20} />
           <span className="text-[10px] font-bold">Explore</span>
