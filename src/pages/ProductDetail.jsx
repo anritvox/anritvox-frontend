@@ -9,14 +9,6 @@ import { fetchProductById } from '../services/api';
 import { useCart } from '../context/CartContext';
 const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
 
-// =====================================================================
-// PREVIEW MOCKS (Delete these 3 lines in your actual local code)
-// =====================================================================
-const fetchProductById = async (id) => ({ id, name: 'Anritvox Premium Audio', price: 2999, discount_price: 1999, description: 'High-quality sound.', images: [] });
-const useCart = () => ({ addToCart: () => {} });
-const BASE_URL = 'http://localhost:5000';
-// =====================================================================
-
 const FALLBACK_IMAGE = "https://via.placeholder.com/600x600?text=No+Image+Available";
 
 // Custom Amazon-Style Image Zoom Component
