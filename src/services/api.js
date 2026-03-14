@@ -219,7 +219,8 @@ export async function deleteBanner(token, id) {
 
 // ─── Customer: Orders ────────────────────────────────────────────────────────
 export async function fetchMyOrders(token) {
-  const res = await fetch(`${BASE_URL}/api/orders/my-orders`, {
+  // 🔴 FIX: Changed endpoint from /api/orders/my-orders to /api/orders/my
+  const res = await fetch(`${BASE_URL}/api/orders/my`, {
     headers: authHeader(token),
   });
   if (!res.ok) throw new Error('Failed to load orders');
