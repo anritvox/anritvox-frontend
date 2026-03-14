@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginAdmin } from "../services/api";
+import { adminLogin } from "../services/api";
 import { FiEye, FiEyeOff, FiAlertCircle, FiLock, FiMail } from "react-icons/fi";
 import { Loader2, Shield } from "lucide-react";
 
@@ -22,7 +22,7 @@ export default function AdminLogin() {
     setLoading(true);
     setError("");
     try {
-      const { token } = await loginAdmin(credentials);
+      const { token } = await adminLogin(credentials);
       localStorage.setItem("ms_token", token);
       setShowNotification(true);
       setTimeout(() => {
