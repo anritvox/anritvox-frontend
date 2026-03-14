@@ -5,20 +5,28 @@ import { fetchProductById } from '../services/api';
 import { useCart } from '../context/CartContext';
 
 const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
+const FALLBACK_IMAGE = "https://via.placeholder.com/600x600?text=No+Image+Available";
 
 // Custom Amazon-Style Image Zoom Component
 const ImageZoom = ({ src, alt }) => {
   const [position, setPosition] = useState('0% 0%');
   const [showZoom, setShowZoom] = useState(false);
-  
-  // Guard against undefined src
-  const safeSrc = src || "https://via.placeholder.com/600?text=No+Image";
+  const [imgSrc, setImgSrc] = useState(src || FALLBACK_IMAGE);
+
+  // Update image when props change
+  useEffect(() => {
+    setImgSrc(src || FALLBACK_IMAGE);
+  }, [src]);
 
   const handleMouseMove = (e) => {
     const { left, top, width, height } = e.target.getBoundingClientRect();
     const x = ((e.clientX - left) / width) * 100;
     const y = ((e.clientY - top) / height) * 100;
     setPosition(`${x}% ${y}%`);
+  };
+
+  const handleError = () => {
+    setImgSrc(FALLBACK_IMAGE);
   };
 
   return (
@@ -28,17 +36,20 @@ const ImageZoom = ({ src, alt }) => {
       onMouseLeave={() => setShowZoom(false)}
       onMouseMove={handleMouseMove}
     >
+      {/* Standard Image with Error Handling */}
       <img
-        src={safeSrc}
+        src={imgSrc}
         alt={alt || "Product Image"}
+        onError={handleError}
         className={`w-full h-full object-contain transition-opacity duration-200 ${showZoom ? 'opacity-0' : 'opacity-100'}`}
       />
       
-      {showZoom && (
+      {/* Zoomed Magnifier Overlay */}
+      {showZoom && imgSrc !== FALLBACK_IMAGE && (
         <div
           className="absolute inset-0 z-10 pointer-events-none bg-white"
           style={{
-            backgroundImage: `url("${safeSrc}")`,
+            backgroundImage: `url("${imgSrc}")`,
             backgroundPosition: position,
             backgroundSize: '250%', 
             backgroundRepeat: 'no-repeat',
@@ -77,7 +88,7 @@ export default function ProductDetail() {
           return;
         }
 
-        // --- BULLETPROOF IMAGE REPAIR LOGIC ---
+        // --- AGGRESSIVE IMAGE PATH RECONSTRUCTION ---
         let processedImages = [];
         const rawImages = data.images || data.image || [];
         const imageArray = Array.isArray(rawImages) ? rawImages : [rawImages];
@@ -86,6 +97,7 @@ export default function ProductDetail() {
           if (!img) return;
           let cleanImg = typeof img === 'string' ? img : String(img);
           
+          // 1. Unpack stringified JSON arrays if present
           if (cleanImg.startsWith('[')) {
             try {
               const parsed = JSON.parse(cleanImg);
@@ -93,11 +105,17 @@ export default function ProductDetail() {
             } catch(e) {}
           }
           
-          cleanImg = cleanImg.replace(/^undefined\//, '');
+          // 2. Strip out 'undefined/' or 'null/' prefixes caused by missing env variables
+          cleanImg = cleanImg.replace(/^(undefined|null)\/?/, '');
+          
+          // 3. Remove leading slashes
+          cleanImg = cleanImg.replace(/^\//, '');
 
-          if (!cleanImg.startsWith('http') && !cleanImg.startsWith('data:')) {
-            cleanImg = cleanImg.replace(/^\//, ''); 
-            cleanImg = `${BASE_URL}/${cleanImg}`;
+          // 4. Force valid URL structure if it's a local file
+          if (cleanImg && !cleanImg.startsWith('http') && !cleanImg.startsWith('data:')) {
+            // Ensure the 'uploads/' folder is in the path
+            const finalPath = cleanImg.startsWith('uploads/') ? cleanImg : `uploads/${cleanImg}`;
+            cleanImg = `${BASE_URL}/${finalPath}`;
           }
 
           if (cleanImg && !processedImages.includes(cleanImg)) {
@@ -105,8 +123,9 @@ export default function ProductDetail() {
           }
         });
 
+        // Fallback if absolutely no valid paths were extracted
         if (processedImages.length === 0) {
-          processedImages = ["https://via.placeholder.com/600?text=No+Image+Available"];
+          processedImages = [FALLBACK_IMAGE];
         }
 
         setProduct({ ...data, images: processedImages });
@@ -150,17 +169,14 @@ export default function ProductDetail() {
     </div>
   );
 
-  // 🔴 FIXED SAFE VARIABLES (Prevents Fatal React Crashes)
-  const images = Array.isArray(product.images) ? product.images : [];
+  const images = Array.isArray(product.images) ? product.images : [FALLBACK_IMAGE];
   
-  // Safe Pricing Logic (Matches Database)
   const originalPrice = Number(product.price || 0);
   const sellingPrice = product.discount_price ? Number(product.discount_price) : originalPrice;
   const discountPercentage = product.discount_price && originalPrice > 0 
     ? Math.round(((originalPrice - sellingPrice) / originalPrice) * 100) 
     : 0;
 
-  // Safe Description Logic
   const descriptionLines = (product.description || '')
     .split('\n')
     .filter(line => line.trim().length > 0);
@@ -189,11 +205,16 @@ export default function ProductDetail() {
                 key={idx}
                 onMouseEnter={() => setSelectedImage(idx)}
                 onClick={() => setSelectedImage(idx)}
-                className={`w-14 h-14 border-2 rounded-md p-1 flex-shrink-0 transition-all ${
+                className={`w-14 h-14 border-2 rounded-md p-1 flex-shrink-0 transition-all bg-white ${
                   selectedImage === idx ? 'border-[#e77600] shadow-sm' : 'border-gray-200 hover:border-gray-400'
                 }`}
               >
-                <img src={img} alt={`Thumbnail ${idx}`} className="w-full h-full object-contain" />
+                <img 
+                  src={img} 
+                  alt={`Thumbnail ${idx}`} 
+                  onError={(e) => { e.target.src = FALLBACK_IMAGE; }} // Fail-safe for thumbnails
+                  className="w-full h-full object-contain" 
+                />
               </button>
             ))}
           </div>
