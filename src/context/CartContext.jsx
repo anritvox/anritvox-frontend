@@ -22,7 +22,8 @@ export const CartProvider = ({ children }) => {
         });
         if (res.ok) {
           const data = await res.json();
-          setCart(data);
+          // FIX: Extract .items from the backend response
+          setCart(data.items || []);
           return;
         }
       } catch {}
@@ -57,22 +58,24 @@ export const CartProvider = ({ children }) => {
         });
         if (res.ok) {
           const data = await res.json();
-          setCart(data);
+          // FIX: Extract .items from the backend response
+          setCart(data.items || []);
           return;
         }
       } catch {}
     }
     // Guest fallback
     setCart(prev => {
-      const existing = prev.find(i => i.id === product.id || i.product_id === product.id);
+      const safePrev = Array.isArray(prev) ? prev : [];
+      const existing = safePrev.find(i => i.id === product.id || i.product_id === product.id);
       if (existing) {
-        return prev.map(i =>
+        return safePrev.map(i =>
           (i.id === product.id || i.product_id === product.id)
             ? { ...i, quantity: (i.quantity || i.qty || 1) + quantity }
             : i
         );
       }
-      return [...prev, { ...product, product_id: product.id, quantity }];
+      return [...safePrev, { ...product, product_id: product.id, quantity }];
     });
   }, []);
 
@@ -86,12 +89,20 @@ export const CartProvider = ({ children }) => {
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ productId, quantity }),
         });
-        if (res.ok) { setCart(await res.json()); return; }
+        if (res.ok) { 
+          const data = await res.json();
+          // FIX: Extract .items from the backend response
+          setCart(data.items || []); 
+          return; 
+        }
       } catch {}
     }
-    setCart(prev => prev.map(i =>
-      (i.product_id === productId || i.id === productId) ? { ...i, quantity } : i
-    ));
+    setCart(prev => {
+      const safePrev = Array.isArray(prev) ? prev : [];
+      return safePrev.map(i =>
+        (i.product_id === productId || i.id === productId) ? { ...i, quantity } : i
+      );
+    });
   }, []);
 
   const removeFromCart = useCallback(async (productId) => {
@@ -102,10 +113,18 @@ export const CartProvider = ({ children }) => {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (res.ok) { setCart(await res.json()); return; }
+        if (res.ok) { 
+          const data = await res.json();
+          // FIX: Extract .items from the backend response
+          setCart(data.items || []); 
+          return; 
+        }
       } catch {}
     }
-    setCart(prev => prev.filter(i => i.product_id !== productId && i.id !== productId));
+    setCart(prev => {
+      const safePrev = Array.isArray(prev) ? prev : [];
+      return safePrev.filter(i => i.product_id !== productId && i.id !== productId);
+    });
   }, []);
 
   const clearCart = useCallback(async () => {
@@ -122,12 +141,14 @@ export const CartProvider = ({ children }) => {
     localStorage.removeItem('cart');
   }, []);
 
-  const cartCount = cart.reduce((s, i) => s + (i.quantity || 1), 0);
-  const cartTotal = cart.reduce((s, i) => s + parseFloat(i.price || 0) * (i.quantity || 1), 0);
+  // FIX: Defensive fallback to guarantee reduce is always called on an array
+  const safeCart = Array.isArray(cart) ? cart : [];
+  const cartCount = safeCart.reduce((s, i) => s + (i.quantity || 1), 0);
+  const cartTotal = safeCart.reduce((s, i) => s + parseFloat(i.price || 0) * (i.quantity || 1), 0);
 
   return (
     <CartContext.Provider value={{
-      cart, cartCount, cartTotal, cartLoading,
+      cart: safeCart, cartCount, cartTotal, cartLoading,
       addToCart, removeFromCart, updateQuantity, clearCart, loadCart
     }}>
       {children}
