@@ -11,10 +11,6 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ["node-mailjet"],
-    include: ["framer-motion", "motion-utils"],
-  },
-  resolve: {
-    alias: {},
   },
   define: {
     global: "globalThis",
