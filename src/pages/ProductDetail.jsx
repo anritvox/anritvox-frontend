@@ -3,12 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { fetchProductById } from '../services/api';
 import { useCart } from '../context/CartContext';
-import { 
-  FiStar as Star, 
-  FiChevronRight as ChevronRight, 
-  FiCheck as Check, 
-  FiShoppingCart as ShoppingCart 
-} from 'react-icons/fi';
 
 const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
 
@@ -31,21 +25,21 @@ const ImageZoom = ({ src, alt }) => {
       onMouseLeave={() => setShowZoom(false)}
       onMouseMove={handleMouseMove}
     >
-      {/* Standard Image (Fades out on hover) */}
+      {/* Standard Image */}
       <img
         src={src}
         alt={alt}
         className={`w-full h-full object-contain transition-opacity duration-200 ${showZoom ? 'opacity-0' : 'opacity-100'}`}
       />
       
-      {/* Zoomed Magnifier Overlay (Appears on hover) */}
+      {/* Zoomed Magnifier Overlay */}
       {showZoom && (
         <div
           className="absolute inset-0 z-10 pointer-events-none bg-white"
           style={{
             backgroundImage: `url("${src}")`,
             backgroundPosition: position,
-            backgroundSize: '250%', // Adjust this percentage to increase/decrease zoom level
+            backgroundSize: '250%', 
             backgroundRepeat: 'no-repeat',
           }}
         />
@@ -91,7 +85,6 @@ export default function ProductDetail() {
           if (!img) return;
           let cleanImg = typeof img === 'string' ? img : String(img);
           
-          // 1. Unpack stringified JSON arrays
           if (cleanImg.startsWith('[')) {
             try {
               const parsed = JSON.parse(cleanImg);
@@ -99,12 +92,10 @@ export default function ProductDetail() {
             } catch(e) {}
           }
           
-          // 2. Remove broken "undefined/" backend prefixes
           cleanImg = cleanImg.replace(/^undefined\//, '');
 
-          // 3. Attach backend URL if the image path is local (e.g. 'uploads/file.jpg')
           if (!cleanImg.startsWith('http') && !cleanImg.startsWith('data:')) {
-            cleanImg = cleanImg.replace(/^\//, ''); // remove leading slash if any
+            cleanImg = cleanImg.replace(/^\//, ''); 
             cleanImg = `${BASE_URL}/${cleanImg}`;
           }
 
@@ -119,7 +110,7 @@ export default function ProductDetail() {
 
         setProduct({ ...data, images: processedImages });
         setError('');
-        setSelectedImage(0); // Reset to first image on load
+        setSelectedImage(0); 
       } catch (err) {
         console.error("Fetch error:", err);
         setError('Failed to fetch product details. Please try again.');
@@ -164,11 +155,11 @@ export default function ProductDetail() {
   return (
     <div className="bg-white min-h-screen pb-12 font-sans antialiased">
       {/* Breadcrumb */}
-      <div className="max-w-[1500px] mx-auto px-4 py-3 text-xs text-gray-600 flex items-center gap-1 overflow-x-auto whitespace-nowrap border-b border-gray-100">
+      <div className="max-w-[1500px] mx-auto px-4 py-3 text-xs text-gray-600 flex items-center gap-2 overflow-x-auto whitespace-nowrap border-b border-gray-100">
         <Link to="/" className="hover:text-[#c45500] hover:underline">Home</Link>
-        <ChevronRight size={12} className="text-gray-400" />
+        <span className="text-gray-400">/</span>
         <Link to="/shop" className="hover:text-[#c45500] hover:underline">Shop</Link>
-        <ChevronRight size={12} className="text-gray-400" />
+        <span className="text-gray-400">/</span>
         <span className="text-gray-400 truncate max-w-[200px]">{product.name}</span>
       </div>
 
@@ -176,11 +167,7 @@ export default function ProductDetail() {
         
         {/* Left: Images with Amazon Zoom */}
         <div className="flex flex-col items-center gap-4">
-          
-          <ImageZoom 
-            src={images[selectedImage]} 
-            alt={product.name} 
-          />
+          <ImageZoom src={images[selectedImage]} alt={product.name} />
 
           {/* Thumbnail List */}
           <div className="flex gap-2 overflow-x-auto pb-2 w-full scrollbar-hide justify-center">
@@ -207,8 +194,8 @@ export default function ProductDetail() {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex">
-              {[...Array(5)].map((_, i) => <Star key={i} size={16} className="fill-[#FFA41C] text-[#FFA41C]" />)}
+            <div className="flex text-[#FFA41C]">
+              ⭐⭐⭐⭐⭐
             </div>
             <span className="text-sm text-[#007185] hover:text-[#c7511f] cursor-pointer"> 426 ratings </span>
           </div>
@@ -273,7 +260,7 @@ export default function ProductDetail() {
                     : 'bg-[#ffd814] hover:bg-[#f7ca00] text-[#0f1111]'
                 }`}
               >
-                {addedToCart ? <><Check size={16} /> Added</> : <><ShoppingCart size={16} /> Add to Cart</>}
+                {addedToCart ? '✓ Added' : '🛒 Add to Cart'}
               </button>
               
               <button
@@ -282,17 +269,6 @@ export default function ProductDetail() {
               >
                 Buy Now
               </button>
-            </div>
-
-            <div className="text-xs text-gray-600 pt-2 space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Ships from</span>
-                <span className="text-[#007185]">Anritvox</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Sold by</span>
-                <span className="text-[#007185]">Anritvox Store</span>
-              </div>
             </div>
           </div>
         </div>
