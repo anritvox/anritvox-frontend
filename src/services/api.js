@@ -443,3 +443,39 @@ export async function updateBannerAdmin(token, id, formData) {
 export async function changeAdminPassword(currentPassword, newPassword, token) {
   return changePassword(token, currentPassword, newPassword);
 }
+// ─── Customer: Cart Management ───────────────────────────────────────────────
+export async function fetchCart(token) {
+  const res = await fetch(`${BASE_URL}/api/cart`, {
+    headers: authHeader(token),
+  });
+  if (!res.ok) throw new Error('Failed to load cart');
+  return res.json();
+}
+
+export async function addToCartAPI(token, productId, quantity) {
+  const res = await fetch(`${BASE_URL}/api/cart`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId, quantity }),
+  });
+  if (!res.ok) throw new Error('Failed to update cart');
+  return res.json();
+}
+
+export async function removeFromCartAPI(token, productId) {
+  const res = await fetch(`${BASE_URL}/api/cart/${productId}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  if (!res.ok) throw new Error('Failed to remove from cart');
+  return res.json();
+}
+
+export async function clearCartAPI(token) {
+  const res = await fetch(`${BASE_URL}/api/cart`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  if (!res.ok) throw new Error('Failed to clear cart');
+  return res.json();
+}
