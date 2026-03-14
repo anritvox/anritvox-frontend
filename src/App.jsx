@@ -17,6 +17,7 @@ const Checkout = lazy(() => import("./pages/Checkout"));
 const OrderSuccess = lazy(() => import("./pages/OrderSuccess"));
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
+const Profile = lazy(() => import("./pages/Profile"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 
@@ -37,7 +38,6 @@ function ProtectedRoute({ children }) {
 function AppContent() {
   const location = useLocation();
   const isAdminPath = location.pathname.startsWith("/admin");
-
   return (
     <>
       {!isAdminPath && <Navbar />}
@@ -58,8 +58,15 @@ function AppContent() {
             <Route path="/order-success" element={
               <ProtectedRoute><OrderSuccess /></ProtectedRoute>
             } />
+            <Route path="/profile" element={
+              <ProtectedRoute><Profile /></ProtectedRoute>
+            } />
+            <Route path="/my-orders" element={
+              <ProtectedRoute><Profile /></ProtectedRoute>
+            } />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/*" element={<AdminDashboard />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
