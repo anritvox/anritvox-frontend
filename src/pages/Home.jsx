@@ -37,7 +37,8 @@ export default function Home() {
   const [addedToCart, setAddedToCart] = useState({});
   const [loading, setLoading] = useState(true);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [activeTab, setActiveTab] = useState("featured");
+  // activeTab is declared but not used in the current UI, keeping it in case you need it later
+  const [activeTab, setActiveTab] = useState("featured"); 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -231,9 +232,9 @@ export default function Home() {
           ) : (
             products.slice(0, 8).map((product) => (
               <Link
-                          key={product._id || product.id}
+                key={product._id || product.id}
                 to={`/product/${product._id || product.id}`}
-              className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all relative group"
+                className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all relative group"
               >
                 {/* Badge */}
                 <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
@@ -273,20 +274,21 @@ export default function Home() {
                     <span className="text-xs text-gray-400 line-through">₹{(product.price * 1.3).toFixed(0)}</span>
                   </div>
                   <button
-                onClick={async (e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  const id = product._id || product.id;
-                  await addToCart(product, 1);
-                  setAddedToCart(prev => ({ ...prev, [id]: true }));
-                  setTimeout(() => setAddedToCart(prev => ({ ...prev, [id]: false })), 2000);
-                }}
-                className={`w-full py-2 rounded-xl text-sm font-bold opacity-0 group-hover:opacity-100 transition-all ${addedToCart[product._id || product.id] ? 'bg-green-600 text-white' : 'bg-blue-600 text-white'}`}
-              >
-                {addedToCart[product._id || product.id] ? '✓ Added' : 'Add to Cart'}
-              </button>
-            </div>            </div>
-              </Link>        ))
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const id = product._id || product.id;
+                      await addToCart(product, 1);
+                      setAddedToCart(prev => ({ ...prev, [id]: true }));
+                      setTimeout(() => setAddedToCart(prev => ({ ...prev, [id]: false })), 2000);
+                    }}
+                    className={`w-full py-2 rounded-xl text-sm font-bold opacity-0 group-hover:opacity-100 transition-all ${addedToCart[product._id || product.id] ? 'bg-green-600 text-white' : 'bg-blue-600 text-white'}`}
+                  >
+                    {addedToCart[product._id || product.id] ? '✓ Added' : 'Add to Cart'}
+                  </button>
+                </div>
+              </Link>
+            ))
           )}
         </div>
       </section>
