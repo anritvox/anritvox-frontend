@@ -10,6 +10,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
+    include: ["lucide-react"],
     exclude: ["node-mailjet"],
   },
   define: {
