@@ -1,10 +1,22 @@
 /* src/pages/ProductDetail.jsx */
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { fetchProductById } from '../services/api';
-import { useCart } from '../context/CartContext';
 
-const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
+// =====================================================================
+// ⚠️ IMPORTANT: UNCOMMENT THESE 3 LINES WHEN PASTING INTO YOUR PROJECT
+// =====================================================================
+// import { fetchProductById } from '../services/api';
+// import { useCart } from '../context/CartContext';
+// const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
+
+// =====================================================================
+// PREVIEW MOCKS (Delete these 3 lines in your actual local code)
+// =====================================================================
+const fetchProductById = async (id) => ({ id, name: 'Anritvox Premium Audio', price: 2999, discount_price: 1999, description: 'High-quality sound.', images: [] });
+const useCart = () => ({ addToCart: () => {} });
+const BASE_URL = 'http://localhost:5000';
+// =====================================================================
+
 const FALLBACK_IMAGE = "https://via.placeholder.com/600x600?text=No+Image+Available";
 
 // Custom Amazon-Style Image Zoom Component
@@ -25,8 +37,9 @@ const ImageZoom = ({ src, alt }) => {
     setPosition(`${x}% ${y}%`);
   };
 
-  const handleError = () => {
+  const handleError = (e) => {
     setImgSrc(FALLBACK_IMAGE);
+    e.target.onerror = null; // Prevent infinite fallback loops
   };
 
   return (
@@ -92,6 +105,9 @@ export default function ProductDetail() {
         let processedImages = [];
         const rawImages = data.images || data.image || [];
         const imageArray = Array.isArray(rawImages) ? rawImages : [rawImages];
+        
+        // Remove trailing slash from base URL to prevent double slashes (e.g. //uploads)
+        const cleanBaseUrl = BASE_URL.replace(/\/$/, '');
 
         imageArray.forEach(img => {
           if (!img) return;
@@ -115,7 +131,7 @@ export default function ProductDetail() {
           if (cleanImg && !cleanImg.startsWith('http') && !cleanImg.startsWith('data:')) {
             // Ensure the 'uploads/' folder is in the path
             const finalPath = cleanImg.startsWith('uploads/') ? cleanImg : `uploads/${cleanImg}`;
-            cleanImg = `${BASE_URL}/${finalPath}`;
+            cleanImg = `${cleanBaseUrl}/${finalPath}`;
           }
 
           if (cleanImg && !processedImages.includes(cleanImg)) {
@@ -169,7 +185,7 @@ export default function ProductDetail() {
     </div>
   );
 
-  const images = Array.isArray(product.images) ? product.images : [FALLBACK_IMAGE];
+  const images = Array.isArray(product.images) && product.images.length > 0 ? product.images : [FALLBACK_IMAGE];
   
   const originalPrice = Number(product.price || 0);
   const sellingPrice = product.discount_price ? Number(product.discount_price) : originalPrice;
@@ -212,7 +228,7 @@ export default function ProductDetail() {
                 <img 
                   src={img} 
                   alt={`Thumbnail ${idx}`} 
-                  onError={(e) => { e.target.src = FALLBACK_IMAGE; }} // Fail-safe for thumbnails
+                  onError={(e) => { e.target.src = FALLBACK_IMAGE; e.target.onerror = null; }}
                   className="w-full h-full object-contain" 
                 />
               </button>
