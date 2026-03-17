@@ -35,9 +35,8 @@ export default function EWarrantyManagement({ token }) {
   const [productSerials, setProductSerials] = useState([]);
   const [serialsLoading, setSerialsLoading] = useState(false);
   const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
-  const [serialPrefix, setSerialPrefix] = useState("ANRT");
+  const [serialPrefix, setSerialPrefix] = useState("AV");
   const [serialCount, setSerialCount] = useState(10);
-  const [serialFormat, setSerialFormat] = useState("alphanumeric");
   const [selectedSerials, setSelectedSerials] = useState([]);
   const [copiedSerial, setCopiedSerial] = useState("");
 
@@ -80,7 +79,7 @@ export default function EWarrantyManagement({ token }) {
   const loadProductSerials = async (productId) => {
     setSerialsLoading(true);
     try {
-      const data = await fetchProductSerials(productId, token);
+      const data = await fetchProductSerials(token, productId);
       setProductSerials(data.serials || []);
     } catch (err) {
       console.error("Serials load error:", err);
@@ -141,23 +140,16 @@ export default function EWarrantyManagement({ token }) {
   const generateSerials = async () => {
     if (!selectedProduct) return;
     setIsUpdating(true);
-    const newSerials = [];
-    const characters = serialFormat === "numeric" ? "0123456789" : "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    
-    for (let i = 0; i < serialCount; i++) {
-      let result = serialPrefix;
-      for (let j = 0; j < 8; j++) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
-      }
-      newSerials.push(result);
-    }
 
     try {
-      await addProductSerials(selectedProduct.id, newSerials, token);
-      loadProductSerials(selectedProduct.id);
+      // Send the request to the backend to generate them securely
+      await addProductSerials(selectedProduct.id, serialCount, serialPrefix, token);
+      
+      // Reload the list
+      await loadProductSerials(selectedProduct.id);
       setIsGeneratorOpen(false);
     } catch (err) {
-      alert(err.message);
+      alert(err.message || "Failed to generate serials");
     } finally {
       setIsUpdating(false);
     }
@@ -371,10 +363,10 @@ export default function EWarrantyManagement({ token }) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {productSerials.map(s => (
                       <div key={s.id} className="bg-[#0a0c10] border border-white/5 p-4 rounded-2xl flex items-center justify-between group hover:border-white/10 transition-all">
-                        <div className="font-mono text-sm font-bold text-white tracking-wider">{s.serial}</div>
+                        <div className="font-mono text-sm font-bold text-white tracking-wider">{s.serial_number || s.serial}</div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                          <button onClick={() => copyToClipboard(s.serial)} className="p-1.5 hover:bg-white/10 rounded-lg text-gray-500 hover:text-white">
-                            {copiedSerial === s.serial ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                          <button onClick={() => copyToClipboard(s.serial_number || s.serial)} className="p-1.5 hover:bg-white/10 rounded-lg text-gray-500 hover:text-white">
+                            {copiedSerial === (s.serial_number || s.serial) ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                           </button>
                         </div>
                       </div>
