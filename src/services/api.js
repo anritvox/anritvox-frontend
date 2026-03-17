@@ -487,3 +487,27 @@ export async function fetchAllSerialRecords(token) {
   if (!res.ok) throw new Error('Failed to load serial records');
   return res.json();
 }
+// Add or update these functions in src/services/api.js
+
+export const checkSerialAvailability = async (serial) => {
+  // Use the new unified validation route
+  const response = await fetch(`${API_URL}/api/warranty/validate/${serial}`);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Invalid Serial Number');
+  }
+  return response.json();
+};
+
+export const registerWarranty = async (data) => {
+  const response = await fetch(`${API_URL}/api/warranty/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data), // Sends { serialNumber, productId, customerName, email, phone, purchaseDate, invoiceNumber }
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Registration failed');
+  }
+  return response.json();
+};
