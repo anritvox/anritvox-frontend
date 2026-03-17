@@ -80,7 +80,7 @@ export default function EWarrantyManagement({ token }) {
     setSerialsLoading(true);
     try {
       const data = await fetchProductSerials(token, productId);
-      setProductSerials(data.serials || []);
+    setProductSerials(Array.isArray(data) ? data : (data.serials || []));
     } catch (err) {
       console.error("Serials load error:", err);
       setProductSerials([]);
@@ -143,7 +143,8 @@ export default function EWarrantyManagement({ token }) {
 
     try {
       // Send the request to the backend to generate them securely
-      await addProductSerials(selectedProduct.id, serialCount, serialPrefix, token);
+    const paddedPrefix = (serialPrefix || 'AV').toUpperCase().substring(0, 4).padEnd(4, 'X');
+      await addProductSerials(selectedProduct.id, serialCount, paddedPrefix, token);
       
       // Reload the list
       await loadProductSerials(selectedProduct.id);
