@@ -461,3 +461,37 @@ export async function fetchAllSerialRecords(token) {
   if (!res.ok) throw new Error('Failed to load serial records');
   return res.json();
 }
+
+// ─── Admin: Product Serials - Missing Functions ─────────────────────────────
+export async function bulkAddProductSerials(token, productId, count, prefix) {
+  const res = await fetch(`${BASE_URL}/api/serials/generate`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId, count, prefix }),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to generate serials');
+  return body;
+}
+
+export async function updateProductSerial(token, serialId, data) {
+  const res = await fetch(`${BASE_URL}/api/serials/${serialId}`, {
+    method: 'PUT',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to update serial');
+  return body;
+}
+
+export async function deleteProductSerial(token, serialId) {
+  const res = await fetch(`${BASE_URL}/api/serials/${serialId}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to delete serial');
+  return body;
+}
+
