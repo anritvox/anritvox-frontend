@@ -377,52 +377,25 @@ export async function deleteWarrantyAdmin(token, id) {
 }
 
 // ─── Admin: Product Serials ──────────────────────────────────────────────────
-export async function fetchProductSerials(token, productId) {
-  const res = await fetch(`${BASE_URL}/api/products/${productId}/serials`, {
-    headers: authHeader(token),
-  });
-  if (!res.ok) throw new Error('Failed to load product serials');
-  const data = await res.json();
-  return Array.isArray(data) ? data : (data.serials || data.data || []);
-}
-export async function addProductSerials(productId, serials, token) {
-  const res = await fetch(`${BASE_URL}/api/products/${productId}/serials`, {
+export async function addProductSerials(productId, count, prefix, token) {
+  const res = await fetch(`${BASE_URL}/api/serials/generate`, {
     method: 'POST',
     headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ serials }),
+    body: JSON.stringify({ productId, count, prefix }),
   });
   const body = await res.json();
   if (!res.ok) throw new Error(body.message || 'Failed to add serials');
   return body;
 }
-export async function bulkAddProductSerials(token, data) {
-  const res = await fetch(`${BASE_URL}/api/products/serials/bulk`, {
-    method: 'POST',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.message || 'Failed to bulk add serials');
-  return body;
-}
-export async function updateProductSerial(token, id, data) {
-  const res = await fetch(`${BASE_URL}/api/serials/${id}`, {
-    method: 'PUT',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.message || 'Failed to update serial');
-  return body;
-}
-export async function deleteProductSerial(token, id) {
-  const res = await fetch(`${BASE_URL}/api/serials/${id}`, {
-    method: 'DELETE',
+
+export async function fetchProductSerials(token, productId) {
+  // Fix: Redirecting to the correct serials route instead of products route
+  const res = await fetch(`${BASE_URL}/api/serials/product/${productId}`, {
     headers: authHeader(token),
   });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.message || 'Failed to delete serial');
-  return body;
+  if (!res.ok) throw new Error('Failed to load product serials');
+  const data = await res.json();
+  return Array.isArray(data) ? data : (data.serials || data.data || []);
 }
 
 // ─── Admin: Banner Aliases & Update ────────────────────────────────────────
