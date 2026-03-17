@@ -480,3 +480,45 @@ export async function clearCartAPI(token) {
   if (!res.ok) throw new Error('Failed to clear cart');
   return res.json();
 }
+export async function fetchAllSerialRecords(token) {
+  const res = await fetch(`${BASE_URL}/api/serials/all`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error('Failed to load serial records');
+  return res.json();
+}
+
+// [ADMIN] Generate new batch of serials
+export async function generateSerials(token, data) {
+  const res = await fetch(`${BASE_URL}/api/serials/generate`, {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}` 
+    },
+    body: JSON.stringify(data)
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || 'Generation failed');
+  return json;
+}
+
+// [PUBLIC] Check serial authenticity on frontend
+export async function checkSerialAvailability(serialNumber) {
+  const res = await fetch(`${BASE_URL}/api/serials/check/${serialNumber}`);
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || 'Serial not found');
+  return json;
+}
+
+// [PUBLIC] Submit final warranty registration
+export async function registerWarranty(data) {
+  const res = await fetch(`${BASE_URL}/api/warranty/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || 'Registration failed');
+  return json;
+}
