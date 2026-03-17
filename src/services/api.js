@@ -23,23 +23,29 @@ export async function fetchProductById(id) {
 }
 
 // ─── Warranty ────────────────────────────────────────────────────────────────
-export async function validateSerial(serial) {
-  const res = await fetch(`${BASE_URL}/api/warranty/validate/${serial}`);
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.message || 'Validation failed');
-  return body;
-}
 
-export async function registerWarranty(data) {
-  const res = await fetch(`${BASE_URL}/api/warranty/register`, {
+export const checkSerialAvailability = async (serial) => {
+  // Use the new unified validation route
+  const response = await fetch(`${BASE_URL}/api/warranty/validate/${serial}`);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Invalid Serial Number');
+  }
+  return response.json();
+};
+
+export const registerWarranty = async (data) => {
+  const response = await fetch(`${BASE_URL}/api/warranty/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    body: JSON.stringify(data), // Sends { serialNumber, productId, customerName, email, phone, purchaseDate, invoiceNumber }
   });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.message || 'Registration failed');
-  return body;
-}
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Registration failed');
+  }
+  return response.json();
+};
 
 // ─── Public: Contact ─────────────────────────────────────────────────────────
 export async function submitContact(message) {
@@ -219,7 +225,6 @@ export async function deleteBanner(token, id) {
 
 // ─── Customer: Orders ────────────────────────────────────────────────────────
 export async function fetchMyOrders(token) {
-  // 🔴 FIX: Changed endpoint from /api/orders/my-orders to /api/orders/my
   const res = await fetch(`${BASE_URL}/api/orders/my`, {
     headers: authHeader(token),
   });
@@ -253,7 +258,7 @@ export async function updateProfile(token, data) {
 
 // ─── Admin: EWarranty ────────────────────────────────────────────────────────
 export async function fetchWarrantiesAdmin(token) {
-  const res = await fetch(`${BASE_URL}/api/warranty`, {
+  const res = await fetch(`${BASE_URL}/api/warranty/admin`, {
     headers: authHeader(token),
   });
   if (!res.ok) throw new Error('Failed to load warranties');
@@ -352,7 +357,7 @@ export async function deleteSubcategory(token, id) {
 
 // ─── Admin: Warranty Management ──────────────────────────────────────────────
 export async function updateWarrantyStatusAdmin(token, id, status) {
-  const res = await fetch(`${BASE_URL}/api/warranty/${id}/status`, {
+  const res = await fetch(`${BASE_URL}/api/warranty/admin/${id}`, {
     method: 'PUT',
     headers: { ...authHeader(token), 'Content-Type': 'application/json' },
     body: JSON.stringify({ status }),
@@ -362,7 +367,7 @@ export async function updateWarrantyStatusAdmin(token, id, status) {
   return body;
 }
 export async function deleteWarrantyAdmin(token, id) {
-  const res = await fetch(`${BASE_URL}/api/warranty/${id}`, {
+  const res = await fetch(`${BASE_URL}/api/warranty/admin/${id}`, {
     method: 'DELETE',
     headers: authHeader(token),
   });
@@ -380,7 +385,7 @@ export async function fetchProductSerials(token, productId) {
   const data = await res.json();
   return Array.isArray(data) ? data : (data.serials || data.data || []);
 }
-export async function addProductSerials(token, productId, serials) {
+export async function addProductSerials(productId, serials, token) {
   const res = await fetch(`${BASE_URL}/api/products/${productId}/serials`, {
     method: 'POST',
     headers: { ...authHeader(token), 'Content-Type': 'application/json' },
@@ -419,12 +424,6 @@ export async function deleteProductSerial(token, id) {
   if (!res.ok) throw new Error(body.message || 'Failed to delete serial');
   return body;
 }
-export async function checkSerialAvailability(serial) {
-  const res = await fetch(`${BASE_URL}/api/serials/check/${serial}`);
-  if (!res.ok) throw new Error('Failed to check serial availability');
-  return res.json();
-}
-
 
 // ─── Admin: Banner Aliases & Update ────────────────────────────────────────
 export const createBannerAdmin = createBanner;
@@ -444,6 +443,7 @@ export async function updateBannerAdmin(token, id, formData) {
 export async function changeAdminPassword(currentPassword, newPassword, token) {
   return changePassword(token, currentPassword, newPassword);
 }
+
 // ─── Customer: Cart Management ───────────────────────────────────────────────
 export async function fetchCart(token) {
   const res = await fetch(`${BASE_URL}/api/cart`, {
@@ -480,34 +480,11 @@ export async function clearCartAPI(token) {
   if (!res.ok) throw new Error('Failed to clear cart');
   return res.json();
 }
+
 export async function fetchAllSerialRecords(token) {
   const res = await fetch(`${BASE_URL}/api/serials/all`, {
-    headers: { 'Authorization': `Bearer ${token}` }
+    headers: authHeader(token)
   });
   if (!res.ok) throw new Error('Failed to load serial records');
   return res.json();
-}
-// Add or update these functions in src/services/api.js
-
-export const checkSerialAvailability = async (serial) => {
-  // Use the new unified validation route
-  const response = await fetch(`${API_URL}/api/warranty/validate/${serial}`);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Invalid Serial Number');
-  }
-  return response.json();
-};
-
-export const registerWarranty = async (data) => {
-  const response = await fetch(`${API_URL}/api/warranty/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data), // Sends { serialNumber, productId, customerName, email, phone, purchaseDate, invoiceNumber }
-  });
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Registration failed');
-  }
-  return response.json();
 }
