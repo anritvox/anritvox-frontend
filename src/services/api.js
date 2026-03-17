@@ -510,4 +510,4 @@ export const registerWarranty = async (data) => {
     throw new Error(error.message || 'Registration failed');
   }
   return response.json();
-};
+}
