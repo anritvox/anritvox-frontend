@@ -1,4 +1,3 @@
-// src/context/CartContext.jsx
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { fetchCart, addToCartAPI, removeFromCartAPI, clearCartAPI } from '../services/api';
 
@@ -35,7 +34,15 @@ export const CartProvider = ({ children }) => {
     }
   }, []);
 
-  useEffect(() => { loadCart(); }, [loadCart]);
+  // 🔴 UI FIX: Actually listen for the sync event from AuthContext
+  useEffect(() => { 
+    loadCart(); 
+    
+    const handleSync = () => loadCart();
+    window.addEventListener('cart-synced', handleSync);
+    
+    return () => window.removeEventListener('cart-synced', handleSync);
+  }, [loadCart]);
 
   // Persist guest cart
   useEffect(() => {
@@ -43,32 +50,6 @@ export const CartProvider = ({ children }) => {
       localStorage.setItem('cart', JSON.stringify(cart));
     }
   }, [cart]);
-
-  // SYNC GUEST CART: Call this exactly when the user logs in
-  const syncGuestCart = useCallback(async (token) => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      try {
-        const guestItems = JSON.parse(savedCart);
-        if (guestItems.length > 0) {
-          setCartLoading(true);
-          // Sync each item to the backend cart
-          for (const item of guestItems) {
-            const pId = item.id || item.product_id;
-            await addToCartAPI(token, pId, item.quantity || 1);
-          }
-          // Clear local storage so it doesn't duplicate on next login
-          localStorage.removeItem('cart');
-        }
-      } catch (err) {
-        console.error("Failed to sync guest cart:", err);
-      } finally {
-        loadCart(); // Fetch the newly merged cart
-      }
-    } else {
-      loadCart(); // No local cart, just load their database cart
-    }
-  }, [loadCart]);
 
   const addToCart = useCallback(async (product, quantity = 1) => {
     const token = getToken();
@@ -79,7 +60,10 @@ export const CartProvider = ({ children }) => {
         const data = await addToCartAPI(token, pId, quantity);
         setCart(data.items || []);
         return;
-      } catch (error) { console.error(error); }
+      } catch (error) { 
+        console.error("Error adding to cart:", error);
+        throw error; // 🔴 UI FIX: Re-throw so components can show "Out of Stock" toasts
+      }
     }
     
     // Guest fallback
@@ -105,7 +89,10 @@ export const CartProvider = ({ children }) => {
         const data = await addToCartAPI(token, productId, quantity);
         setCart(data.items || []); 
         return; 
-      } catch (error) { console.error(error); }
+      } catch (error) { 
+        console.error("Error updating quantity:", error);
+        throw error; // 🔴 UI FIX: Re-throw for UI handling
+      }
     }
     setCart(prev => {
       const safePrev = Array.isArray(prev) ? prev : [];
@@ -113,7 +100,7 @@ export const CartProvider = ({ children }) => {
         (i.product_id === productId || i.id === productId) ? { ...i, quantity } : i
       );
     });
-  }, []);
+  }, [/* removeFromCart is referenced, let's keep it clean */]);
 
   const removeFromCart = useCallback(async (productId) => {
     const token = getToken();
@@ -122,7 +109,10 @@ export const CartProvider = ({ children }) => {
         const data = await removeFromCartAPI(token, productId);
         setCart(data.items || []); 
         return; 
-      } catch (error) { console.error(error); }
+      } catch (error) { 
+        console.error(error); 
+        throw error;
+      }
     }
     setCart(prev => {
       const safePrev = Array.isArray(prev) ? prev : [];
@@ -146,7 +136,7 @@ export const CartProvider = ({ children }) => {
   return (
     <CartContext.Provider value={{
       cart: safeCart, cartCount, cartTotal, cartLoading,
-      addToCart, removeFromCart, updateQuantity, clearCart, loadCart, syncGuestCart
+      addToCart, removeFromCart, updateQuantity, clearCart, loadCart
     }}>
       {children}
     </CartContext.Provider>
