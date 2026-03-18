@@ -19,19 +19,27 @@ export default function NavBar() {
     if (searchQuery.trim()) {
       navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery("");
-      setOpen(false);
+      setOpen(false); // Closes the mobile menu automatically after searching
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    setUserMenuOpen(false);
+    navigate("/");
   };
 
   return (
     <nav className="bg-[#131921] text-white font-sans antialiased sticky top-0 z-50">
-      {/* Top Row: Logo, Desktop Search, and Icons */}
+      {/* Main Header Container */}
       <div className="max-w-[1500px] mx-auto p-2 flex items-center gap-4 h-16">
+        
+        {/* Logo */}
         <Link to="/" className="flex-shrink-0">
           <img src={logo} alt="Anritvox" className="h-10 object-contain" />
         </Link>
         
-        {/* Desktop Search - Hidden on Mobile */}
+        {/* 1. DESKTOP SEARCH BAR (Only visible on Medium screens and up) */}
         <form onSubmit={handleSearch} className="hidden md:flex flex-1 items-center max-w-2xl bg-[#232f3e] border border-gray-700 rounded overflow-hidden mx-4">
           <input
             type="text"
@@ -45,21 +53,43 @@ export default function NavBar() {
           </button>
         </form>
 
+        {/* Right Action Icons (User, Cart, Menu) */}
         <div className="flex items-center gap-4 ml-auto">
-          {/* User and Cart Icons remain here */}
+          
+          {/* User Menu / Sign In */}
           {user ? (
             <div className="relative">
-              <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1 hover:text-[#febd69] text-sm">
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center gap-1 hover:text-[#febd69] text-sm"
+              >
                 <FiUser size={20} />
                 <span className="hidden sm:inline">{user.name?.split(" ")[0]}</span>
                 <FiChevronDown size={14} className="hidden sm:block" />
               </button>
+              
+              {/* Desktop User Dropdown */}
               {userMenuOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded shadow-lg z-50 py-1">
-                  <Link to="/profile" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm">
+                  <Link
+                    to="/profile"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm"
+                  >
                     <FiUser size={16} /> My Profile
                   </Link>
-                  <button onClick={() => { logout(); setUserMenuOpen(false); }} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm w-full text-left text-red-600">
+                  <Link
+                    to="/my-orders"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm"
+                  >
+                    <FiPackage size={16} /> My Orders
+                  </Link>
+                  <hr className="my-1" />
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm w-full text-left text-red-600"
+                  >
                     <FiLogOut size={16} /> Logout
                   </button>
                 </div>
@@ -72,6 +102,7 @@ export default function NavBar() {
             </Link>
           )}
 
+          {/* Cart Icon */}
           <Link to="/cart" className="flex items-center gap-1 hover:text-[#febd69] relative">
             <FiShoppingCart size={24} />
             {cartCount > 0 && (
@@ -79,15 +110,17 @@ export default function NavBar() {
                 {cartCount}
               </span>
             )}
+            <span className="text-sm hidden md:inline">Cart</span>
           </Link>
 
+          {/* Mobile Menu Toggle Button */}
           <button onClick={() => setOpen(!open)} className="md:hidden ml-2">
             {open ? <FiX size={24} /> : <FiMenu size={24} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile-Only Search Bar - Always visible on mobile, below the main header */}
+      {/* 2. MOBILE SEARCH BAR (Always visible below the logo on Mobile) */}
       <div className="md:hidden px-4 pb-3">
         <form onSubmit={handleSearch} className="flex items-center bg-white border border-gray-600 rounded overflow-hidden">
           <input
@@ -97,18 +130,40 @@ export default function NavBar() {
             placeholder="Search products..."
             className="flex-1 px-3 py-2 bg-transparent text-black text-sm outline-none placeholder-gray-500"
           />
-          <button type="submit" className="bg-[#febd69] px-4 py-2">
+          <button type="submit" className="bg-[#febd69] hover:bg-[#f3a847] px-4 py-2">
             <FiSearch size={18} className="text-gray-900" />
           </button>
         </form>
       </div>
 
-      {/* Mobile Navigation Links - No Search Bar here */}
+      {/* MOBILE NAVIGATION LINKS (Hamburger Menu Content) */}
       {open && (
         <div className="md:hidden bg-[#232f3e] px-4 py-3 flex flex-col gap-3 border-t border-gray-700">
+          {/* Core Navigation */}
           <Link to="/" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Home</Link>
           <Link to="/shop" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Shop</Link>
+          <Link to="/e-warranty" onClick={() => setOpen(false)} className="hover:text-[#febd69]">E-Warranty</Link>
           <Link to="/contact" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Contact</Link>
+          
+          {/* User Specific Mobile Links */}
+          {user ? (
+            <>
+              <hr className="border-gray-600 my-1"/>
+              <Link to="/profile" onClick={() => setOpen(false)} className="hover:text-[#febd69]">My Profile</Link>
+              <Link to="/my-orders" onClick={() => setOpen(false)} className="hover:text-[#febd69]">My Orders</Link>
+              <button 
+                onClick={() => { handleLogout(); setOpen(false); }} 
+                className="text-left text-red-400 hover:text-red-300"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <hr className="border-gray-600 my-1"/>
+              <Link to="/login" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Sign In</Link>
+            </>
+          )}
         </div>
       )}
     </nav>
