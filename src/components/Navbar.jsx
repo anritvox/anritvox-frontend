@@ -1,5 +1,10 @@
 // src/components/Navbar.jsx
-// ... (keep your imports the same)
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import logo from "../assets/images/logo.webp";
+import { FiShoppingCart, FiSearch, FiMenu, FiX, FiChevronDown, FiUser, FiLogOut, FiPackage } from "react-icons/fi";
+import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
 
 export default function NavBar() {
   const [open, setOpen] = useState(false);
