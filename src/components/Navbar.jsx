@@ -35,19 +35,6 @@ export default function NavBar() {
         <Link to="/" className="flex-shrink-0">
           <img src={logo} alt="Anritvox" className="h-10 object-contain" />
         </Link>
-        {/* Search bar */}
-        <form onSubmit={handleSearch} className="flex flex-1 items-center max-w-2xl bg-white rounded overflow-hidden">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search products..."
-            className="flex-1 px-3 py-2 text-gray-900 text-sm outline-none"
-          />
-          <button type="submit" className="bg-[#febd69] hover:bg-[#f3a847] px-4 py-2">
-            <FiSearch size={18} className="text-gray-900" />
-          </button>
-        </form>
         {/* Right icons */}
         <div className="flex items-center gap-4 ml-auto">
           {/* User menu */}
