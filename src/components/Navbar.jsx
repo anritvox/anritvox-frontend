@@ -13,13 +13,13 @@ export default function NavBar() {
   const { user, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
-  
 
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery("");
+      setOpen(false); // Closes the mobile menu automatically after searching
     }
   };
 
@@ -37,14 +37,14 @@ export default function NavBar() {
           <img src={logo} alt="Anritvox" className="h-10 object-contain" />
         </Link>
         
-        {/* Search bar - HIDDEN ON MOBILE (added hidden md:flex) */}
-        <form onSubmit={handleSearch} className="hidden md:flex flex-1 items-center max-w-2xl bg-white rounded overflow-hidden">
+        {/* Desktop Black Search Bar (Hidden on Mobile) */}
+        <form onSubmit={handleSearch} className="hidden md:flex flex-1 items-center max-w-2xl bg-[#232f3e] border border-gray-700 rounded overflow-hidden mx-4">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search products..."
-            className="flex-1 px-3 py-2 text-gray-900 text-sm outline-none"
+            className="flex-1 px-3 py-2 bg-transparent text-white text-sm outline-none placeholder-gray-400"
           />
           <button type="submit" className="bg-[#febd69] hover:bg-[#f3a847] px-4 py-2">
             <FiSearch size={18} className="text-gray-900" />
@@ -115,9 +115,24 @@ export default function NavBar() {
         </div>
       </div>
 
-      {/* Mobile nav links */}
+      {/* Mobile nav links & Search */}
       {open && (
         <div className="md:hidden bg-[#232f3e] px-4 py-3 flex flex-col gap-3 border-t border-gray-700">
+          
+          {/* Mobile Black Search Bar */}
+          <form onSubmit={handleSearch} className="flex items-center bg-[#131921] border border-gray-600 rounded overflow-hidden mb-2">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search products..."
+              className="flex-1 px-3 py-2 bg-transparent text-white text-sm outline-none placeholder-gray-400"
+            />
+            <button type="submit" className="bg-[#febd69] hover:bg-[#f3a847] px-4 py-2">
+              <FiSearch size={18} className="text-gray-900" />
+            </button>
+          </form>
+
           <Link to="/" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Home</Link>
           <Link to="/shop" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Shop</Link>
           <Link to="/e-warranty" onClick={() => setOpen(false)} className="hover:text-[#febd69]">E-Warranty</Link>
