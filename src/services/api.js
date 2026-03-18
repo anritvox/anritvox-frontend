@@ -432,7 +432,17 @@ export async function bulkAddProductSerials(token, productId, count, prefix) {
   if (!res.ok) throw new Error(body.message || 'Failed to generate serials');
   return body;
 }
+// src/services/api.js
 
+export async function fetchBannersAdmin(token) {
+  // FIX: Change to the dedicated admin route to see ALL banners
+  const res = await fetch(`${BASE_URL}/api/banners/admin/all`, { 
+    headers: authHeader(token) 
+  });
+  if (!res.ok) throw new Error('Failed to load banners');
+  const data = await res.json();
+  return Array.isArray(data) ? data : (data.banners || data.data || []);
+}
 export async function updateProductSerial(token, serialId, data) {
   const res = await fetch(`${BASE_URL}/api/serials/${serialId}`, {
     method: 'PUT',
