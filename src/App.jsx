@@ -4,6 +4,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { SettingsProvider } from "./context/SettingsContext";
 import "./index.css";
 
 // Lazy load pages
@@ -115,9 +116,11 @@ function App() {
     <BrowserRouter>
       <ErrorBoundary>
         <AuthProvider>
-          <CartProvider>
+<SettingsProvider>
+  <CartProvider>
             <AppContent />
           </CartProvider>
+  </SettingsProvider>
         </AuthProvider>
       </ErrorBoundary>
     </BrowserRouter>
