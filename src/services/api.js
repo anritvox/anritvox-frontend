@@ -26,8 +26,9 @@ export async function fetchCategories() {
  * Fetches active banners for the public website.
  * FIXED: Points to /api/banners which is the correct public route.
  */
-export async function fetchActiveBanners() {
-  const res = await fetch(`${BASE_URL}/api/banners`);
+export async function fetchActiveBanners(position = '') {
+  const url = position ? `${BASE_URL}/api/banners?position=${position}` : `${BASE_URL}/api/banners`;
+  const res = await fetch(url);
   if (!res.ok) throw new Error('Failed to load banners');
   const data = await res.json();
   return Array.isArray(data) ? data : (data.banners || data.data || []);
