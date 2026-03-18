@@ -12,6 +12,7 @@ export default function BannerManagement({ token }) {
   const [form, setForm] = useState({
     title: '',
     subtitle: '',
+        description: '',
     image_url: '',
     link_url: '',
     position: 'hero',
@@ -37,7 +38,7 @@ export default function BannerManagement({ token }) {
   }, [token]);
 
   const resetForm = () => {
-    setForm({ title: '', subtitle: '', image_url: '', link_url: '', position: 'hero', sort_order: 0, is_active: true });
+    setForm({ title: '', subtitle: '', description: '', image_url: '', link_url: '', position: 'hero', sort_order: 0, is_active: true });
     setEditingId(null);
   };
 
@@ -46,6 +47,7 @@ export default function BannerManagement({ token }) {
     setForm({
       title: banner.title || '',
       subtitle: banner.subtitle || '',
+            description: banner.description || '',
       image_url: banner.image_url || '',
       link_url: banner.link_url || '',
       position: banner.position || 'hero',
@@ -149,6 +151,15 @@ export default function BannerManagement({ token }) {
               className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500"
             />
           </div>
+                      <div className="md:col-span-2">
+              <label className="text-xs text-gray-400 mb-1 block">Description (optional - shown on slider)</label>
+              <textarea
+                value={form.description}
+                onChange={e => setForm({ ...form, description: e.target.value })}
+                placeholder="Enter banner description text..."
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500 h-20"
+              />
+            </div>
           <div className="md:col-span-2">
             <label className="text-xs text-gray-400 mb-1 block">Image URL *</label>
             <input
