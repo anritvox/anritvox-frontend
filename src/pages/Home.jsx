@@ -28,37 +28,59 @@ export default function Home() {
   const { settings } = useSettings(); 
 
   // --- EFFECTS ---
+  // 1. Fetching all dynamic data on component mount
   useEffect(() => {
-    const loadData = async () => {
+    const loadInitialData = async () => {
       try {
-        setLoading(true);
-        // Fetch all data concurrently for better performance
+        setLoading(true); // Ensure loading state is true when starting
+        
+        // Promise.all runs all these fetches concurrently!
         const [productsData, bannersData, categoriesData] = await Promise.all([
           fetchProducts(),
           fetchActiveBanners(),
           fetchCategories()
         ]);
         
+        // Safely update state. If the backend fails to send an array, default to an empty array []
         setProducts(Array.isArray(productsData) ? productsData : []);
         setBanners(Array.isArray(bannersData) ? bannersData : []);
         setDynamicCategories(Array.isArray(categoriesData) ? categoriesData : []);
+        
       } catch (err) {
-        console.error("Failed to fetch home data:", err);
+        console.error("Failed to fetch initial home data:", err);
       } finally {
-        setLoading(false);
+        setLoading(false); // Turn off the loading skeleton
       }
     };
-    
-    loadData();
 
+    loadInitialData();
+
+    // The scroll listener can stay in this mount effect
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 400);
     };
-
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []); 
+  // 2. Handle the Hero Slider rotation
+  useEffect(() => {
+    // If there are no banners yet (still loading or empty), don't run the timer
+    if (banners.length === 0) return;
 
+    const interval = setInterval(() => {
+      // Rotate to the next index based on the actual number of banners from the database
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % banners.length);
+    }, 5000);
+
+    // Cleanup function to clear the timer if the user leaves the page
+    return () => clearInterval(interval);
+    
+  }, [banners.length]); 
+  
+  // This dependency array tells React to restart this timer ONLY when the number of banners changes
   // Auto-slide logic for dynamic banners
   useEffect(() => {
     if (banners.length === 0) return;
