@@ -8,17 +8,17 @@ export default defineConfig({
       external: [],
       output: {
         manualChunks(id) {
-          if (id.includes('/node_modules/lucide-react/')) {
+          // Fix: Added safety check for 'id' to prevent Vercel build crashes
+          if (id && id.includes('/node_modules/lucide-react/')) {
             return 'lucide-icons';
           }
-          if (id.includes('/node_modules/framer-motion/') || id.includes('/node_modules/motion-utils/')) {
+          if (id && (id.includes('/node_modules/framer-motion/') || id.includes('/node_modules/motion-utils/'))) {
             return 'framer-motion';
           }
         },
       },
     },
   },
-  // Removed optimizeDeps referring to node-mailjet
   define: {
     global: "globalThis",
   },
