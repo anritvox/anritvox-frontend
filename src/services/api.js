@@ -6,6 +6,12 @@ function authHeader(token) {
 }
 
 // ─── Public: Products ───────────────────────────────────────────────────────
+// Add this near your other public fetch functions in api.js
+export async function fetchPublicSettings() {
+  const res = await fetch(`${BASE_URL}/api/settings/public`);
+  if (!res.ok) throw new Error('Failed to load site settings');
+  return res.json();
+}
 export async function fetchProducts() {
   const res = await fetch(`${BASE_URL}/api/products`);
   if (!res.ok) throw new Error('Failed to load products');
