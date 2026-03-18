@@ -20,7 +20,7 @@ export async function fetchCategories() {
 }
 
 export async function fetchActiveBanners() {
-  const res = await fetch(`${BASE_URL}/api/banners/active`);
+  const res = await fetch(`${BASE_URL}/api/banners`);
   if (!res.ok) throw new Error('Failed to load banners');
   const data = await res.json();
   return Array.isArray(data) ? data : (data.banners || data.data || []);
