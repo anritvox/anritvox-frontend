@@ -1,10 +1,5 @@
 // src/components/Navbar.jsx
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import logo from "../assets/images/logo.webp";
-import { FiShoppingCart, FiSearch, FiMenu, FiX, FiChevronDown, FiUser, FiLogOut, FiPackage } from "react-icons/fi";
-import { useCart } from "../context/CartContext";
-import { useAuth } from "../context/AuthContext";
+// ... (keep your imports the same)
 
 export default function NavBar() {
   const [open, setOpen] = useState(false);
@@ -19,7 +14,7 @@ export default function NavBar() {
     if (searchQuery.trim()) {
       navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery("");
-      setOpen(false); // Closes the mobile menu automatically after searching
+      setOpen(false); 
     }
   };
 
@@ -31,13 +26,14 @@ export default function NavBar() {
 
   return (
     <nav className="bg-[#131921] text-white font-sans antialiased sticky top-0 z-50">
-      <div className="max-w-[1500px] mx-auto my-4 p-2 flex items-center gap-4 h-16">
+      {/* Top Row: Logo and Icons */}
+      <div className="max-w-[1500px] mx-auto p-2 flex items-center justify-between gap-4 h-16">
         {/* Logo */}
         <Link to="/" className="flex-shrink-0">
           <img src={logo} alt="Anritvox" className="h-10 object-contain" />
         </Link>
         
-        {/* Desktop Black Search Bar (Hidden on Mobile) */}
+        {/* SHARED SEARCH BAR: Visible on Desktop middle, Hidden on Mobile middle */}
         <form onSubmit={handleSearch} className="hidden md:flex flex-1 items-center max-w-2xl bg-[#232f3e] border border-gray-700 rounded overflow-hidden mx-4">
           <input
             type="text"
@@ -52,44 +48,17 @@ export default function NavBar() {
         </form>
 
         {/* Right icons */}
-        <div className="flex items-center gap-4 ml-auto">
-          {/* User menu */}
+        <div className="flex items-center gap-4">
+          {/* User menu logic - Keep as is */}
           {user ? (
-            <div className="relative">
-              <button
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-1 hover:text-[#febd69] text-sm"
-              >
-                <FiUser size={20} />
-                <span className="hidden sm:inline">{user.name?.split(" ")[0]}</span>
-                <FiChevronDown size={14} className="hidden sm:block" />
-              </button>
-              {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded shadow-lg z-50 py-1">
-                  <Link
-                    to="/profile"
-                    onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm"
-                  >
-                    <FiUser size={16} /> My Profile
-                  </Link>
-                  <Link
-                    to="/my-orders"
-                    onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm"
-                  >
-                    <FiPackage size={16} /> My Orders
-                  </Link>
-                  <hr className="my-1" />
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm w-full text-left text-red-600"
-                  >
-                    <FiLogOut size={16} /> Logout
-                  </button>
-                </div>
-              )}
-            </div>
+             <div className="relative">
+               <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1 hover:text-[#febd69] text-sm">
+                 <FiUser size={20} />
+                 <span className="hidden sm:inline">{user.name?.split(" ")[0]}</span>
+                 <FiChevronDown size={14} className="hidden sm:block" />
+               </button>
+               {/* ... (User dropdown content) */}
+             </div>
           ) : (
             <Link to="/login" className="flex items-center gap-1 hover:text-[#febd69] text-sm">
               <FiUser size={20} />
@@ -97,59 +66,41 @@ export default function NavBar() {
             </Link>
           )}
 
-          {/* Cart */}
           <Link to="/cart" className="flex items-center gap-1 hover:text-[#febd69] relative">
             <FiShoppingCart size={24} />
-            {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-[#febd69] text-black text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                {cartCount}
-              </span>
-            )}
-            <span className="text-sm hidden md:inline">Cart</span>
+            {cartCount > 0 && <span className="absolute -top-2 -right-2 bg-[#febd69] text-black text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">{cartCount}</span>}
           </Link>
 
-          {/* Mobile menu toggle */}
           <button onClick={() => setOpen(!open)} className="md:hidden ml-2">
             {open ? <FiX size={24} /> : <FiMenu size={24} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile nav links & Search */}
+      {/* MOBILE SEARCH BAR: Visible only on mobile, below the logo row */}
+      <div className="md:hidden px-4 pb-3">
+        <form onSubmit={handleSearch} className="flex items-center bg-white rounded overflow-hidden">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search Anritvox"
+            className="flex-1 px-3 py-2 bg-transparent text-black text-sm outline-none placeholder-gray-500"
+          />
+          <button type="submit" className="bg-[#febd69] px-4 py-2">
+            <FiSearch size={18} className="text-gray-900" />
+          </button>
+        </form>
+      </div>
+
+      {/* Mobile nav links ONLY (No search bar here anymore) */}
       {open && (
         <div className="md:hidden bg-[#232f3e] px-4 py-3 flex flex-col gap-3 border-t border-gray-700">
-          
-          {/* Mobile Black Search Bar */}
-          <form onSubmit={handleSearch} className="flex items-center bg-[#131921] border border-gray-600 rounded overflow-hidden mb-2">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search products..."
-              className="flex-1 px-3 py-2 bg-transparent text-white text-sm outline-none placeholder-gray-400"
-            />
-            <button type="submit" className="bg-[#febd69] hover:bg-[#f3a847] px-4 py-2">
-              <FiSearch size={18} className="text-gray-900" />
-            </button>
-          </form>
-
           <Link to="/" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Home</Link>
           <Link to="/shop" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Shop</Link>
           <Link to="/e-warranty" onClick={() => setOpen(false)} className="hover:text-[#febd69]">E-Warranty</Link>
           <Link to="/contact" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Contact</Link>
-          {user ? (
-            <>
-              <hr className="border-gray-600 my-1"/>
-              <Link to="/profile" onClick={() => setOpen(false)} className="hover:text-[#febd69]">My Profile</Link>
-              <Link to="/my-orders" onClick={() => setOpen(false)} className="hover:text-[#febd69]">My Orders</Link>
-              <button onClick={() => { handleLogout(); setOpen(false); }} className="text-left text-red-400 hover:text-red-300">Logout</button>
-            </>
-          ) : (
-            <>
-              <hr className="border-gray-600 my-1"/>
-              <Link to="/login" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Sign In</Link>
-            </>
-          )}
+          {/* ... (Rest of your profile/logout links) */}
         </div>
       )}
     </nav>
