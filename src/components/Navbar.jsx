@@ -36,8 +36,9 @@ export default function NavBar() {
         <Link to="/" className="flex-shrink-0">
           <img src={logo} alt="Anritvox" className="h-10 object-contain" />
         </Link>
-          {/* Search bar */}
-        <form onSubmit={handleSearch} className="flex flex-1 items-center max-w-2xl bg-white rounded overflow-hidden">
+        
+        {/* Search bar - HIDDEN ON MOBILE (added hidden md:flex) */}
+        <form onSubmit={handleSearch} className="hidden md:flex flex-1 items-center max-w-2xl bg-white rounded overflow-hidden">
           <input
             type="text"
             value={searchQuery}
@@ -49,6 +50,7 @@ export default function NavBar() {
             <FiSearch size={18} className="text-gray-900" />
           </button>
         </form>
+
         {/* Right icons */}
         <div className="flex items-center gap-4 ml-auto">
           {/* User menu */}
@@ -59,8 +61,8 @@ export default function NavBar() {
                 className="flex items-center gap-1 hover:text-[#febd69] text-sm"
               >
                 <FiUser size={20} />
-                {user.name?.split(" ")[0]}
-                <FiChevronDown size={14} />
+                <span className="hidden sm:inline">{user.name?.split(" ")[0]}</span>
+                <FiChevronDown size={14} className="hidden sm:block" />
               </button>
               {userMenuOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded shadow-lg z-50 py-1">
@@ -91,9 +93,10 @@ export default function NavBar() {
           ) : (
             <Link to="/login" className="flex items-center gap-1 hover:text-[#febd69] text-sm">
               <FiUser size={20} />
-              Sign In
+              <span className="hidden sm:inline">Sign In</span>
             </Link>
           )}
+
           {/* Cart */}
           <Link to="/cart" className="flex items-center gap-1 hover:text-[#febd69] relative">
             <FiShoppingCart size={24} />
@@ -104,27 +107,33 @@ export default function NavBar() {
             )}
             <span className="text-sm hidden md:inline">Cart</span>
           </Link>
+
           {/* Mobile menu toggle */}
-          <button onClick={() => setOpen(!open)} className="md:hidden">
+          <button onClick={() => setOpen(!open)} className="md:hidden ml-2">
             {open ? <FiX size={24} /> : <FiMenu size={24} />}
           </button>
         </div>
       </div>
-      {/* Mobile nav */}
+
+      {/* Mobile nav links */}
       {open && (
-        <div className="md:hidden bg-[#232f3e] px-4 py-3 flex flex-col gap-3">
+        <div className="md:hidden bg-[#232f3e] px-4 py-3 flex flex-col gap-3 border-t border-gray-700">
           <Link to="/" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Home</Link>
           <Link to="/shop" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Shop</Link>
           <Link to="/e-warranty" onClick={() => setOpen(false)} className="hover:text-[#febd69]">E-Warranty</Link>
           <Link to="/contact" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Contact</Link>
           {user ? (
             <>
+              <hr className="border-gray-600 my-1"/>
               <Link to="/profile" onClick={() => setOpen(false)} className="hover:text-[#febd69]">My Profile</Link>
               <Link to="/my-orders" onClick={() => setOpen(false)} className="hover:text-[#febd69]">My Orders</Link>
               <button onClick={() => { handleLogout(); setOpen(false); }} className="text-left text-red-400 hover:text-red-300">Logout</button>
             </>
           ) : (
-            <Link to="/login" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Sign In</Link>
+            <>
+              <hr className="border-gray-600 my-1"/>
+              <Link to="/login" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Sign In</Link>
+            </>
           )}
         </div>
       )}
