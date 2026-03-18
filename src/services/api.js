@@ -599,3 +599,47 @@ export async function updateProductStock(token, id, stockData) {
   if (!res.ok) throw new Error('Failed to update stock');
   return res.json();
 }
+
+// ─── ADMIN: WARRANTY MANAGEMENT (additional) ────────────────────────────────
+export async function deleteWarrantyAdmin(token, id) {
+  const res = await fetch(`${BASE_URL}/api/warranty/admin/${id}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to delete warranty');
+  return body;
+}
+
+// ─── ADMIN: SERIAL MANAGEMENT (additional) ───────────────────────────────────
+export async function addProductSerials(token, productId, serials) {
+  const res = await fetch(`${BASE_URL}/api/serials`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId, serials }),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to add serials');
+  return body;
+}
+
+export async function updateProductSerial(token, serialId, data) {
+  const res = await fetch(`${BASE_URL}/api/serials/${serialId}`, {
+    method: 'PUT',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to update serial');
+  return body;
+}
+
+export async function deleteProductSerial(token, serialId) {
+  const res = await fetch(`${BASE_URL}/api/serials/${serialId}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to delete serial');
+  return body;
+}
