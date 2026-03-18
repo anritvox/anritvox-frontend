@@ -5,7 +5,7 @@ import axios from 'axios';
 // IMPORTANT: Change the production URL below to your actual deployed BACKEND URL!
 const API_BASE_URL = import.meta.env.MODE === 'development' 
   ? 'http://localhost:5000/api' 
-  : 'https://YOUR-BACKEND-VERCEL-URL.vercel.app/api'; 
+    : 'https://service.anritvox.com/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -25,7 +25,7 @@ export default api;
 
 export const BASE_URL = import.meta.env.MODE === 'development'
   ? 'http://localhost:5000'
-  : 'https://YOUR-BACKEND-VERCEL-URL.vercel.app';
+    : 'https://service.anritvox.com';
 /**
  * Helper: attach authorization header
  */
