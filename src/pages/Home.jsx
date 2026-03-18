@@ -146,7 +146,7 @@ export default function Home() {
                 className="absolute inset-0"
               >
                 <img 
-                  src={currentBanner.image || currentBanner.imageUrl || DEFAULT_BANNER.imageUrl} 
+                  src={currentBanner.image_url || currentBanner.image || currentBanner.imageUrl || DEFAULT_BANNER.imageUrl} 
                   alt={currentBanner.title || `Promotion`}
                   className="w-full h-full object-cover"
                   onError={(e) => { e.currentTarget.src = FALLBACK_IMG; e.currentTarget.onerror = null; }}
@@ -186,7 +186,7 @@ export default function Home() {
                        transition={{ delay: 0.4 }}
                        className="flex gap-4 pt-4"
                     >
-                      <Link to={currentBanner.link || "/shop"} className="bg-white text-blue-900 px-8 py-3 rounded-xl font-bold hover:bg-blue-50 transition-colors shadow-lg">Shop Now</Link>
+                      <Link to={currentBanner.link_url || currentBanner.link || "/shop"} className="bg-white text-blue-900 px-8 py-3 rounded-xl font-bold hover:bg-blue-50 transition-colors shadow-lg">Shop Now</Link>
                     </motion.div>
                   </div>
                 </div>
