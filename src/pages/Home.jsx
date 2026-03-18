@@ -33,15 +33,16 @@ export default function Home() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const { addToCart } = useCart();
-  const { settings } = useSettings(); 
+  // SAFE DESTRUCTURING: Prevents crashes if providers are missing
+  const { addToCart = () => console.warn("Cart Provider missing") } = useCart() || {};
+  const { settings = {} } = useSettings() || {}; 
 
   useEffect(() => {
     const loadInitialData = async () => {
       try {
         setLoading(true); 
         const [productsData, bannersData, categoriesData] = await Promise.all([
-          fetchProducts().catch(() => []), // Fails safely to empty array
+          fetchProducts().catch(() => []),
           fetchActiveBanners().catch(() => []),
           fetchCategories().catch(() => [])
         ]);
@@ -53,7 +54,7 @@ export default function Home() {
       } catch (err) {
         console.error("Failed to fetch initial home data:", err);
       } finally {
-        setLoading(false); // This STOPS the spinner
+        setLoading(false);
       }
     };
 
@@ -66,7 +67,7 @@ export default function Home() {
 
   // Slider rotation effect
   useEffect(() => {
-    if (banners.length <= 1) return; // Don't slide if 0 or 1 banner exists
+    if (banners.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % banners.length);
     }, 5000);
@@ -85,7 +86,6 @@ export default function Home() {
   
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
-  // Use the loaded banner, or the default fallback if database is empty
   const currentBanner = banners.length > 0 ? banners[currentIndex] : DEFAULT_BANNER;
 
   return (
