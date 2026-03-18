@@ -5,13 +5,28 @@ function authHeader(token) {
   return { Authorization: `Bearer ${token}` };
 }
 
-// ─── Public: Products ───────────────────────────────────────────────────────
-// Add this near your other public fetch functions in api.js
+// ─── Public: Global Settings & Categories ────────────────────────────────────
 export async function fetchPublicSettings() {
   const res = await fetch(`${BASE_URL}/api/settings/public`);
   if (!res.ok) throw new Error('Failed to load site settings');
   return res.json();
 }
+
+export async function fetchCategories() {
+  const res = await fetch(`${BASE_URL}/api/categories`);
+  if (!res.ok) throw new Error('Failed to load categories');
+  const data = await res.json();
+  return Array.isArray(data) ? data : (data.categories || data.data || []);
+}
+
+export async function fetchActiveBanners() {
+  const res = await fetch(`${BASE_URL}/api/banners/active`);
+  if (!res.ok) throw new Error('Failed to load banners');
+  const data = await res.json();
+  return Array.isArray(data) ? data : (data.banners || data.data || []);
+}
+
+// ─── Public: Products ───────────────────────────────────────────────────────
 export async function fetchProducts() {
   const res = await fetch(`${BASE_URL}/api/products`);
   if (!res.ok) throw new Error('Failed to load products');
@@ -139,7 +154,6 @@ export async function fetchMyOrders(token) {
   return Array.isArray(data) ? data : (data.orders || data.data || []);
 }
 
-// 🔴 NEW: Place Order
 export async function placeOrderAPI(token, orderData) {
   const res = await fetch(`${BASE_URL}/api/orders`, {
     method: 'POST',
@@ -147,13 +161,11 @@ export async function placeOrderAPI(token, orderData) {
     body: JSON.stringify(orderData),
   });
   const body = await res.json();
-  // We throw the exact message from the backend so the UI can show "Insufficient stock"
   if (!res.ok) throw new Error(body.message || 'Order failed');
   return body;
 }
 
 // ─── Customer: Addresses ────────────────────────────────────────────────────
-// 🔴 NEW: Address Management
 export async function fetchAddressesAPI(token) {
   const res = await fetch(`${BASE_URL}/api/addresses`, { headers: authHeader(token) });
   if (!res.ok) throw new Error('Failed to fetch addresses');
@@ -168,7 +180,7 @@ export async function saveAddressAPI(token, addressData) {
   });
   const body = await res.json();
   if (!res.ok) throw new Error(body.message || 'Failed to save address');
-  return body; // Returns updated list of addresses
+  return body;
 }
 
 // ─── Admin: Users, Contacts, Categories, Banners, Analytics, Inventory ────
@@ -186,8 +198,9 @@ export async function fetchContactsAdmin(token) {
   return Array.isArray(data) ? data : (data.contacts || data.data || []);
 }
 
-export async function fetchCategories() {
-  const res = await fetch(`${BASE_URL}/api/categories`);
+// 🔴 Restored Admin Categories Fetch
+export async function fetchCategoriesAdmin(token) {
+  const res = await fetch(`${BASE_URL}/api/categories`, { headers: authHeader(token) });
   if (!res.ok) throw new Error('Failed to load categories');
   const data = await res.json();
   return Array.isArray(data) ? data : (data.categories || data.data || []);
@@ -204,6 +217,17 @@ export async function createCategory(token, data) {
   return body;
 }
 
+export async function updateCategory(token, id, data) {
+  const res = await fetch(`${BASE_URL}/api/categories/${id}`, {
+    method: 'PUT',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to update category');
+  return body;
+}
+
 export async function deleteCategory(token, id) {
   const res = await fetch(`${BASE_URL}/api/categories/${id}`, {
     method: 'DELETE',
@@ -212,13 +236,6 @@ export async function deleteCategory(token, id) {
   const body = await res.json();
   if (!res.ok) throw new Error(body.message || 'Failed to delete category');
   return body;
-}
-
-export async function fetchActiveBanners() {
-  const res = await fetch(`${BASE_URL}/api/banners/active`);
-  if (!res.ok) throw new Error('Failed to load banners');
-  const data = await res.json();
-  return Array.isArray(data) ? data : (data.banners || data.data || []);
 }
 
 export async function fetchBannersAdmin(token) {
@@ -239,11 +256,25 @@ export async function createBanner(token, formData) {
   return body;
 }
 
-export async function fetchCategories() {
-  const res = await fetch(`${BASE_URL}/api/categories`);
-  if (!res.ok) throw new Error('Failed to load categories');
-  const data = await res.json();
-  return Array.isArray(data) ? data : (data.categories || data.data || []);
+export async function updateBannerAdmin(token, id, formData) {
+  const res = await fetch(`${BASE_URL}/api/banners/${id}`, {
+    method: 'PUT',
+    headers: authHeader(token),
+    body: formData,
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to update banner');
+  return body;
+}
+
+export async function deleteBanner(token, id) {
+  const res = await fetch(`${BASE_URL}/api/banners/${id}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to delete banner');
+  return body;
 }
 
 // ─── Customer: Profile / Change Password ─────────────────────────────────────
@@ -269,6 +300,7 @@ export async function updateProfile(token, data) {
   return body;
 }
 
+// ─── Admin: Analytics & Inventory ──────────────────────────────────────────
 export async function fetchWarrantiesAdmin(token) {
   const res = await fetch(`${BASE_URL}/api/warranty/admin`, { headers: authHeader(token) });
   if (!res.ok) throw new Error('Failed to load warranties');
@@ -300,22 +332,7 @@ export async function updateInventory(token, id, stock) {
   return body;
 }
 
-// ─── Aliases & Missing Functions ───────────────────────────────────────────
-export const fetchWarrantyAdmin = fetchWarrantiesAdmin;
-export const fetchAdminUsers = fetchUsersAdmin;
-export const fetchAdminOrders = fetchOrdersAdmin;
-
-export async function updateCategory(token, id, data) {
-  const res = await fetch(`${BASE_URL}/api/categories/${id}`, {
-    method: 'PUT',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.message || 'Failed to update category');
-  return body;
-}
-
+// ─── Subcategories ─────────────────────────────────────────────────────────
 export async function fetchSubcategories(token) {
   const res = await fetch(`${BASE_URL}/api/subcategories`, { headers: authHeader(token) });
   if (!res.ok) throw new Error('Failed to load subcategories');
@@ -355,6 +372,7 @@ export async function deleteSubcategory(token, id) {
   return body;
 }
 
+// ─── Admin Warranty & Serials ──────────────────────────────────────────────
 export async function updateWarrantyStatusAdmin(token, id, status) {
   const res = await fetch(`${BASE_URL}/api/warranty/admin/${id}`, {
     method: 'PUT',
@@ -394,61 +412,6 @@ export async function fetchProductSerials(token, productId) {
   return Array.isArray(data) ? data : (data.serials || data.data || []);
 }
 
-export const createBannerAdmin = createBanner;
-export const deleteBannerAdmin = deleteBanner;
-export async function updateBannerAdmin(token, id, formData) {
-  const res = await fetch(`${BASE_URL}/api/banners/${id}`, {
-    method: 'PUT',
-    headers: authHeader(token),
-    body: formData,
-  });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.message || 'Failed to update banner');
-  return body;
-}
-
-export async function changeAdminPassword(currentPassword, newPassword, token) {
-  return changePassword(token, currentPassword, newPassword);
-}
-
-// ─── Customer: Cart Management ───────────────────────────────────────────────
-export async function fetchCart(token) {
-  const res = await fetch(`${BASE_URL}/api/cart`, { headers: authHeader(token) });
-  if (!res.ok) throw new Error('Failed to load cart');
-  return res.json();
-}
-
-export async function addToCartAPI(token, productId, quantity) {
-  const res = await fetch(`${BASE_URL}/api/cart`, {
-    method: 'POST',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ productId, quantity }),
-  });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.message || 'Failed to update cart');
-  return body; // Must return JSON body so CartContext gets the updated total
-}
-
-export async function removeFromCartAPI(token, productId) {
-  const res = await fetch(`${BASE_URL}/api/cart/${productId}`, {
-    method: 'DELETE',
-    headers: authHeader(token),
-  });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.message || 'Failed to remove from cart');
-  return body;
-}
-
-export async function clearCartAPI(token) {
-  const res = await fetch(`${BASE_URL}/api/cart`, {
-    method: 'DELETE',
-    headers: authHeader(token),
-  });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.message || 'Failed to clear cart');
-  return body;
-}
-
 export async function fetchAllSerialRecords(token) {
   const res = await fetch(`${BASE_URL}/api/serials/all`, { headers: authHeader(token) });
   if (!res.ok) throw new Error('Failed to load serial records');
@@ -485,4 +448,53 @@ export async function deleteProductSerial(token, serialId) {
   const body = await res.json();
   if (!res.ok) throw new Error(body.message || 'Failed to delete serial');
   return body;
+}
+
+// ─── Customer: Cart Management ───────────────────────────────────────────────
+export async function fetchCart(token) {
+  const res = await fetch(`${BASE_URL}/api/cart`, { headers: authHeader(token) });
+  if (!res.ok) throw new Error('Failed to load cart');
+  return res.json();
+}
+
+export async function addToCartAPI(token, productId, quantity) {
+  const res = await fetch(`${BASE_URL}/api/cart`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId, quantity }),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to update cart');
+  return body; 
+}
+
+export async function removeFromCartAPI(token, productId) {
+  const res = await fetch(`${BASE_URL}/api/cart/${productId}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to remove from cart');
+  return body;
+}
+
+export async function clearCartAPI(token) {
+  const res = await fetch(`${BASE_URL}/api/cart`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to clear cart');
+  return body;
+}
+
+// ─── Aliases & Missing Functions ───────────────────────────────────────────
+export const fetchWarrantyAdmin = fetchWarrantiesAdmin;
+export const fetchAdminUsers = fetchUsersAdmin;
+export const fetchAdminOrders = fetchOrdersAdmin;
+export const createBannerAdmin = createBanner;
+export const deleteBannerAdmin = deleteBanner;
+
+export async function changeAdminPassword(currentPassword, newPassword, token) {
+  return changePassword(token, currentPassword, newPassword);
 }
