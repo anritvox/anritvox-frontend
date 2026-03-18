@@ -5,6 +5,8 @@ import Footer from "./components/Footer";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { SettingsProvider } from "./context/SettingsContext";
+import { ToastProvider } from "./context/ToastContext";
+import { WishlistProvider } from "./context/WishlistContext";
 import "./index.css";
 
 // Lazy load pages
@@ -21,6 +23,13 @@ const Register = lazy(() => import("./pages/Register"));
 const Profile = lazy(() => import("./pages/Profile"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const Wishlist = lazy(() => import("./pages/Wishlist"));
+const OrderTracking = lazy(() => import("./pages/OrderTracking"));
+const Compare = lazy(() => import("./pages/Compare"));
+const AddressBook = lazy(() => import("./pages/AddressBook"));
+const ReturnManagement = lazy(() => import("./pages/admin/ReturnManagement"));
+const CouponManagement = lazy(() => import("./pages/admin/CouponManagement"));
+const InventoryManagement = lazy(() => import("./pages/admin/InventoryManagement"));
 
 const PageLoader = () => (
   <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -61,7 +70,6 @@ class ErrorBoundary extends Component {
   }
 }
 
-// Protected route - redirects to login if not authenticated
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <PageLoader />;
@@ -86,6 +94,7 @@ function AppContent() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/cart" element={<Cart />} />
+            <Route path="/compare" element={<Compare />} />
             <Route path="/checkout" element={
               <ProtectedRoute><Checkout /></ProtectedRoute>
             } />
@@ -98,9 +107,24 @@ function AppContent() {
             <Route path="/my-orders" element={
               <ProtectedRoute><Profile /></ProtectedRoute>
             } />
+            <Route path="/wishlist" element={
+              <ProtectedRoute><Wishlist /></ProtectedRoute>
+            } />
+            <Route path="/track/:orderId" element={
+              <ProtectedRoute><OrderTracking /></ProtectedRoute>
+            } />
+            <Route path="/track" element={
+              <ProtectedRoute><OrderTracking /></ProtectedRoute>
+            } />
+            <Route path="/address-book" element={
+              <ProtectedRoute><AddressBook /></ProtectedRoute>
+            } />
             <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/returns" element={<ReturnManagement />} />
+            <Route path="/admin/coupons" element={<CouponManagement />} />
+            <Route path="/admin/inventory" element={<InventoryManagement />} />
             <Route path="/admin/*" element={<AdminDashboard />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
@@ -116,11 +140,15 @@ function App() {
     <BrowserRouter>
       <ErrorBoundary>
         <AuthProvider>
-<SettingsProvider>
-  <CartProvider>
-            <AppContent />
-          </CartProvider>
-  </SettingsProvider>
+          <SettingsProvider>
+            <ToastProvider>
+              <WishlistProvider>
+                <CartProvider>
+                  <AppContent />
+                </CartProvider>
+              </WishlistProvider>
+            </ToastProvider>
+          </SettingsProvider>
         </AuthProvider>
       </ErrorBoundary>
     </BrowserRouter>
