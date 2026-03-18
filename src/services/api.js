@@ -447,3 +447,135 @@ export const fetchWarrantyAdmin = fetchWarrantiesAdmin;
 export async function changeAdminPassword(currentPassword, newPassword, token) {
   return changePassword(token, currentPassword, newPassword);
 }
+
+// ——— NEW FEATURE API ENDPOINTS ———————————————————————————————
+
+// Wishlist
+export async function fetchWishlist(token) {
+  const res = await fetch(`${BASE_URL}/api/wishlist`, { headers: authHeader(token) });
+  if (!res.ok) throw new Error('Failed to fetch wishlist');
+  return res.json();
+}
+export async function addToWishlist(token, productId) {
+  const res = await fetch(`${BASE_URL}/api/wishlist/${productId}`, { method: 'POST', headers: authHeader(token) });
+  if (!res.ok) throw new Error('Failed to add to wishlist');
+  return res.json();
+}
+export async function removeFromWishlist(token, productId) {
+  const res = await fetch(`${BASE_URL}/api/wishlist/${productId}`, { method: 'DELETE', headers: authHeader(token) });
+  if (!res.ok) throw new Error('Failed to remove from wishlist');
+  return res.json();
+}
+
+// Reviews
+export async function fetchProductReviews(productId, page = 1) {
+  const res = await fetch(`${BASE_URL}/api/reviews/product/${productId}?page=${page}`);
+  if (!res.ok) throw new Error('Failed to fetch reviews');
+  return res.json();
+}
+export async function submitReview(token, data) {
+  const res = await fetch(`${BASE_URL}/api/reviews`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error('Failed to submit review');
+  return res.json();
+}
+
+// Order Tracking
+export async function fetchOrderTracking(token, orderId) {
+  const res = await fetch(`${BASE_URL}/api/orders/${orderId}/tracking`, { headers: authHeader(token) });
+  if (!res.ok) throw new Error('Failed to fetch order tracking');
+  return res.json();
+}
+
+// Coupons
+export async function validateCoupon(token, code, orderAmount) {
+  const res = await fetch(`${BASE_URL}/api/coupons/validate`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, orderAmount })
+  });
+  if (!res.ok) throw new Error('Invalid coupon');
+  return res.json();
+}
+export async function fetchCouponsAdmin(token) {
+  const res = await fetch(`${BASE_URL}/api/coupons`, { headers: authHeader(token) });
+  if (!res.ok) throw new Error('Failed to fetch coupons');
+  return res.json();
+}
+export async function createCoupon(token, data) {
+  const res = await fetch(`${BASE_URL}/api/coupons`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error('Failed to create coupon');
+  return res.json();
+}
+export async function deleteCoupon(token, id) {
+  const res = await fetch(`${BASE_URL}/api/coupons/${id}`, { method: 'DELETE', headers: authHeader(token) });
+  if (!res.ok) throw new Error('Failed to delete coupon');
+  return res.json();
+}
+
+// Returns
+export async function fetchReturnsAdmin(token) {
+  const res = await fetch(`${BASE_URL}/api/returns`, { headers: authHeader(token) });
+  if (!res.ok) throw new Error('Failed to fetch returns');
+  return res.json();
+}
+export async function updateReturnStatus(token, id, status) {
+  const res = await fetch(`${BASE_URL}/api/returns/${id}`, {
+    method: 'PUT',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status })
+  });
+  if (!res.ok) throw new Error('Failed to update return');
+  return res.json();
+}
+
+// Address Book
+export async function fetchAddresses(token) {
+  const res = await fetch(`${BASE_URL}/api/users/addresses`, { headers: authHeader(token) });
+  if (!res.ok) throw new Error('Failed to fetch addresses');
+  return res.json();
+}
+export async function addAddress(token, data) {
+  const res = await fetch(`${BASE_URL}/api/users/addresses`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error('Failed to add address');
+  return res.json();
+}
+export async function deleteAddress(token, id) {
+  const res = await fetch(`${BASE_URL}/api/users/addresses/${id}`, { method: 'DELETE', headers: authHeader(token) });
+  if (!res.ok) throw new Error('Failed to delete address');
+  return res.json();
+}
+
+// Notifications
+export async function fetchNotifications(token) {
+  const res = await fetch(`${BASE_URL}/api/notifications`, { headers: authHeader(token) });
+  if (!res.ok) throw new Error('Failed to fetch notifications');
+  return res.json();
+}
+export async function markNotificationsRead(token) {
+  const res = await fetch(`${BASE_URL}/api/notifications/read-all`, { method: 'PUT', headers: authHeader(token) });
+  if (!res.ok) throw new Error('Failed to mark notifications');
+  return res.json();
+}
+
+// Inventory
+export async function updateProductStock(token, id, stockData) {
+  const res = await fetch(`${BASE_URL}/api/products/${id}`, {
+    method: 'PUT',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(stockData)
+  });
+  if (!res.ok) throw new Error('Failed to update stock');
+  return res.json();
+}
