@@ -64,10 +64,12 @@ export default function BannerManagement({ token }) {
     setSuccess('');
     try {
       if (editingId) {
-        await updateBannerAdmin(editingId, form, token);
+        // FIX: Token is the first argument
+        await updateBannerAdmin(token, editingId, form);
         setSuccess('Banner updated successfully!');
       } else {
-        await createBannerAdmin(form, token);
+        // FIX: Token is the first argument
+        await createBannerAdmin(token, form);
         setSuccess('Banner created successfully!');
       }
       resetForm();
@@ -82,7 +84,8 @@ export default function BannerManagement({ token }) {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this banner?')) return;
     try {
-      await deleteBannerAdmin(id, token);
+      // FIX: Token is the first argument
+      await deleteBannerAdmin(token, id);
       setSuccess('Banner deleted.');
       await loadBanners();
     } catch (err) {
@@ -92,7 +95,8 @@ export default function BannerManagement({ token }) {
 
   const handleToggle = async (banner) => {
     try {
-      await updateBannerAdmin(banner.id, { ...banner, is_active: !banner.is_active }, token);
+      // FIX: Token is the first argument
+      await updateBannerAdmin(token, banner.id, { ...banner, is_active: !banner.is_active });
       await loadBanners();
     } catch (err) {
       setError(err.message);
