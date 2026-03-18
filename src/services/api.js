@@ -248,8 +248,10 @@ export async function fetchBannersAdmin(token) {
 export async function createBanner(token, formData) {
   const res = await fetch(`${BASE_URL}/api/banners`, {
     method: 'POST',
-    headers: authHeader(token),
-    body: formData,
+    // FIX: Add Content-Type header
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    // FIX: Stringify the payload
+    body: JSON.stringify(formData),
   });
   const body = await res.json();
   if (!res.ok) throw new Error(body.message || 'Failed to create banner');
@@ -259,8 +261,10 @@ export async function createBanner(token, formData) {
 export async function updateBannerAdmin(token, id, formData) {
   const res = await fetch(`${BASE_URL}/api/banners/${id}`, {
     method: 'PUT',
-    headers: authHeader(token),
-    body: formData,
+    // FIX: Add Content-Type header
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    // FIX: Stringify the payload
+    body: JSON.stringify(formData),
   });
   const body = await res.json();
   if (!res.ok) throw new Error(body.message || 'Failed to update banner');
