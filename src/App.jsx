@@ -139,14 +139,14 @@ function App() {
     <BrowserRouter>
       <ErrorBoundary>
         <AuthProvider>
-            <ToastProvider>
-              <WishlistProvider>
-                <CartProvider>
-                  <AppContent />
-                </CartProvider>
-              </WishlistProvider>
-            </ToastProvider>
-          AuthProvider>
+          <ToastProvider>
+            <WishlistProvider>
+              <CartProvider>
+                <AppContent />
+              </CartProvider>
+            </WishlistProvider>
+          </ToastProvider>
+        </AuthProvider>
       </ErrorBoundary>
     </BrowserRouter>
   );
