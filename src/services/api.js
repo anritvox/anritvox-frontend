@@ -186,8 +186,8 @@ export async function fetchContactsAdmin(token) {
   return Array.isArray(data) ? data : (data.contacts || data.data || []);
 }
 
-export async function fetchCategoriesAdmin(token) {
-  const res = await fetch(`${BASE_URL}/api/categories`, { headers: authHeader(token) });
+export async function fetchCategories() {
+  const res = await fetch(`${BASE_URL}/api/categories`);
   if (!res.ok) throw new Error('Failed to load categories');
   const data = await res.json();
   return Array.isArray(data) ? data : (data.categories || data.data || []);
@@ -302,7 +302,6 @@ export async function updateInventory(token, id, stock) {
 
 // ─── Aliases & Missing Functions ───────────────────────────────────────────
 export const fetchWarrantyAdmin = fetchWarrantiesAdmin;
-export const fetchCategories = fetchCategoriesAdmin;
 export const fetchAdminUsers = fetchUsersAdmin;
 export const fetchAdminOrders = fetchOrdersAdmin;
 
