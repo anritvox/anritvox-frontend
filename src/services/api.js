@@ -239,14 +239,11 @@ export async function createBanner(token, formData) {
   return body;
 }
 
-export async function deleteBanner(token, id) {
-  const res = await fetch(`${BASE_URL}/api/banners/${id}`, {
-    method: 'DELETE',
-    headers: authHeader(token),
-  });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.message || 'Failed to delete banner');
-  return body;
+export async function fetchCategories() {
+  const res = await fetch(`${BASE_URL}/api/categories`);
+  if (!res.ok) throw new Error('Failed to load categories');
+  const data = await res.json();
+  return Array.isArray(data) ? data : (data.categories || data.data || []);
 }
 
 // ─── Customer: Profile / Change Password ─────────────────────────────────────
