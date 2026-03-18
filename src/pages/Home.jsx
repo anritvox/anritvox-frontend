@@ -11,8 +11,16 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Default Fallback Banner if the database is empty
+const DEFAULT_BANNER = {
+  imageUrl: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=1200",
+  title: "THE FUTURE OF <br /> <span class='text-blue-400'>CAR TECH</span>",
+  description: "Experience premium accessories engineered specifically for your needs.",
+  subtitle: "Premium Exclusive",
+  link: "/shop"
+};
+
 export default function Home() {
-  // --- STATE ---
   const [currentIndex, setCurrentIndex] = useState(0);
   const [products, setProducts] = useState([]);
   const [banners, setBanners] = useState([]); 
@@ -23,25 +31,19 @@ export default function Home() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // --- CONTEXT ---
   const { addToCart } = useCart();
   const { settings } = useSettings(); 
 
-  // --- EFFECTS ---
-  // 1. Fetching all dynamic data on component mount
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        setLoading(true); // Ensure loading state is true when starting
-        
-        // Promise.all runs all these fetches concurrently!
+        setLoading(true); 
         const [productsData, bannersData, categoriesData] = await Promise.all([
-          fetchProducts(),
-          fetchActiveBanners(),
-          fetchCategories()
+          fetchProducts().catch(() => []), // Added catch to prevent 1 failure breaking everything
+          fetchActiveBanners().catch(() => []),
+          fetchCategories().catch(() => [])
         ]);
         
-        // Safely update state. If the backend fails to send an array, default to an empty array []
         setProducts(Array.isArray(productsData) ? productsData : []);
         setBanners(Array.isArray(bannersData) ? bannersData : []);
         setDynamicCategories(Array.isArray(categoriesData) ? categoriesData : []);
@@ -49,64 +51,40 @@ export default function Home() {
       } catch (err) {
         console.error("Failed to fetch initial home data:", err);
       } finally {
-        setLoading(false); // Turn off the loading skeleton
+        setLoading(false); 
       }
     };
 
     loadInitialData();
 
-    // The scroll listener can stay in this mount effect
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 400);
-    };
+    const handleScroll = () => setShowScrollTop(window.scrollY > 400);
     window.addEventListener("scroll", handleScroll);
-    
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []); 
-  // 2. Handle the Hero Slider rotation
-  useEffect(() => {
-    // If there are no banners yet (still loading or empty), don't run the timer
-    if (banners.length === 0) return;
 
-    const interval = setInterval(() => {
-      // Rotate to the next index based on the actual number of banners from the database
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % banners.length);
-    }, 5000);
-
-    // Cleanup function to clear the timer if the user leaves the page
-    return () => clearInterval(interval);
-    
-  }, [banners.length]); 
-  
-  // This dependency array tells React to restart this timer ONLY when the number of banners changes
-  // Auto-slide logic for dynamic banners
+  // Kept ONLY ONE slider rotation effect
   useEffect(() => {
-    if (banners.length === 0) return;
-    
+    if (banners.length <= 1) return; // Don't slide if 0 or 1 banner
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % banners.length);
     }, 5000);
-    
     return () => clearInterval(interval);
-  }, [banners.length]);
+  }, [banners.length]); 
 
-  // --- HANDLERS ---
   const nextHero = () => {
-    if (banners.length === 0) return;
+    if (banners.length <= 1) return;
     setCurrentIndex((prev) => (prev + 1) % banners.length);
   };
   
   const prevHero = () => {
-    if (banners.length === 0) return;
+    if (banners.length <= 1) return;
     setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length);
   };
   
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
-  // Safe fallback if banners aren't loaded yet
-  const currentBanner = banners[currentIndex] || {};
+  // Use the loaded banner, or the default fallback if database is empty
+  const currentBanner = banners.length > 0 ? banners[currentIndex] : DEFAULT_BANNER;
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-900 overflow-x-hidden">
@@ -131,11 +109,14 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Desktop Navigation Highlights */}
+      {/* Desktop Navigation Highlights (Dynamic Settings applied here!) */}
       <div className="hidden lg:block bg-blue-700 text-white py-2 px-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center text-sm font-medium">
           <div className="flex gap-6">
-            <span className="flex items-center gap-1"><Truck size={14} /> Free Shipping Over ₹4999</span>
+            <span className="flex items-center gap-1">
+              <Truck size={14} /> 
+              Free Shipping Over ₹{settings?.free_shipping_threshold || "4999"}
+            </span>
             <span className="flex items-center gap-1"><ShieldCheck size={14} /> 2 Year Warranty</span>
           </div>
           <div className="flex gap-4">
@@ -147,7 +128,11 @@ export default function Home() {
 
       {/* Dynamic Hero Section */}
       <div className="relative w-full h-[300px] md:h-[500px] lg:h-[600px] bg-gray-200 overflow-hidden group">
-        {banners.length > 0 ? (
+        {loading ? (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : (
           <>
             <AnimatePresence mode="wait">
               <motion.div
@@ -159,11 +144,11 @@ export default function Home() {
                 className="absolute inset-0"
               >
                 <img 
-                  src={currentBanner.image || currentBanner.imageUrl} 
-                  alt={currentBanner.title || `Promotion ${currentIndex + 1}`}
+                  src={currentBanner.image || currentBanner.imageUrl || DEFAULT_BANNER.imageUrl} 
+                  alt={currentBanner.title || `Promotion`}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    e.target.src = "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=1200";
+                    e.target.src = DEFAULT_BANNER.imageUrl;
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent flex items-center px-6 md:px-20">
@@ -184,7 +169,7 @@ export default function Home() {
                       {currentBanner.title ? (
                         <span dangerouslySetInnerHTML={{ __html: currentBanner.title.replace(/\n/g, "<br />") }} />
                       ) : (
-                        <>THE FUTURE OF <br /> <span className="text-blue-400">CAR TECH</span></>
+                        <span dangerouslySetInnerHTML={{ __html: DEFAULT_BANNER.title }} />
                       )}
                     </motion.h1>
                     <motion.p 
@@ -193,7 +178,7 @@ export default function Home() {
                       transition={{ delay: 0.3 }}
                       className="text-lg md:text-xl text-gray-200 max-w-lg"
                     >
-                      {currentBanner.description || "Experience premium accessories engineered specifically for your needs."}
+                      {currentBanner.description || DEFAULT_BANNER.description}
                     </motion.p>
                     <motion.div 
                        initial={{ y: 20, opacity: 0 }}
@@ -208,42 +193,47 @@ export default function Home() {
               </motion.div>
             </AnimatePresence>
 
-            {/* Slider Controls */}
-            <button 
-              onClick={prevHero}
-              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 p-3 rounded-full backdrop-blur-md transition-all hidden group-hover:block"
-            >
-              <ChevronLeft className="text-white" size={32} />
-            </button>
-            <button 
-              onClick={nextHero}
-              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 p-3 rounded-full backdrop-blur-md transition-all hidden group-hover:block"
-            >
-              <ChevronRight className="text-white" size={32} />
-            </button>
-
-            {/* Indicators */}
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3 z-10">
-              {banners.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentIndex(i)}
-                  className={`h-2 rounded-full transition-all duration-300 ${currentIndex === i ? "w-10 bg-blue-500" : "w-2 bg-white/50"}`}
-                />
-              ))}
-            </div>
+            {/* Only show slider controls if there is more than 1 banner */}
+            {banners.length > 1 && (
+              <>
+                <button onClick={prevHero} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 p-3 rounded-full backdrop-blur-md transition-all hidden group-hover:block">
+                  <ChevronLeft className="text-white" size={32} />
+                </button>
+                <button onClick={nextHero} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 p-3 rounded-full backdrop-blur-md transition-all hidden group-hover:block">
+                  <ChevronRight className="text-white" size={32} />
+                </button>
+                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3 z-10">
+                  {banners.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentIndex(i)}
+                      className={`h-2 rounded-full transition-all duration-300 ${currentIndex === i ? "w-10 bg-blue-500" : "w-2 bg-white/50"}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </>
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
         )}
       </div>
 
       {/* Dynamic Categories */}
       <div className="max-w-7xl mx-auto px-4 py-8 overflow-x-auto scrollbar-hide">
         <div className="flex lg:grid lg:grid-cols-6 gap-6 min-w-max lg:min-w-0">
-          {dynamicCategories.length > 0 ? (
+          {!loading && dynamicCategories.length === 0 && (
+            <div className="col-span-full text-center text-gray-500 font-medium w-full py-4">
+              Categories will appear here once added in the Admin Panel.
+            </div>
+          )}
+          
+          {loading ? (
+            Array(6).fill(0).map((_, i) => (
+              <div key={i} className="flex flex-col items-center gap-3 animate-pulse">
+                <div className="bg-gray-200 w-16 h-16 md:w-20 md:h-20 rounded-2xl shadow-sm"></div>
+                <div className="bg-gray-200 h-4 w-16 rounded"></div>
+              </div>
+            ))
+          ) : (
             dynamicCategories.map((cat) => (
               <Link 
                 key={cat._id || cat.id} 
@@ -259,14 +249,6 @@ export default function Home() {
                 </div>
                 <span className="text-sm font-bold text-gray-700">{cat.name}</span>
               </Link>
-            ))
-          ) : (
-            // Skeleton loader for categories
-            Array(6).fill(0).map((_, i) => (
-              <div key={i} className="flex flex-col items-center gap-3 animate-pulse">
-                <div className="bg-gray-200 w-16 h-16 md:w-20 md:h-20 rounded-2xl shadow-sm"></div>
-                <div className="bg-gray-200 h-4 w-16 rounded"></div>
-              </div>
             ))
           )}
         </div>
@@ -289,6 +271,10 @@ export default function Home() {
             Array(4).fill(0).map((_, i) => (
               <div key={i} className="bg-white rounded-2xl h-80 animate-pulse border border-gray-100 shadow-sm"></div>
             ))
+          ) : products.length === 0 ? (
+             <div className="col-span-full text-center text-gray-500 font-medium py-12">
+               Products will appear here once added in the Admin Panel.
+             </div>
           ) : (
             products.slice(0, 8).map((product) => (
               <Link
