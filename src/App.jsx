@@ -4,7 +4,6 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
-import { SettingsProvider } from "./context/SettingsContext";
 import { ToastProvider } from "./context/ToastContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import "./index.css";
@@ -140,7 +139,6 @@ function App() {
     <BrowserRouter>
       <ErrorBoundary>
         <AuthProvider>
-          <SettingsProvider>
             <ToastProvider>
               <WishlistProvider>
                 <CartProvider>
@@ -148,8 +146,7 @@ function App() {
                 </CartProvider>
               </WishlistProvider>
             </ToastProvider>
-          </SettingsProvider>
-        </AuthProvider>
+          AuthProvider>
       </ErrorBoundary>
     </BrowserRouter>
   );
