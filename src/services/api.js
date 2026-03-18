@@ -1,8 +1,6 @@
 import axios from 'axios';
 
 // This checks if Vite is in development mode.
-// If yes, it uses localhost. If in production, it uses your deployed backend URL.
-// IMPORTANT: Change the production URL below to your actual deployed BACKEND URL!
 const API_BASE_URL = import.meta.env.MODE === 'development' 
   ? 'http://localhost:5000/api' 
     : 'https://service.anritvox.com/api';
@@ -26,6 +24,7 @@ export default api;
 export const BASE_URL = import.meta.env.MODE === 'development'
   ? 'http://localhost:5000'
     : 'https://service.anritvox.com';
+
 /**
  * Helper: attach authorization header
  */
@@ -48,10 +47,6 @@ export async function fetchCategories() {
   return Array.isArray(data) ? data : (data.categories || data.data || []);
 }
 
-/**
- * Fetches active banners for the public website.
- * FIXED: Points to /api/banners which is the correct public route.
- */
 export async function fetchActiveBanners(position = '') {
   const url = position ? `${BASE_URL}/api/banners?position=${position}` : `${BASE_URL}/api/banners`;
   const res = await fetch(url);
@@ -135,9 +130,6 @@ export async function fetchProductsAdmin(token) {
   return Array.isArray(data) ? data : (data.products || data.data || []);
 }
 
-/**
- * Uses FormData for file uploads (images)
- */
 export async function createProduct(token, formData) {
   const res = await fetch(`${BASE_URL}/api/products`, {
     method: 'POST',
@@ -213,9 +205,6 @@ export async function deleteCategory(token, id) {
 
 // ─── ADMIN: BANNER MANAGEMENT ───────────────────────────────────────────────
 
-/**
- * Fetches ALL banners for admin dashboard.
- */
 export async function fetchBannersAdmin(token) {
   const res = await fetch(`${BASE_URL}/api/banners/admin/all`, { 
     headers: authHeader(token) 
@@ -225,9 +214,6 @@ export async function fetchBannersAdmin(token) {
   return Array.isArray(data) ? data : (data.banners || data.data || []);
 }
 
-/**
- * FIXED: Pass token first, uses JSON stringify for URL-based uploads.
- */
 export async function createBanner(token, data) {
   const res = await fetch(`${BASE_URL}/api/banners`, {
     method: 'POST',
@@ -239,9 +225,6 @@ export async function createBanner(token, data) {
   return body;
 }
 
-/**
- * FIXED: Pass token first, id second.
- */
 export async function updateBannerAdmin(token, id, data) {
   const res = await fetch(`${BASE_URL}/api/banners/${id}`, {
     method: 'PUT',
@@ -253,9 +236,6 @@ export async function updateBannerAdmin(token, id, data) {
   return body;
 }
 
-/**
- * FIXED: Pass token first.
- */
 export async function deleteBanner(token, id) {
   const res = await fetch(`${BASE_URL}/api/banners/${id}`, {
     method: 'DELETE',
@@ -362,6 +342,20 @@ export async function bulkAddProductSerials(token, productId, count, prefix) {
 export async function fetchAllSerialRecords(token) {
   const res = await fetch(`${BASE_URL}/api/serials/all`, { headers: authHeader(token) });
   if (!res.ok) throw new Error('Failed to load serial records');
+  return res.json();
+}
+
+/**
+ * INTEGRATED: Fetches serial numbers for a specific product for the Admin dashboard.
+ */
+export async function fetchProductSerials(token, productId) {
+  const res = await fetch(`${BASE_URL}/api/admin/products/${productId}/serials`, { 
+    headers: authHeader(token) 
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'Failed to fetch serial numbers');
+  }
   return res.json();
 }
 
