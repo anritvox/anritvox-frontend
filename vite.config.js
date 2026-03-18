@@ -8,12 +8,10 @@ export default defineConfig({
       external: [],
       output: {
         manualChunks(id) {
-          // Fix: Added safety check for 'id' to prevent Vercel build crashes
-          if (id && id.includes('/node_modules/lucide-react/')) {
-            return 'lucide-icons';
-          }
-          if (id && (id.includes('/node_modules/framer-motion/') || id.includes('/node_modules/motion-utils/'))) {
-            return 'framer-motion';
+          if (id && id.includes('node_modules')) {
+            if (id.includes('lucide-react')) return 'lucide-icons';
+            if (id.includes('framer-motion') || id.includes('motion-utils')) return 'framer-motion';
+            return 'vendor'; // Groups remaining dependencies cleanly
           }
         },
       },
