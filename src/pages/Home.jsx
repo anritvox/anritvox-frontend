@@ -46,7 +46,7 @@ export default function Home() {
           fetchCategories().catch(() => [])
         ]);
         
-        setProducts(Array.is'hero'Array(productsData) ? productsData : []);
+        setProducts(Array.isArray(productsData) ? productsData : []);
         setBanners(Array.isArray(bannersData) ? bannersData : []);
         setDynamicCategories(Array.isArray(categoriesData) ? categoriesData : []);
         
