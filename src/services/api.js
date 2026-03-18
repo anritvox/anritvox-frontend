@@ -1,5 +1,31 @@
-export const BASE_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
+import axios from 'axios';
 
+// This checks if Vite is in development mode.
+// If yes, it uses localhost. If in production, it uses your deployed backend URL.
+// IMPORTANT: Change the production URL below to your actual deployed BACKEND URL!
+const API_BASE_URL = import.meta.env.MODE === 'development' 
+  ? 'http://localhost:5000/api' 
+  : 'https://YOUR-BACKEND-VERCEL-URL.vercel.app/api'; 
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+});
+
+// Example request interceptor for attaching tokens
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export default api;
+
+export const BASE_URL = import.meta.env.MODE === 'development'
+  ? 'http://localhost:5000'
+  : 'https://YOUR-BACKEND-VERCEL-URL.vercel.app';
 /**
  * Helper: attach authorization header
  */
