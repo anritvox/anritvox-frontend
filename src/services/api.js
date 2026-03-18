@@ -643,3 +643,43 @@ export async function deleteProductSerial(token, serialId) {
   if (!res.ok) throw new Error(body.message || 'Failed to delete serial');
   return body;
 }
+
+// ─── ADMIN: SUBCATEGORY MANAGEMENT ─────────────────────────────────────
+export async function fetchSubcategories(categoryId) {
+  const res = await fetch(`${BASE_URL}/api/categories/${categoryId}/subcategories`);
+  if (!res.ok) throw new Error('Failed to load subcategories');
+  const data = await res.json();
+  return Array.isArray(data) ? data : (data.subcategories || data.data || []);
+}
+
+export async function createSubcategory(token, categoryId, data) {
+  const res = await fetch(`${BASE_URL}/api/categories/${categoryId}/subcategories`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to create subcategory');
+  return body;
+}
+
+export async function updateSubcategory(token, categoryId, subcategoryId, data) {
+  const res = await fetch(`${BASE_URL}/api/categories/${categoryId}/subcategories/${subcategoryId}`, {
+    method: 'PUT',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to update subcategory');
+  return body;
+}
+
+export async function deleteSubcategory(token, categoryId, subcategoryId) {
+  const res = await fetch(`${BASE_URL}/api/categories/${categoryId}/subcategories/${subcategoryId}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.message || 'Failed to delete subcategory');
+  return body;
+}
