@@ -11,9 +11,11 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+const FALLBACK_IMG = "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=1200";
+
 // Default Fallback Banner if the database is empty
 const DEFAULT_BANNER = {
-  imageUrl: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=1200",
+  imageUrl: FALLBACK_IMG,
   title: "THE FUTURE OF <br /> <span class='text-blue-400'>CAR TECH</span>",
   description: "Experience premium accessories engineered specifically for your needs.",
   subtitle: "Premium Exclusive",
@@ -39,7 +41,7 @@ export default function Home() {
       try {
         setLoading(true); 
         const [productsData, bannersData, categoriesData] = await Promise.all([
-          fetchProducts().catch(() => []), // Added catch to prevent 1 failure breaking everything
+          fetchProducts().catch(() => []), // Fails safely to empty array
           fetchActiveBanners().catch(() => []),
           fetchCategories().catch(() => [])
         ]);
@@ -51,7 +53,7 @@ export default function Home() {
       } catch (err) {
         console.error("Failed to fetch initial home data:", err);
       } finally {
-        setLoading(false); 
+        setLoading(false); // This STOPS the spinner
       }
     };
 
@@ -62,9 +64,9 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []); 
 
-  // Kept ONLY ONE slider rotation effect
+  // Slider rotation effect
   useEffect(() => {
-    if (banners.length <= 1) return; // Don't slide if 0 or 1 banner
+    if (banners.length <= 1) return; // Don't slide if 0 or 1 banner exists
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % banners.length);
     }, 5000);
@@ -109,7 +111,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Desktop Navigation Highlights (Dynamic Settings applied here!) */}
+      {/* Desktop Navigation Highlights */}
       <div className="hidden lg:block bg-blue-700 text-white py-2 px-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center text-sm font-medium">
           <div className="flex gap-6">
@@ -147,9 +149,7 @@ export default function Home() {
                   src={currentBanner.image || currentBanner.imageUrl || DEFAULT_BANNER.imageUrl} 
                   alt={currentBanner.title || `Promotion`}
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.src = DEFAULT_BANNER.imageUrl;
-                  }}
+                  onError={(e) => { e.currentTarget.src = FALLBACK_IMG; e.currentTarget.onerror = null; }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent flex items-center px-6 md:px-20">
                   <div className="max-w-2xl text-white space-y-4">
@@ -167,7 +167,7 @@ export default function Home() {
                       className="text-4xl md:text-6xl font-black leading-tight"
                     >
                       {currentBanner.title ? (
-                        <span dangerouslySetInnerHTML={{ __html: currentBanner.title.replace(/\n/g, "<br />") }} />
+                        <span dangerouslySetInnerHTML={{ __html: String(currentBanner.title).replace(/\n/g, "<br />") }} />
                       ) : (
                         <span dangerouslySetInnerHTML={{ __html: DEFAULT_BANNER.title }} />
                       )}
@@ -193,7 +193,6 @@ export default function Home() {
               </motion.div>
             </AnimatePresence>
 
-            {/* Only show slider controls if there is more than 1 banner */}
             {banners.length > 1 && (
               <>
                 <button onClick={prevHero} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 p-3 rounded-full backdrop-blur-md transition-all hidden group-hover:block">
@@ -282,7 +281,6 @@ export default function Home() {
                 to={`/product/${product._id || product.id}`}
                 className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all relative group flex flex-col"
               >
-                {/* Badge */}
                 <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
                   <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
                     <Percent size={10} /> 30% OFF
@@ -294,23 +292,17 @@ export default function Home() {
 
                 <div className="aspect-square relative overflow-hidden bg-gray-50 flex-shrink-0">
                   <img 
-                    src={product.image || product.images?.[0] || "https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&q=80&w=400"} 
+                    src={product.image || product.images?.[0] || FALLBACK_IMG} 
                     alt={product.name}
                     className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-500"
-                    onError={(e) => {
-                      e.target.src = "https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&q=80&w=400";
-                    }}
+                    onError={(e) => { e.currentTarget.src = FALLBACK_IMG; e.currentTarget.onerror = null; }}
                   />
                 </div>
                 
                 <div className="p-4 flex flex-col flex-grow justify-between space-y-3">
                   <div className="space-y-2">
                     <div className="flex items-center gap-1 text-yellow-400">
-                      <Star size={12} fill="currentColor" />
-                      <Star size={12} fill="currentColor" />
-                      <Star size={12} fill="currentColor" />
-                      <Star size={12} fill="currentColor" />
-                      <Star size={12} fill="currentColor" />
+                      {[...Array(5)].map((_, i) => <Star key={i} size={12} fill="currentColor" />)}
                       <span className="text-gray-400 text-[10px] font-bold ml-1">(4.9)</span>
                     </div>
                     <h3 className="font-bold text-gray-800 text-sm line-clamp-2 min-h-[40px] leading-tight">
