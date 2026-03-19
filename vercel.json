@@ -2,8 +2,5 @@
   "version": 2,
   "framework": "vite",
   "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "rewrites": [
-    { "source": "/((?!assets|favicon\.ico|manifest\.json|sw\.js|logo.*|robots\.txt).*)", "destination": "/index.html" }
-  ]
+  "outputDirectory": "dist"
 }
