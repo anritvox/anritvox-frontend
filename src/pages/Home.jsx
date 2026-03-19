@@ -5,10 +5,11 @@ import { useSettings } from "../context/SettingsContext";
 import { useCart } from "../context/CartContext";
 import { 
   ChevronLeft, ChevronRight, Star, ArrowRight, ShieldCheck, 
-  Headphones, Truck, Zap, Globe, ChevronUp, Flame, 
+  Headphones, Truck, Zap, Globe, ChevronUp,, 
   CheckCircle2, Cpu, Smartphone, LayoutGrid, Search, 
   Menu, User, ShoppingCart, Percent
 } from "lucide-react";
+const Flame = Zap; // Flame icon alias (not in this lucide-react version)
 import { motion, AnimatePresence } from "framer-motion";
 
 const FALLBACK_IMG = "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=1200";
