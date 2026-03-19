@@ -13,7 +13,7 @@
     "axios": "^1.6.0",
     "browser-image-compression": "^2.0.2",
     "framer-motion": "^11.18.2",
-    "lucide-react": "0.525.0",
+    "lucide-react": "0.460.0",
     "papaparse": "^5.5.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
