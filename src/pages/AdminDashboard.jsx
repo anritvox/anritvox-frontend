@@ -1,185 +1,96 @@
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
-const pool = require("./config/db");
-const path = require("path");
+import React, { useState, useEffect } from 'react';
+import { 
+  FiHome, FiBox, FiDatabase, FiFolder, FiShoppingCart, 
+  FiRefreshCcw, FiTag, FiUsers, FiLayout, FiFileText, 
+  FiMail, FiSettings, FiLogOut, FiMenu, FiX 
+} from 'react-icons/fi';
 
-// --- Route Imports ---
-const categoryRoutes = require("./routes/categoryRoutes");
-const subcategoryRoutes = require("./routes/subcategoryRoutes");
-const productRoutes = require("./routes/productRoutes");
-const warrantyRoutes = require("./routes/warrantyRoutes");
-const contactRoutes = require("./routes/contactRoutes");
-const authRoutes = require("./routes/authRoutes");
-const serialRoutes = require("./routes/serialRoutes");
-const { router: userRoutes } = require("./routes/userRoutes");
-const cartRoutes = require("./routes/cartRoutes");
-const orderRoutes = require("./routes/orderRoutes");
-const addressRoutes = require("./routes/addressRoutes");
-const adminUserRoutes = require("./routes/adminUserRoutes");
-const wishlistRoutes = require("./routes/wishlistRoutes");
-const couponRoutes = require("./routes/couponRoutes");
-const reviewRoutes = require("./routes/reviewRoutes");
-const notificationRoutes = require("./routes/notificationRoutes");
-const analyticsRoutes = require("./routes/analyticsRoutes");
-const settingsRoutes = require("./routes/settingsRoutes");
-const shippingRoutes = require("./routes/shippingRoutes");
-const returnRoutes = require("./routes/returnRoutes");
-const inventoryRoutes = require("./routes/inventoryRoutes");
-const bannerRoutes = require("./routes/bannerRoutes");
+// Import Section Components
+import DashboardOverview from '../components/admin/DashboardOverview';
+import ProductManagement from '../components/admin/ProductManagement';
+import InventoryManagement from '../components/admin/InventoryManagement';
+import CategoryManagement from '../components/admin/CategoryManagement';
+import OrderManagement from '../components/admin/OrderManagement';
+import ReturnManagement from '../components/admin/ReturnManagement';
+import CouponManagement from '../components/admin/CouponManagement';
+import UserManagement from '../components/admin/UserManagement';
+import BannerManagement from '../components/admin/BannerManagement';
+import EWarrantyManagement from '../components/admin/EWarrantyManagement';
+import ContactManagement from '../components/admin/ContactManagement';
+import AdminSettings from '../components/admin/AdminSettings';
 
-// --- Model Imports for Initialization ---
-const { createUsersTable } = require("./models/userModel");
-const { createCartTable } = require("./models/cartModel");
-const { createOrdersTables } = require("./models/orderModel");
-const { createAddressTable } = require("./models/addressModel");
-const { createWishlistTable } = require("./models/wishlistModel");
-const { createCouponTable } = require("./models/couponModel");
-const { createReviewTable } = require("./models/reviewModel");
-const { createNotificationTable } = require("./models/notificationModel");
-const { createSettingsTable } = require("./models/settingsModel");
-const { createShippingTable } = require("./models/shippingModel");
-const { createReturnTable } = require("./models/returnModel");
-const { createBannerTable } = require("./models/bannerModel");
-const { createSerialTable } = require("./models/serialModel");
+const AdminDashboard = () => {
+  const [section, setSection] = useState("dashboard");
+  const [token] = useState(localStorage.getItem('adminToken'));
+  const [isRealTimeSync] = useState(true);
 
-const app = express();
+  const menuItems = [
+    { id: "dashboard", label: "Overview", icon: FiHome, color: "text-cyan-400" },
+    { id: "products", label: "Inventory", icon: FiBox, color: "text-purple-400" },
+    { id: "inventory", label: "Stock Control", icon: FiDatabase, color: "text-indigo-400" },
+    { id: "categories", label: "Categories", icon: FiFolder, color: "text-pink-400" },
+    { id: "orders", label: "Orders", icon: FiShoppingCart, color: "text-blue-400" },
+    { id: "returns", label: "Returns", icon: FiRefreshCcw, color: "text-rose-400" },
+    { id: "coupons", label: "Coupons", icon: FiTag, color: "text-yellow-400" },
+    { id: "users", label: "Users", icon: FiUsers, color: "text-teal-400" },
+    { id: "banners", label: "Banners", icon: FiLayout, color: "text-orange-400" },
+    { id: "ewarranty", label: "Warranty", icon: FiFileText, color: "text-emerald-400" },
+    { id: "contacts", label: "Messages", icon: FiMail, color: "text-yellow-400" },
+    { id: "settings", label: "Settings", icon: FiSettings, color: "text-gray-400" },
+  ];
 
-// Middlewares
-app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+  const renderSection = () => {
+    const props = { token, isRealTimeSync, setSection };
+    switch (section) {
+      case "dashboard": return <DashboardOverview {...props} />;
+      case "inventory": return <InventoryManagement token={token} />;
+      case "returns": return <ReturnManagement token={token} />;
+      case "coupons": return <CouponManagement token={token} />;
+      case "products": return <ProductManagement token={token} />;
+      case "ewarranty": return <EWarrantyManagement token={token} />;
+      case "categories": return <CategoryManagement token={token} />;
+      case "contacts": return <ContactManagement token={token} />;
+      case "orders": return <OrderManagement token={token} />;
+      case "banners": return <BannerManagement token={token} />;
+      case "users": return <UserManagement token={token} />;
+      case "settings": return <AdminSettings token={token} />;
+      default: return <DashboardOverview {...props} />;
+    }
+  };
 
-// --- CORS Configuration ---
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:5173",
-  "https://anritvox-frontend.vercel.app",
-  "https://www.anritvox.com",
-  "https://anritvox.com",
-];
+  return (
+    <div className="flex h-screen bg-gray-900 text-white overflow-hidden">
+      {/* Sidebar */}
+      <aside className="w-64 bg-gray-800 flex-shrink-0 border-r border-gray-700 hidden md:block">
+        <div className="p-6">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+            ANRITVOX Admin
+          </h1>
+        </div>
+        <nav className="mt-4 px-4 space-y-1 overflow-y-auto h-[calc(100vh-120px)]">
+          {menuItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setSection(item.id)}
+              className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-all ${
+                section === item.id 
+                ? 'bg-gray-700 shadow-lg' 
+                : 'hover:bg-gray-700/50'
+              }`}
+            >
+              <item.icon className={`mr-3 h-5 w-5 ${item.color}`} />
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      </aside>
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
-        return callback(null, true);
-      }
-      return callback(new Error("Not allowed by CORS"));
-    },
-    credentials: true,
-  })
-);
-
-// --- Database Utilities ---
-const initDB = async () => {
-  try {
-    await createUsersTable();
-    await createCartTable();
-    await createOrdersTables();
-    await createAddressTable();
-    await createWishlistTable();
-    await createCouponTable();
-    await createReviewTable();
-    await createNotificationTable();
-    await createSettingsTable();
-    await createShippingTable();
-    await createReturnTable();
-    await createBannerTable();
-    await createSerialTable();
-    console.log("All tables initialized successfully");
-    return true;
-  } catch (err) {
-    console.error("DB init error:", err.message);
-    return false;
-  }
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto bg-gray-900 p-8">
+        {renderSection()}
+      </main>
+    </div>
+  );
 };
 
-const safeAddColumn = async (table, column, definition) => {
-  try {
-    await pool.query(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
-  } catch (err) {
-    if (err.code !== 'ER_DUP_FIELDNAME') throw err;
-  }
-};
-
-// --- Migration Route ---
-app.get("/api/migrate-db", async (req, res) => {
-  try {
-    const secret = req.query.secret;
-    if (secret !== (process.env.MIGRATION_SECRET || "anritvox-admin-migrate")) {
-      return res.status(403).json({ error: "Forbidden." });
-    }
-    
-    await initDB();
-    await safeAddColumn("warranty_registrations", "purchase_date", "DATE DEFAULT NULL");
-    await safeAddColumn("warranty_registrations", "invoice_number", "VARCHAR(100) DEFAULT NULL");
-    await safeAddColumn("warranty_registrations", "registered_serial", "VARCHAR(50) DEFAULT NULL");
-    await safeAddColumn("banners", "description", "TEXT DEFAULT NULL");
-
-    const [tables] = await pool.query("SHOW TABLES LIKE 'serial_numbers'");
-    let migratedCount = 0;
-    if (tables.length > 0) {
-      const [migrationRes] = await pool.query(`
-        INSERT IGNORE INTO product_serials (product_id, serial_number, status)
-        SELECT product_id, serial, IF(is_used = 1, 'registered', 'available')
-        FROM serial_numbers
-      `);
-      migratedCount = migrationRes.affectedRows;
-      await pool.query(`
-        UPDATE warranty_registrations wr
-        JOIN serial_numbers sn ON wr.serial_number_id = sn.id
-        SET wr.registered_serial = sn.serial
-        WHERE wr.registered_serial IS NULL
-      `);
-    }
-
-    res.json({ status: "success", details: { migrated_serials: migratedCount } });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// --- Register API Routes ---
-app.use("/api/categories", categoryRoutes);
-app.use("/api/subcategories", subcategoryRoutes);
-app.use("/api/products", productRoutes);
-app.use("/api/warranty", warrantyRoutes);
-app.use("/api/contact", contactRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/serials", serialRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/cart", cartRoutes);
-app.use("/api/orders", orderRoutes);
-app.use("/api/addresses", addressRoutes);
-app.use("/api/admin", adminUserRoutes);
-app.use("/api/wishlist", wishlistRoutes);
-app.use("/api/coupons", couponRoutes);
-app.use("/api/reviews", reviewRoutes);
-app.use("/api/notifications", notificationRoutes);
-app.use("/api/analytics", analyticsRoutes);
-app.use("/api/settings", settingsRoutes);
-app.use("/api/shipping", shippingRoutes);
-app.use("/api/returns", returnRoutes);
-app.use("/api/inventory", inventoryRoutes);
-app.use("/api/banners", bannerRoutes);
-
-// --- Health Check ---
-app.get("/", (req, res) => res.json({
-  status: "ok",
-  message: "Anritvox API running on Railway!",
-  version: "3.2.1",
-  environment: process.env.NODE_ENV || "development"
-}));
-
-// --- Server Start (Optimized for Railway & Vercel) ---
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, async () => {
-  console.log(`Server running on port ${PORT}`);
-  // Run initialization on startup for persistent environments
-  if (process.env.NODE_ENV !== 'production') {
-    await initDB();
-  }
-});
-
-module.exports = app;
+export default AdminDashboard;
