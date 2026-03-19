@@ -1,59 +1,67 @@
 import axios from 'axios';
 
-// 1. Environment Configuration
-export const BASE_URL = import.meta.env.MODE === 'development'
-  ? 'http://localhost:5000'
-  : (import.meta.env.VITE_BASE_URL || 'https://service.anritvox.com');
-
+// Correctly use Vite environment variables
+export const BASE_URL = import.meta.env.VITE_BASE_URL || 'https://service.anritvox.com';
 const API_BASE_URL = `${BASE_URL}/api`;
 
-// 2. Axios Instance (Used for complex requests or interceptors)
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
 });
 
+// Helper for tokens
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+  const token = localStorage.getItem('token') || localStorage.getItem('ms_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// 3. Helper for Fetch-based calls
 function authHeader(token) {
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  return { Authorization: `Bearer ${token}` };
 }
 
-// ─── ADMIN: PRODUCT MANAGEMENT (Fixed Argument Order) ───────────────────────
+// ─── PUBLIC API ────────────────────────────────────────────────────────────
 
-/**
- * Matches ProductManagement.jsx: createProduct(formData, token)
- */
+export async function fetchCategories() {
+  const res = await fetch(`${BASE_URL}/api/categories`);
+  return res.json();
+}
+
+export async function fetchProducts() {
+  const res = await fetch(`${BASE_URL}/api/products`);
+  return res.json();
+}
+
+export async function fetchProductById(id) {
+  const res = await fetch(`${BASE_URL}/api/products/${id}`);
+  return res.json();
+}
+
+// ─── ADMIN: PRODUCT MANAGEMENT (FIXED ARGS) ────────────────────────────────
+
+export async function fetchProductsAdmin(token) {
+  const res = await fetch(`${BASE_URL}/api/products`, { headers: authHeader(token) });
+  return res.json();
+}
+
 export async function createProduct(formData, token) {
   const res = await fetch(`${BASE_URL}/api/products`, {
     method: 'POST',
     headers: authHeader(token),
-    body: formData, // FormData handles its own Content-Type
+    body: formData,
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to create product');
-  return data;
+  return res.json();
 }
 
-/**
- * Matches ProductManagement.jsx: updateProduct(id, formData, token)
- */
 export async function updateProduct(id, formData, token) {
   const res = await fetch(`${BASE_URL}/api/products/${id}`, {
     method: 'PUT',
     headers: authHeader(token),
     body: formData,
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to update product');
-  return data;
+  return res.json();
 }
 
 export async function deleteProduct(id, token) {
@@ -61,76 +69,178 @@ export async function deleteProduct(id, token) {
     method: 'DELETE',
     headers: authHeader(token),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to delete product');
-  return data;
+  return res.json();
 }
 
-// ─── ADMIN: SERIAL MANAGEMENT (Fixed Argument Order) ─────────────────────────
+// ─── ADMIN: SERIAL MANAGEMENT ──────────────────────────────────────────────
 
 export async function fetchProductSerials(productId, token) {
-  const res = await fetch(`${BASE_URL}/api/admin/products/${productId}/serials`, {
-    headers: authHeader(token),
+  const res = await fetch(`${BASE_URL}/api/admin/products/${productId}/serials`, { 
+    headers: authHeader(token) 
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to fetch serials');
-  return data;
+  return res.json();
 }
 
-export async function updateProductSerial(serialId, newSerial, token, productId) {
+export async function addProductSerials(productId, serials, token) {
+  const res = await fetch(`${BASE_URL}/api/serials`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId, serials }),
+  });
+  return res.json();
+}
+
+export async function updateProductSerial(productId, serialId, newSerial, token) {
   const res = await fetch(`${BASE_URL}/api/serials/${serialId}`, {
     method: 'PUT',
     headers: { ...authHeader(token), 'Content-Type': 'application/json' },
     body: JSON.stringify({ productId, serial: newSerial }),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to update serial');
-  return data;
+  return res.json();
 }
 
-// ─── CATEGORIES & SUB-CATEGORIES ───────────────────────────────────────────
-
-export async function fetchCategories() {
-  const res = await fetch(`${BASE_URL}/api/categories`);
-  const data = await res.json();
-  if (!res.ok) throw new Error('Failed to load categories');
-  return Array.isArray(data) ? data : (data.categories || data.data || []);
+export async function deleteProductSerial(productId, serialId, token) {
+  const res = await fetch(`${BASE_URL}/api/serials/${serialId}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  return res.json();
 }
 
-export async function fetchSubcategories(categoryId) {
-  const url = categoryId 
-    ? `${BASE_URL}/api/categories/${categoryId}/subcategories`
-    : `${BASE_URL}/api/categories/all/subcategories`;
-    
-  const res = await fetch(url);
-  const data = await res.json();
-  if (!res.ok) throw new Error('Failed to load subcategories');
-  return Array.isArray(data) ? data : (data.subcategories || data.data || []);
+// ─── CART SYSTEM (RESTORING MISSING EXPORTS) ────────────────────────────────
+
+export async function fetchCart(token) {
+  const res = await fetch(`${BASE_URL}/api/cart`, { headers: authHeader(token) });
+  if (!res.ok) throw new Error('Failed to load cart');
+  return res.json();
 }
 
-// ─── PUBLIC: PRODUCTS ───────────────────────────────────────────────────────
-
-export async function fetchProducts() {
-  const res = await fetch(`${BASE_URL}/api/products`);
-  const data = await res.json();
-  if (!res.ok) throw new Error('Failed to load products');
-  return Array.isArray(data) ? data : (data.products || data.data || []);
+export async function addToCartAPI(token, productId, quantity) {
+  const res = await fetch(`${BASE_URL}/api/cart`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId, quantity }),
+  });
+  return res.json();
 }
 
-export async function fetchProductById(id) {
-  const res = await fetch(`${BASE_URL}/api/products/${id}`);
-  const data = await res.json();
-  if (!res.ok) throw new Error('Failed to load product details');
-  return data.product || data.data || data;
+export async function removeFromCartAPI(token, productId) {
+  const res = await fetch(`${BASE_URL}/api/cart/${productId}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  return res.json();
 }
 
-// ─── ADMIN: GENERAL ─────────────────────────────────────────────────────────
+export async function clearCartAPI(token) {
+  const res = await fetch(`${BASE_URL}/api/cart`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  return res.json();
+}
 
-export async function fetchProductsAdmin(token) {
-  const res = await fetch(`${BASE_URL}/api/products`, { headers: authHeader(token) });
-  const data = await res.json();
-  if (!res.ok) throw new Error('Failed to load admin products');
-  return Array.isArray(data) ? data : (data.products || data.data || []);
+// ─── AUTH & ADMIN ──────────────────────────────────────────────────────────
+
+export async function adminLogin(credentials) {
+  const res = await fetch(`${BASE_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(credentials),
+  });
+  return res.json();
+}
+
+export async function changeAdminPassword(currentPassword, newPassword, token) {
+  const res = await fetch(`${BASE_URL}/api/users/change-password`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  return res.json();
+}
+
+// ─── CATEGORIES & SUBCATEGORIES ─────────────────────────────────────────────
+
+export async function fetchSubcategories(token) {
+  // Assuming this endpoint exists to get all subcategories
+  const res = await fetch(`${BASE_URL}/api/categories/subcategories/all`, { headers: authHeader(token) });
+  return res.json();
+}
+
+export async function updateCategory(id, data, token) {
+  const res = await fetch(`${BASE_URL}/api/categories/${id}`, {
+    method: 'PUT',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+export async function createCategory(data, token) {
+  const res = await fetch(`${BASE_URL}/api/categories`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+export async function deleteCategory(id, token) {
+  const res = await fetch(`${BASE_URL}/api/categories/${id}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  return res.json();
+}
+
+// ─── NEW FEATURES (RESTORING) ───────────────────────────────────────────────
+
+export async function fetchCouponsAdmin(token) {
+  const res = await fetch(`${BASE_URL}/api/coupons`, { headers: authHeader(token) });
+  return res.json();
+}
+
+export async function fetchReturnsAdmin(token) {
+  const res = await fetch(`${BASE_URL}/api/returns`, { headers: authHeader(token) });
+  return res.json();
+}
+
+export async function fetchWarrantyAdmin(token) {
+  const res = await fetch(`${BASE_URL}/api/warranty/admin`, { headers: authHeader(token) });
+  return res.json();
+}
+
+export async function fetchAdminUsers(token) {
+  const res = await fetch(`${BASE_URL}/api/admin/users`, { headers: authHeader(token) });
+  return res.json();
+}
+
+export async function fetchAdminOrders(token) {
+  const res = await fetch(`${BASE_URL}/api/admin/orders`, { headers: authHeader(token) });
+  return res.json();
+}
+
+export async function fetchContactsAdmin(token) {
+  const res = await fetch(`${BASE_URL}/api/contact`, { headers: authHeader(token) });
+  return res.json();
+}
+
+export async function updateWarrantyStatusAdmin(token, id, status) {
+  const res = await fetch(`${BASE_URL}/api/warranty/admin/${id}`, {
+    method: 'PUT',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+  return res.json();
+}
+
+export async function deleteWarrantyAdmin(token, id) {
+  const res = await fetch(`${BASE_URL}/api/warranty/admin/${id}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  return res.json();
 }
 
 export default api;
