@@ -31,22 +31,17 @@ const CouponManagement = lazy(() => import("./pages/admin/CouponManagement"));
 const InventoryManagement = lazy(() => import("./pages/admin/InventoryManagement"));
 
 const PageLoader = () => (
-  <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-    <div className="w-10 h-10 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+  <div style={{minHeight:'100vh',background:'#111',display:'flex',alignItems:'center',justifyContent:'center'}}>
+    <div style={{width:40,height:40,border:'4px solid #22d3ee',borderTopColor:'transparent',borderRadius:'50%',animation:'spin 1s linear infinite'}} />
   </div>
 );
 
 const ErrorFallback = ({ error, resetError }) => (
-  <div className="min-h-screen bg-gray-950 flex items-center justify-center flex-col gap-4 text-white p-8">
-    <h2 className="text-2xl font-bold text-red-400">Something went wrong</h2>
-    <p className="text-gray-400 text-center max-w-md">{error?.message || "An unexpected error occurred."}</p>
-    <button
-      onClick={resetError}
-      className="px-6 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-colors"
-    >
-      Try Again
-    </button>
-    <a href="/" className="text-cyan-400 hover:underline">Go to Homepage</a>
+  <div style={{minHeight:'100vh',background:'#000',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:16,color:'#fff',padding:32}}>
+    <h2 style={{fontSize:24,fontWeight:'bold',color:'#f87171'}}>Something went wrong</h2>
+    <pre style={{background:'#1f1f1f',color:'#fbbf24',padding:16,borderRadius:8,maxWidth:800,overflowX:'auto',whiteSpace:'pre-wrap',wordBreak:'break-word',fontSize:13}}>{error?.message || "An unexpected error occurred."}{"\n\n"}{error?.stack || ""}</pre>
+    <button onClick={resetError} style={{padding:'8px 24px',background:'#06b6d4',color:'#000',border:'none',borderRadius:8,cursor:'pointer',fontWeight:'bold'}}>Try Again</button>
+    <a href="/" style={{color:'#22d3ee'}}>Go to Homepage</a>
   </div>
 );
 
@@ -72,7 +67,7 @@ class ErrorBoundary extends Component {
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <PageLoader />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login" />;
   return children;
 }
 
@@ -82,53 +77,31 @@ function AppContent() {
   return (
     <>
       {!isAdminPath && <Navbar />}
-      <main>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/shop" element={<Shop />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
-            <Route path="/e-warranty" element={<EWarranty />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/compare" element={<Compare />} />
-            <Route path="/checkout" element={
-              <ProtectedRoute><Checkout /></ProtectedRoute>
-            } />
-            <Route path="/order-success" element={
-              <ProtectedRoute><OrderSuccess /></ProtectedRoute>
-            } />
-            <Route path="/profile" element={
-              <ProtectedRoute><Profile /></ProtectedRoute>
-            } />
-            <Route path="/my-orders" element={
-              <ProtectedRoute><Profile /></ProtectedRoute>
-            } />
-            <Route path="/wishlist" element={
-              <ProtectedRoute><Wishlist /></ProtectedRoute>
-            } />
-            <Route path="/track/:orderId" element={
-              <ProtectedRoute><OrderTracking /></ProtectedRoute>
-            } />
-            <Route path="/track" element={
-              <ProtectedRoute><OrderTracking /></ProtectedRoute>
-            } />
-            <Route path="/address-book" element={
-              <ProtectedRoute><AddressBook /></ProtectedRoute>
-            } />
-            <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/returns" element={<ReturnManagement />} />
-            <Route path="/admin/coupons" element={<CouponManagement />} />
-            <Route path="/admin/inventory" element={<InventoryManagement />} />
-            <Route path="/admin/*" element={<AdminDashboard />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
-      </main>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/ewarranty" element={<EWarranty />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+          <Route path="/order-success" element={<OrderSuccess />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/order-tracking" element={<OrderTracking />} />
+          <Route path="/compare" element={<Compare />} />
+          <Route path="/address-book" element={<AddressBook />} />
+          <Route path="/admin/returns" element={<ReturnManagement />} />
+          <Route path="/admin/coupons" element={<CouponManagement />} />
+          <Route path="/admin/inventory" element={<InventoryManagement />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Suspense>
       {!isAdminPath && <Footer />}
     </>
   );
@@ -136,19 +109,19 @@ function AppContent() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <ErrorBoundary>
+    <ErrorBoundary>
+      <CartProvider>
         <AuthProvider>
           <ToastProvider>
             <WishlistProvider>
-              <CartProvider>
+              <BrowserRouter>
                 <AppContent />
-              </CartProvider>
+              </BrowserRouter>
             </WishlistProvider>
           </ToastProvider>
         </AuthProvider>
-      </ErrorBoundary>
-    </BrowserRouter>
+      </CartProvider>
+    </ErrorBoundary>
   );
 }
 
