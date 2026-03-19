@@ -5,7 +5,7 @@ import { useSettings } from "../context/SettingsContext";
 import { useCart } from "../context/CartContext";
 import { 
   ChevronLeft, ChevronRight, Star, ArrowRight, ShieldCheck, 
-  Headphones, Truck, Zap, Globe, ChevronUp,,
+    Headphones, Truck, Zap, Globe, ChevronUp,
   CheckCircle2, Cpu, Smartphone, LayoutGrid, Search, 
   Menu, User, ShoppingCart, Percent
 } from "lucide-react";
