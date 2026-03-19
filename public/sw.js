@@ -1,4 +1,4 @@
-const CACHE_NAME = 'anritvox-v1';
+const CACHE_NAME = 'anritvox-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
