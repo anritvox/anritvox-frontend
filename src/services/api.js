@@ -1,9 +1,11 @@
 import axios from 'axios';
 
-// This checks if Vite is in development mode.
-const API_BASE_URL = import.meta.env.MODE === 'development' 
-  ? 'http://localhost:5000/api' 
-    : 'https://service.anritvox.com/api';
+// Correctly use Vite environment variables
+export const BASE_URL = import.meta.env.MODE === 'development'
+  ? 'http://localhost:5000'
+  : (import.meta.env.VITE_BASE_URL || 'https://service.anritvox.com');
+
+const API_BASE_URL = `${BASE_URL}/api`;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -21,17 +23,12 @@ api.interceptors.request.use((config) => {
 
 export default api;
 
-export const BASE_URL = import.meta.env.MODE === 'development'
-  ? 'http://localhost:5000'
-    : 'https://service.anritvox.com';
-
 /**
  * Helper: attach authorization header
  */
 function authHeader(token) {
   return { Authorization: `Bearer ${token}` };
 }
-
 // ─── PUBLIC: GLOBAL SETTINGS & CATEGORIES ────────────────────────────────────
 
 export async function fetchPublicSettings() {
