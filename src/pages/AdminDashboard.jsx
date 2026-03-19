@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   FiHome, FiBox, FiDatabase, FiFolder, FiShoppingCart, 
   FiRefreshCcw, FiTag, FiUsers, FiLayout, FiFileText, 
-  FiMail, FiSettings, FiLogOut, FiMenu, FiX 
+  FiMail, FiSettings 
 } from 'react-icons/fi';
 
-// Import Section Components
+// ─── IMPORTANT: CHECK FILENAMES IN YOUR FOLDER ───────────────────
+// If your file is "dashboardOverview.jsx", change the import to match!
 import DashboardOverview from '../components/admin/DashboardOverview';
 import ProductManagement from '../components/admin/ProductManagement';
 import InventoryManagement from '../components/admin/InventoryManagement';
@@ -21,8 +22,7 @@ import AdminSettings from '../components/admin/AdminSettings';
 
 const AdminDashboard = () => {
   const [section, setSection] = useState("dashboard");
-  const [token] = useState(localStorage.getItem('adminToken'));
-  const [isRealTimeSync] = useState(true);
+  const token = localStorage.getItem('adminToken');
 
   const menuItems = [
     { id: "dashboard", label: "Overview", icon: FiHome, color: "text-cyan-400" },
@@ -40,53 +40,49 @@ const AdminDashboard = () => {
   ];
 
   const renderSection = () => {
-    const props = { token, isRealTimeSync, setSection };
+    const props = { token, setSection };
+    
+    // Safety check: If a component is missing during development, 
+    // it will throw an error here.
     switch (section) {
       case "dashboard": return <DashboardOverview {...props} />;
-      case "inventory": return <InventoryManagement token={token} />;
-      case "returns": return <ReturnManagement token={token} />;
-      case "coupons": return <CouponManagement token={token} />;
-      case "products": return <ProductManagement token={token} />;
-      case "ewarranty": return <EWarrantyManagement token={token} />;
-      case "categories": return <CategoryManagement token={token} />;
-      case "contacts": return <ContactManagement token={token} />;
-      case "orders": return <OrderManagement token={token} />;
-      case "banners": return <BannerManagement token={token} />;
-      case "users": return <UserManagement token={token} />;
-      case "settings": return <AdminSettings token={token} />;
+      case "inventory": return <InventoryManagement {...props} />;
+      case "returns": return <ReturnManagement {...props} />;
+      case "coupons": return <CouponManagement {...props} />;
+      case "products": return <ProductManagement {...props} />;
+      case "ewarranty": return <EWarrantyManagement {...props} />;
+      case "categories": return <CategoryManagement {...props} />;
+      case "contacts": return <ContactManagement {...props} />;
+      case "orders": return <OrderManagement {...props} />;
+      case "banners": return <BannerManagement {...props} />;
+      case "users": return <UserManagement {...props} />;
+      case "settings": return <AdminSettings {...props} />;
       default: return <DashboardOverview {...props} />;
     }
   };
 
   return (
-    <div className="flex h-screen bg-gray-900 text-white overflow-hidden">
-      {/* Sidebar */}
-      <aside className="w-64 bg-gray-800 flex-shrink-0 border-r border-gray-700 hidden md:block">
-        <div className="p-6">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-            ANRITVOX Admin
-          </h1>
+    <div className="flex h-screen bg-gray-900 text-white">
+      <aside className="w-64 bg-gray-800 border-r border-gray-700 overflow-y-auto">
+        <div className="p-6 font-bold text-xl border-b border-gray-700 text-cyan-400">
+          Admin Panel
         </div>
-        <nav className="mt-4 px-4 space-y-1 overflow-y-auto h-[calc(100vh-120px)]">
+        <nav className="p-4 space-y-2">
           {menuItems.map((item) => (
             <button
               key={item.id}
               onClick={() => setSection(item.id)}
-              className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-all ${
-                section === item.id 
-                ? 'bg-gray-700 shadow-lg' 
-                : 'hover:bg-gray-700/50'
+              className={`flex items-center w-full p-3 rounded-lg transition ${
+                section === item.id ? 'bg-gray-700 ring-1 ring-cyan-500' : 'hover:bg-gray-700'
               }`}
             >
-              <item.icon className={`mr-3 h-5 w-5 ${item.color}`} />
-              {item.label}
+              <item.icon className={`mr-3 ${item.color}`} />
+              <span className="text-sm">{item.label}</span>
             </button>
           ))}
         </nav>
       </aside>
-
-      {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto bg-gray-900 p-8">
+      <main className="flex-1 p-8 overflow-y-auto">
         {renderSection()}
       </main>
     </div>
