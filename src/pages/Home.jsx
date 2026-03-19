@@ -3,13 +3,8 @@ import { Link } from "react-router-dom";
 import { fetchProducts, fetchActiveBanners, fetchCategories } from "../services/api";
 import { useSettings } from "../context/SettingsContext";
 import { useCart } from "../context/CartContext";
-import { 
-  ChevronLeft, ChevronRight, Star, ArrowRight, ShieldCheck, 
-    Headphones, Truck, Zap, Globe, ChevronUp,
-  CheckCircle2, Cpu, Smartphone, LayoutGrid, Search, 
-  Menu, User, ShoppingCart, Percent
-} from "lucide-react";
-const Flame = Zap; // Flame icon alias (not in this lucide-react version)
+import { FiChevronLeft as ChevronLeft, FiChevronRight as ChevronRight, FiStar as Star, FiArrowRight as ArrowRight, FiShield as ShieldCheck, FiHeadphones as Headphones, FiTruck as Truck, FiZap as Zap, FiGlobe as Globe, FiChevronUp as ChevronUp, FiCheckCircle as CheckCircle2, FiCpu as Cpu, FiSmartphone as Smartphone, FiGrid as LayoutGrid, FiSearch as Search, FiMenu as Menu, FiUser as User, FiShoppingCart as ShoppingCart, FiPercent as Percent } from "react-icons/fi";
+const Flame = Zap; // Alias for Flame icon
 import { motion, AnimatePresence } from "framer-motion";
 
 const FALLBACK_IMG = "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=1200";
