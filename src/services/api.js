@@ -243,4 +243,8 @@ export async function deleteWarrantyAdmin(token, id) {
   return res.json();
 }
 
+export async function fetchPublicSettings() {
+  const res = await fetch(`${BASE_URL}/api/settings/public`);
+  return res.json();
+}
 export default api;
