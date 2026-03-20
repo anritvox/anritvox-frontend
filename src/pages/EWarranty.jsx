@@ -10,12 +10,11 @@ import {
   ArrowRight,
   Download
 } from 'lucide-react';
-// Updated import to include BASE_URL
 import { checkSerialAvailability, registerWarranty, BASE_URL } from '../services/api';
 
 export default function EWarranty() {
   const [serial, setSerial] = useState('');
-  const [step, setStep] = useState(1); // 1: Check, 2: Register, 3: Success
+  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [productData, setProductData] = useState(null);
   const [error, setError] = useState('');
@@ -28,13 +27,15 @@ export default function EWarranty() {
     invoiceNumber: ''
   });
 
+  // Fixed the nested quote issue by using backticks for the SVG string
+  const FALLBACK_IMAGE = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='16' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E`;
+
   const handleCheckSerial = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
       const data = await checkSerialAvailability(serial);
-      
       if (data.status === 'registered') {
         setError('This product is already registered for warranty.');
       } else {
@@ -69,7 +70,6 @@ export default function EWarranty() {
     <div className="min-h-screen bg-[#f8fafc] py-12 px-4 font-sans">
       <div className="max-w-4xl mx-auto">
         
-        {/* Header Section */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 text-white rounded-2xl shadow-xl shadow-blue-200 mb-6">
             <ShieldCheck size={32} />
@@ -80,7 +80,6 @@ export default function EWarranty() {
           </p>
         </div>
 
-        {/* Progress Bar */}
         <div className="flex items-center justify-center mb-10 gap-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex items-center">
@@ -94,7 +93,6 @@ export default function EWarranty() {
           ))}
         </div>
 
-        {/* Step 1: Verification */}
         {step === 1 && (
           <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/60 p-8 md:p-12 border border-slate-100">
             <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-2">
@@ -116,11 +114,10 @@ export default function EWarranty() {
                     <Cpu size={24} />
                   </div>
                 </div>
-                <p className="mt-3 text-sm text-slate-400">You can find the serial number on the product packaging or the device body.</p>
               </div>
 
               {error && (
-                <div className="flex items-center gap-3 p-4 bg-red-50 text-red-600 rounded-2xl border border-red-100 animate-shake">
+                <div className="flex items-center gap-3 p-4 bg-red-50 text-red-600 rounded-2xl border border-red-100">
                   <AlertCircle size={20} />
                   <span className="font-medium text-sm">{error}</span>
                 </div>
@@ -129,7 +126,7 @@ export default function EWarranty() {
               <button 
                 type="submit" 
                 disabled={loading}
-                className="w-full bg-slate-900 hover:bg-black text-white font-bold py-5 rounded-2xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                className="w-full bg-slate-900 hover:bg-black text-white font-bold py-5 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50"
               >
                 {loading ? 'Verifying...' : 'Validate Serial Number'}
                 <ArrowRight size={20} />
@@ -138,7 +135,6 @@ export default function EWarranty() {
           </div>
         )}
 
-        {/* Step 2: Registration */}
         {step === 2 && productData && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="md:col-span-1 space-y-6">
@@ -150,7 +146,7 @@ export default function EWarranty() {
                       ? (productData.images[0].startsWith('http') 
                           ? productData.images[0] 
                           : `${BASE_URL}/${productData.images[0].replace(/^[\/\\]/, '').startsWith('uploads/') ? '' : 'uploads/'}${productData.images[0].replace(/^[\/\\]/, '')}`)
-                      : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='16' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E"
+                      : FALLBACK_IMAGE
                   } 
                   alt={productData.product_name}
                   className="w-full aspect-square object-contain bg-slate-50 rounded-2xl mb-4"
@@ -161,10 +157,6 @@ export default function EWarranty() {
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-400">Warranty</span>
                     <span className="font-bold text-slate-800">{productData.warranty_period} Months</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">Batch</span>
-                    <span className="font-mono text-slate-800">{productData.batch_number || 'Standard'}</span>
                   </div>
                 </div>
               </div>
@@ -226,7 +218,7 @@ export default function EWarranty() {
                   <button 
                     type="submit" 
                     disabled={loading}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg mt-6 flex items-center justify-center gap-2"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg mt-6"
                   >
                     {loading ? 'Activating...' : 'Activate Warranty'}
                   </button>
@@ -236,47 +228,18 @@ export default function EWarranty() {
           </div>
         )}
 
-        {/* Step 3: Success Certificate */}
         {step === 3 && (
-          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-500">
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
             <div className="bg-slate-900 p-8 text-center text-white">
               <Award className="mx-auto mb-4 text-blue-400" size={64} />
               <h2 className="text-3xl font-bold">Warranty Activated</h2>
               <p className="text-slate-400 mt-2">Product Serial: <span className="font-mono text-white">{serial}</span></p>
             </div>
-            <div className="p-8 md:p-12">
-              <div className="flex flex-col md:flex-row gap-8 items-center border-b border-dashed border-slate-200 pb-10 mb-10">
-                <div className="flex-1 space-y-4">
-                  <div className="flex items-center gap-3 text-green-600">
-                    <CheckCircle />
-                    <span className="font-bold text-lg">Manufacturer Protection Active</span>
-                  </div>
-                  <p className="text-slate-600">
-                    Thank you, <span className="font-bold text-slate-900">{formData.customerName}</span>. Your {productData.product_name} is now covered under our official warranty program.
-                  </p>
-                </div>
-                <div className="bg-slate-50 p-6 rounded-2xl text-center min-w-[200px]">
-                  <p className="text-xs font-bold text-slate-400 uppercase mb-1">Valid Until</p>
-                  <div className="flex items-center justify-center gap-2 text-slate-900 font-bold text-xl">
-                    <Calendar className="text-blue-600" size={20} />
-                    {new Date(new Date(formData.purchaseDate).setMonth(new Date(formData.purchaseDate).getMonth() + productData.warranty_period)).toLocaleDateString()}
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button 
-                  onClick={() => window.print()}
-                  className="flex-1 bg-slate-900 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-black transition-colors"
-                >
-                  <Download size={20} /> Download PDF
-                </button>
-                <button 
-                  onClick={() => window.location.href = '/shop'}
-                  className="flex-1 bg-slate-100 text-slate-600 font-bold py-4 rounded-xl hover:bg-slate-200 transition-colors"
-                >
-                  Continue Shopping
-                </button>
-              </div>
+            <div className="p-8 md:p-12 text-center">
+               <p className="text-slate-600 mb-6">Thank you, {formData.customerName}. Your product is now registered.</p>
+               <button onClick={() => window.print()} className="bg-slate-900 text-white px-8 py-3 rounded-xl flex items-center gap-2 mx-auto">
+                 <Download size={20}/> Download Certificate
+               </button>
             </div>
           </div>
         )}
