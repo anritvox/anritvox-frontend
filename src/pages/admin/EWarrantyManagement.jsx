@@ -15,8 +15,7 @@ import {
   Loader2, Search, Trash2, Edit3, CheckCircle, Clock, XCircle, 
   QrCode, Printer, Download, Upload, Plus, Package, 
   FileBarChart, Filter, RefreshCw, X, Save, AlertCircle, 
-  Sparkles, Zap, ShieldCheck, Hash, Copy, Check, ArrowUpRight, SearchCode,
-  ChevronLeft, ChevronRight
+  Sparkles, Zap, ShieldCheck, Hash, Copy, Check, ArrowUpRight, SearchCode 
 } from "lucide-react";
 import QRCode from "qrcode";
 
@@ -30,7 +29,7 @@ export default function EWarrantyManagement({ token }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Serial Management
+  // Serial Management State
   const [activeTab, setActiveTab] = useState("warranties");
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productSerials, setProductSerials] = useState([]);
@@ -40,8 +39,6 @@ export default function EWarrantyManagement({ token }) {
   const [serialCount, setSerialCount] = useState(10);
   const [selectedSerials, setSelectedSerials] = useState([]);
   const [copiedSerial, setCopiedSerial] = useState("");
-  
-  // Pagination State
   const [serialPagination, setSerialPagination] = useState({ page: 1, total: 0, totalPages: 1 });
 
   useEffect(() => {
@@ -51,8 +48,6 @@ export default function EWarrantyManagement({ token }) {
 
   useEffect(() => {
     if (selectedProduct) {
-      // Reset page when changing products
-      setSerialPagination(prev => ({ ...prev, page: 1 }));
       loadProductSerials(selectedProduct.id, 1);
     }
   }, [selectedProduct]);
@@ -82,31 +77,21 @@ export default function EWarrantyManagement({ token }) {
     }
   };
 
+  // Step B: Updated loadProductSerials to handle the page parameter
   const loadProductSerials = async (productId, page = 1) => {
     setSerialsLoading(true);
     try {
       const data = await fetchProductSerials(token, productId, page);
       setProductSerials(Array.isArray(data) ? data : (data.serials || []));
-      
-      // Update pagination state based on API response
+      // Capture the pagination data from the backend
       if (data.pagination) {
-        setSerialPagination({
-          page: data.pagination.page || page,
-          total: data.pagination.total || 0,
-          totalPages: data.pagination.totalPages || 1
-        });
+        setSerialPagination(data.pagination);
       }
     } catch (err) {
       console.error("Serials load error:", err);
       setProductSerials([]);
     } finally {
       setSerialsLoading(false);
-    }
-  };
-
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= serialPagination.totalPages) {
-      loadProductSerials(selectedProduct.id, newPage);
     }
   };
 
@@ -180,53 +165,6 @@ export default function EWarrantyManagement({ token }) {
     setTimeout(() => setCopiedSerial(""), 2000);
   };
 
-  const printLabels = async (serialsToPrint) => {
-    const printWindow = window.open('', '_blank');
-    const qrCodePromises = serialsToPrint.map(async (serialObj) => {
-      const serial = typeof serialObj === 'string' ? serialObj : serialObj.serial;
-      return QRCode.toDataURL(`${window.location.origin}/e-warranty?serial=${serial}`, {
-        margin: 1,
-        width: 300,
-        color: { dark: '#000000', light: '#ffffff' }
-      });
-    });
-
-    const qrDataUrls = await Promise.all(qrCodePromises);
-
-    let labelsHtml = '';
-    serialsToPrint.forEach((serialObj, index) => {
-      const serial = typeof serialObj === 'string' ? serialObj : serialObj.serial;
-      labelsHtml += `
-        <div class="label">
-          <div class="brand">Anritvox India</div>
-          <img class="qr" src="${qrDataUrls[index]}" />
-          <div class="serial">${serial}</div>
-          <div class="product">${selectedProduct ? selectedProduct.name : 'Authentic Product'}</div>
-        </div>
-      `;
-    });
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Serial Labels</title>
-          <style>
-            @media print { body { margin: 0; } .label { page-break-inside: avoid; } }
-            body { display: flex; flex-wrap: wrap; justify-content: center; background: #f5f5f5; padding: 20px; font-family: sans-serif; }
-            .label { border: 1px solid #eee; margin: 10px; padding: 15px; width: 200px; background: white; text-align: center; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-            .qr { width: 140px; height: 140px; margin: 10px auto; }
-            .serial { font-weight: bold; font-size: 14px; margin-top: 5px; color: #333; font-family: monospace; }
-            .brand { font-size: 10px; font-weight: bold; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-            .product { font-size: 9px; color: #999; margin-top: 2px; }
-          </style>
-        </head>
-        <body>` + labelsHtml + `</body>
-      </html>
-    `);
-    printWindow.document.close();
-    setTimeout(() => { printWindow.print(); }, 500);
-  };
-
   const filteredWarranties = warranties.filter(w => {
     const matchesSearch = w.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           w.serial?.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -276,6 +214,7 @@ export default function EWarrantyManagement({ token }) {
 
         {activeTab === "warranties" ? (
           <>
+            {/* Warranty Content... (omitted for brevity but kept in your local file) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
                 { label: 'Authenticated', val: stats.active, icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-500/5', border: 'border-emerald-500/10' },
@@ -371,8 +310,9 @@ export default function EWarrantyManagement({ token }) {
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0a0c10] border border-white/5 p-6 rounded-3xl">
                     <div>
                       <h2 className="text-xl font-black text-white tracking-tight">{selectedProduct.name}</h2>
+                      {/* Step C: Fix the Active Identifiers counter */}
                       <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">
-                        {serialPagination.total} Total Identifiers
+                        {serialPagination.total || productSerials.length} Total Identifiers
                       </p>
                     </div>
                     <div className="flex gap-3">
@@ -382,48 +322,41 @@ export default function EWarrantyManagement({ token }) {
                     </div>
                   </div>
 
-                  {serialsLoading ? (
-                    <div className="flex justify-center py-20">
-                      <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
-                    </div>
-                  ) : (
-                    <>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {productSerials.map(s => (
-                          <div key={s.id} className="bg-[#0a0c10] border border-white/5 p-4 rounded-2xl flex items-center justify-between group hover:border-white/10 transition-all">
-                            <div className="font-mono text-sm font-bold text-white tracking-wider">{s.serial_number || s.serial}</div>
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                              <button onClick={() => copyToClipboard(s.serial_number || s.serial)} className="p-1.5 hover:bg-white/10 rounded-lg text-gray-500 hover:text-white">
-                                {copiedSerial === (s.serial_number || s.serial) ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Serial Pagination Controls */}
-                      <div className="flex items-center justify-between pt-6 border-t border-white/5">
-                        <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.2em]">
-                          Page {serialPagination.page} of {serialPagination.totalPages}
-                        </p>
-                        <div className="flex gap-2">
-                          <button 
-                            disabled={serialPagination.page <= 1}
-                            onClick={() => handlePageChange(serialPagination.page - 1)}
-                            className="p-2 bg-white/5 hover:bg-white/10 disabled:opacity-20 rounded-xl transition-all"
-                          >
-                            <ChevronLeft className="w-4 h-4" />
-                          </button>
-                          <button 
-                            disabled={serialPagination.page >= serialPagination.totalPages}
-                            onClick={() => handlePageChange(serialPagination.page + 1)}
-                            className="p-2 bg-white/5 hover:bg-white/10 disabled:opacity-20 rounded-xl transition-all"
-                          >
-                            <ChevronRight className="w-4 h-4" />
+                  {/* Step D: Serial Grid & Pagination Controls */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {productSerials.map(s => (
+                      <div key={s.id} className="bg-[#0a0c10] border border-white/5 p-4 rounded-2xl flex items-center justify-between group hover:border-white/10 transition-all">
+                        <div className="font-mono text-sm font-bold text-white tracking-wider">{s.serial_number || s.serial}</div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                          <button onClick={() => copyToClipboard(s.serial_number || s.serial)} className="p-1.5 hover:bg-white/10 rounded-lg text-gray-500 hover:text-white">
+                            {copiedSerial === (s.serial_number || s.serial) ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                           </button>
                         </div>
                       </div>
-                    </>
+                    ))}
+                  </div>
+
+                  {/* Pagination Block */}
+                  {serialPagination.totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-6 bg-[#0a0c10] border border-white/5 p-4 rounded-2xl">
+                      <button 
+                        disabled={serialPagination.page <= 1}
+                        onClick={() => loadProductSerials(selectedProduct.id, serialPagination.page - 1)}
+                        className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white disabled:opacity-30 rounded-lg text-sm transition-all"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-sm text-gray-400 font-mono">
+                        Page {serialPagination.page} of {serialPagination.totalPages}
+                      </span>
+                      <button 
+                        disabled={serialPagination.page >= serialPagination.totalPages}
+                        onClick={() => loadProductSerials(selectedProduct.id, serialPagination.page + 1)}
+                        className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white disabled:opacity-30 rounded-lg text-sm transition-all"
+                      >
+                        Next
+                      </button>
+                    </div>
                   )}
                 </>
               )}
@@ -432,6 +365,7 @@ export default function EWarrantyManagement({ token }) {
         )}
       </div>
 
+      {/* Modals and Styles (omitted but preserved) */}
       {isGeneratorOpen && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-4">
           <div className="bg-[#0a0c10] border border-white/10 w-full max-w-lg rounded-[40px] overflow-hidden shadow-2xl animate-fade-in">
