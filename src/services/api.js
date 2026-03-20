@@ -70,7 +70,7 @@ export async function deleteProduct(id, token) {
   return res.json();
 }
 
-// ─── ADMIN: SERIAL MANAGEMENT (FIXED) ──────────────────────────────────────
+// ─── ADMIN: SERIAL MANAGEMENT (FIXED ENDPOINTS) ────────────────────────────
 export async function fetchProductSerials(productId, token, page = 1, limit = 100) {
   const res = await fetch(`${BASE_URL}/api/serials/product/${productId}?page=${page}&limit=${limit}`, {
     headers: authHeader(token)
@@ -166,7 +166,7 @@ export async function changeAdminPassword(currentPassword, newPassword, token) {
   return res.json();
 }
 
-// ─── CATEGORIES & SUBCATEGORIES ────────────────────────────────────────────
+// ─── CATEGORIES & SUBCATEGORIES ──────────────────────────
 export async function fetchSubcategories(token) {
   const res = await fetch(`${BASE_URL}/api/subcategories`, { headers: authHeader(token) });
   return res.json();
@@ -224,7 +224,7 @@ export async function deleteSubcategory(id, token) {
   return res.json();
 }
 
-// ─── ADMIN FEATURES ────────────────────────────────────────────────────────
+// ─── ADMIN FEATURES (COUPONS, RETURNS, WARRANTY, USERS, ORDERS) ───────────
 export async function fetchCouponsAdmin(token) {
   const res = await fetch(`${BASE_URL}/api/coupons`, { headers: authHeader(token) });
   return res.json();
@@ -277,13 +277,13 @@ export async function fetchPublicSettings() {
   return res.json();
 }
 
-// ─── PUBLIC BANNERS ────────────────────────────────────────────────────────
+// ─── PUBLIC BANNERS ───────────────────────────────────────
 export async function fetchActiveBanners() {
   const res = await fetch(`${BASE_URL}/api/banners`);
   return res.json();
 }
 
-// ─── ADMIN: BANNER MANAGEMENT ──────────────────────────────────────────────
+// ─── ADMIN: BANNER MANAGEMENT ─────────────────────────────
 export async function fetchBannersAdmin(token) {
   const res = await fetch(`${BASE_URL}/api/banners/admin/all`, { headers: authHeader(token) });
   return res.json();
@@ -325,7 +325,7 @@ export async function registerWarranty(data) {
   return res.json();
 }
 
-// ─── USER: PROFILE & ORDERS ────────────────────────────────────────────────
+// ─── USER: PROFILE & ORDERS ──────────────────────────────────────────────────
 export async function fetchMyOrders(token) {
   const res = await fetch(`${BASE_URL}/api/orders/my`, { headers: authHeader(token) });
   return res.json();
@@ -349,7 +349,7 @@ export async function updateProfile(data, token) {
   return res.json();
 }
 
-// ─── CHECKOUT: ADDRESS & ORDER ──────────────────────────────────────────────
+// ─── CHECKOUT: ADDRESS & ORDER ────────────────────────────────────────────────
 export async function fetchAddressesAPI(token) {
   const res = await fetch(`${BASE_URL}/api/addresses`, { headers: authHeader(token) });
   return res.json();
@@ -373,7 +373,7 @@ export async function placeOrderAPI(data, token) {
   return res.json();
 }
 
-// ─── CONTACT FORM ──────────────────────────────────────────────────────────
+// ─── CONTACT FORM ────────────────────────────────────────────────────────────
 export async function submitContact(data) {
   const res = await fetch(`${BASE_URL}/api/contact`, {
     method: 'POST',
