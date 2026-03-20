@@ -23,7 +23,6 @@ function authHeader(token) {
 }
 
 // ─── PUBLIC API ────────────────────────────────────────────────────────────
-
 export async function fetchCategories() {
   const res = await fetch(`${BASE_URL}/api/categories`);
   return res.json();
@@ -39,8 +38,7 @@ export async function fetchProductById(id) {
   return res.json();
 }
 
-// ─── ADMIN: PRODUCT MANAGEMENT (FIXED ARGS) ────────────────────────────────
-
+// ─── ADMIN: PRODUCT MANAGEMENT ────────────────────────────────────────────
 export async function fetchProductsAdmin(token) {
   const res = await fetch(`${BASE_URL}/api/products`, { headers: authHeader(token) });
   return res.json();
@@ -72,22 +70,27 @@ export async function deleteProduct(id, token) {
   return res.json();
 }
 
-// ─── ADMIN: SERIAL MANAGEMENT ──────────────────────────────────────────────
-
-export async function fetchProductSerials(productId, token) {
-  const res = await fetch(`${BASE_URL}/api/admin/products/${productId}/serials`, { 
-    headers: authHeader(token) 
+// ─── ADMIN: SERIAL MANAGEMENT (FIXED ENDPOINTS) ────────────────────────────
+export async function fetchProductSerials(token, productId) {
+  const res = await fetch(`${BASE_URL}/api/serials/product/${productId}`, {
+    headers: authHeader(token)
   });
   return res.json();
 }
 
-export async function addProductSerials(productId, serials, token) {
-  const res = await fetch(`${BASE_URL}/api/serials`, {
+export async function addProductSerials(productId, count, prefix, token) {
+  const res = await fetch(`${BASE_URL}/api/serials/generate`, {
     method: 'POST',
     headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ productId, serials }),
+    body: JSON.stringify({ productId, count, prefix, batchNumber: Date.now() }),
   });
   return res.json();
+}
+
+export async function bulkAddProductSerials(productId, serials, token) {
+  // Same endpoint as addProductSerials - backend generates them
+  const count = Array.isArray(serials) ? serials.length : parseInt(serials);
+  return addProductSerials(productId, count, 'AV', token);
 }
 
 export async function updateProductSerial(productId, serialId, newSerial, token) {
@@ -107,8 +110,12 @@ export async function deleteProductSerial(productId, serialId, token) {
   return res.json();
 }
 
-// ─── CART SYSTEM (RESTORING MISSING EXPORTS) ────────────────────────────────
+export async function checkSerialAvailability(serial) {
+  const res = await fetch(`${BASE_URL}/api/serials/check/${encodeURIComponent(serial)}`);
+  return res.json();
+}
 
+// ─── CART SYSTEM ───────────────────────────────────────────────────────────
 export async function fetchCart(token) {
   const res = await fetch(`${BASE_URL}/api/cart`, { headers: authHeader(token) });
   if (!res.ok) throw new Error('Failed to load cart');
@@ -141,7 +148,6 @@ export async function clearCartAPI(token) {
 }
 
 // ─── AUTH & ADMIN ──────────────────────────────────────────────────────────
-
 export async function adminLogin(credentials) {
   const res = await fetch(`${BASE_URL}/api/auth/login`, {
     method: 'POST',
@@ -160,11 +166,9 @@ export async function changeAdminPassword(currentPassword, newPassword, token) {
   return res.json();
 }
 
-// ─── CATEGORIES & SUBCATEGORIES ─────────────────────────────────────────────
-
+// ─── CATEGORIES & SUBCATEGORIES (FIXED ENDPOINTS) ──────────────────────────
 export async function fetchSubcategories(token) {
-  // Assuming this endpoint exists to get all subcategories
-  const res = await fetch(`${BASE_URL}/api/categories/subcategories/all`, { headers: authHeader(token) });
+  const res = await fetch(`${BASE_URL}/api/subcategories`, { headers: authHeader(token) });
   return res.json();
 }
 
@@ -194,8 +198,33 @@ export async function deleteCategory(id, token) {
   return res.json();
 }
 
-// ─── NEW FEATURES (RESTORING) ───────────────────────────────────────────────
+export async function createSubcategory(data, token) {
+  const res = await fetch(`${BASE_URL}/api/subcategories`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
 
+export async function updateSubcategory(id, data, token) {
+  const res = await fetch(`${BASE_URL}/api/subcategories/${id}`, {
+    method: 'PUT',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+export async function deleteSubcategory(id, token) {
+  const res = await fetch(`${BASE_URL}/api/subcategories/${id}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  return res.json();
+}
+
+// ─── ADMIN FEATURES (COUPONS, RETURNS, WARRANTY, USERS, ORDERS) ───────────
 export async function fetchCouponsAdmin(token) {
   const res = await fetch(`${BASE_URL}/api/coupons`, { headers: authHeader(token) });
   return res.json();
@@ -248,17 +277,18 @@ export async function fetchPublicSettings() {
   return res.json();
 }
 
-// ─── PUBLIC BANNERS ───────────────────────────────────────────────────────────
+// ─── PUBLIC BANNERS (FIXED ENDPOINT) ───────────────────────────────────────
 export async function fetchActiveBanners() {
-  const res = await fetch(`${BASE_URL}/api/banners/active`);
+  const res = await fetch(`${BASE_URL}/api/banners`);
   return res.json();
 }
 
-// ─── ADMIN: BANNER MANAGEMENT ─────────────────────────────────────────────────
+// ─── ADMIN: BANNER MANAGEMENT (FIXED ENDPOINT) ─────────────────────────────
 export async function fetchBannersAdmin(token) {
-  const res = await fetch(`${BASE_URL}/api/banners`, { headers: authHeader(token) });
+  const res = await fetch(`${BASE_URL}/api/banners/admin/all`, { headers: authHeader(token) });
   return res.json();
 }
+
 export async function createBannerAdmin(formData, token) {
   const res = await fetch(`${BASE_URL}/api/banners`, {
     method: 'POST',
@@ -267,6 +297,7 @@ export async function createBannerAdmin(formData, token) {
   });
   return res.json();
 }
+
 export async function updateBannerAdmin(id, formData, token) {
   const res = await fetch(`${BASE_URL}/api/banners/${id}`, {
     method: 'PUT',
@@ -275,50 +306,12 @@ export async function updateBannerAdmin(id, formData, token) {
   });
   return res.json();
 }
+
 export async function deleteBannerAdmin(id, token) {
   const res = await fetch(`${BASE_URL}/api/banners/${id}`, {
     method: 'DELETE',
     headers: authHeader(token),
   });
-  return res.json();
-}
-
-// ─── ADMIN: SUBCATEGORY MANAGEMENT ────────────────────────────────────────────
-export async function createSubcategory(data, token) {
-  const res = await fetch(`${BASE_URL}/api/categories/subcategories`, {
-    method: 'POST',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  return res.json();
-}
-export async function updateSubcategory(id, data, token) {
-  const res = await fetch(`${BASE_URL}/api/categories/subcategories/${id}`, {
-    method: 'PUT',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  return res.json();
-}
-export async function deleteSubcategory(id, token) {
-  const res = await fetch(`${BASE_URL}/api/categories/subcategories/${id}`, {
-    method: 'DELETE',
-    headers: authHeader(token),
-  });
-  return res.json();
-}
-
-// ─── ADMIN: BULK SERIAL MANAGEMENT ────────────────────────────────────────────
-export async function bulkAddProductSerials(productId, serials, token) {
-  const res = await fetch(`${BASE_URL}/api/serials/bulk`, {
-    method: 'POST',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ productId, serials }),
-  });
-  return res.json();
-}
-export async function checkSerialAvailability(serial) {
-  const res = await fetch(`${BASE_URL}/api/serials/check/${encodeURIComponent(serial)}`);
   return res.json();
 }
 
@@ -337,6 +330,7 @@ export async function fetchMyOrders(token) {
   const res = await fetch(`${BASE_URL}/api/orders/my`, { headers: authHeader(token) });
   return res.json();
 }
+
 export async function changePassword(currentPassword, newPassword, token) {
   const res = await fetch(`${BASE_URL}/api/users/change-password`, {
     method: 'POST',
@@ -345,6 +339,7 @@ export async function changePassword(currentPassword, newPassword, token) {
   });
   return res.json();
 }
+
 export async function updateProfile(data, token) {
   const res = await fetch(`${BASE_URL}/api/users/profile`, {
     method: 'PUT',
@@ -359,6 +354,7 @@ export async function fetchAddressesAPI(token) {
   const res = await fetch(`${BASE_URL}/api/addresses`, { headers: authHeader(token) });
   return res.json();
 }
+
 export async function saveAddressAPI(data, token) {
   const res = await fetch(`${BASE_URL}/api/addresses`, {
     method: 'POST',
@@ -367,6 +363,7 @@ export async function saveAddressAPI(data, token) {
   });
   return res.json();
 }
+
 export async function placeOrderAPI(data, token) {
   const res = await fetch(`${BASE_URL}/api/orders`, {
     method: 'POST',
@@ -385,4 +382,5 @@ export async function submitContact(data) {
   });
   return res.json();
 }
+
 export default api;
