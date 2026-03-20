@@ -69,8 +69,7 @@ export async function deleteProduct(id, token) {
   });
   return res.json();
 }
-
-// ─── ADMIN: SERIAL MANAGEMENT (FIXED ENDPOINTS) ────────────────────────────
+// ─── ADMIN: SERIAL MANAGEMENT ────────────────────────────
 export async function fetchProductSerials(productId, token, page = 1, limit = 100) {
   const res = await fetch(`${BASE_URL}/api/serials/product/${productId}?page=${page}&limit=${limit}`, {
     headers: authHeader(token)
@@ -79,6 +78,31 @@ export async function fetchProductSerials(productId, token, page = 1, limit = 10
 }
 
 export async function addProductSerials(productId, count, prefix = 'ANRI', token) {
+  const cleanPrefix = String(prefix || 'ANRI').substring(0, 4).toUpperCase().padEnd(4, 'X');
+  const res = await fetch(`${BASE_URL}/api/serials/generate`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId, count, prefix: cleanPrefix, batchNumber: Date.now() }),
+  });
+  return res.json();
+}
+
+export async function updateProductSerial(productId, serialId, newSerial, token) {
+  const res = await fetch(`${BASE_URL}/api/serials/${serialId}`, {
+    method: 'PUT',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId, serial: newSerial }),
+  });
+  return res.json();
+}
+
+export async function deleteProductSerial(productId, serialId, token) {
+  const res = await fetch(`${BASE_URL}/api/serials/${serialId}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  return res.json();
+}
   // Ensure prefix is exactly 4 chars as required by the backend enhanced serial generator
   const cleanPrefix = String(prefix || 'ANRI').substring(0, 4).toUpperCase().padEnd(4, 'X');
   const res = await fetch(`${BASE_URL}/api/serials/generate`, {
