@@ -365,7 +365,7 @@ export default function EWarrantyManagement({ token }) {
         )}
       </div>
 
-      {/* Modals and Styles (omitted but preserved) */}
+      {/* Modals and Styles (omitted but preserve) */}
       {isGeneratorOpen && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-4">
           <div className="bg-[#0a0c10] border border-white/10 w-full max-w-lg rounded-[40px] overflow-hidden shadow-2xl animate-fade-in">
