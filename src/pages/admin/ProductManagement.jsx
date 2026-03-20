@@ -75,7 +75,9 @@ export default function ProductManagement({ token }) {
   const [productSerials, setProductSerials] = useState([]);
   const [serialStats, setSerialStats] = useState({});
   const [serialLoading, setSerialLoading] = useState(false);
-  const [newSerials, setNewSerials] = useState("");   const [serialCount, setSerialCount] = useState(1);   const [serialPrefix, setSerialPrefix] = useState("ANRI");
+  const [newSerials, setNewSerials] = useState("");
+  const [serialCount, setSerialCount] = useState(1);
+  const [serialPrefix, setSerialPrefix] = useState("ANRI");
   const [editingSerial, setEditingSerial] = useState(null);
   const [serialSearch, setSerialSearch] = useState("");
   const [serialAddMethod, setSerialAddMethod] = useState("manual");
@@ -161,9 +163,9 @@ export default function ProductManagement({ token }) {
   };
 
   const handleSerialChange = (index, value) => {
-    const newSerials = [...form.serials];
-    newSerials[index] = value.trim().toUpperCase();
-    setForm((prev) => ({ ...prev, serials: newSerials }));
+    const newSerialsArr = [...form.serials];
+    newSerialsArr[index] = value.trim().toUpperCase();
+    setForm((prev) => ({ ...prev, serials: newSerialsArr }));
   };
 
   const handleExcelUpload = async (e) => {
@@ -274,7 +276,8 @@ export default function ProductManagement({ token }) {
   };
 
   const handleEdit = (product) => {
-    setEditProductId(product.id);
+    const prodId = product._id || product.id; // FIX: MongoDB Support
+    setEditProductId(prodId);
     setForm({
       name: product.name,
       description: product.description,
@@ -290,10 +293,11 @@ export default function ProductManagement({ token }) {
     formRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleRemove = async (productId) => {
+  const handleRemove = async (product) => {
+    const prodId = product._id || product.id; // FIX: MongoDB Support
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
-        await deleteProduct(productId, token);
+        await deleteProduct(prodId, token);
         await loadData();
       } catch (err) {
         setError("Failed to delete product.");
@@ -304,7 +308,7 @@ export default function ProductManagement({ token }) {
   const openSerialModal = async (product) => {
     setSelectedProduct(product);
     setShowSerialModal(true);
-    await loadProductSerials(product.id);
+    await loadProductSerials(product._id || product.id); // FIX: MongoDB Support
   };
 
   const closeSerialModal = () => {
@@ -324,9 +328,13 @@ export default function ProductManagement({ token }) {
     try {
       setSerialLoading(true);
       const serialArray = newSerials.split(/[\n,]+/).map((s) => s.trim()).filter((s) => s.length > 0);
-      await addProductSerials(selectedProduct.id, serialArray, token);
+      const prodId = selectedProduct._id || selectedProduct.id;
+      
+      // FIX: Correctly pass the arguments expected by enhanced backend generator
+      await addProductSerials(prodId, serialArray.length, "ANRI", token); 
+      
       setNewSerials("");
-      await loadProductSerials(selectedProduct.id);
+      await loadProductSerials(prodId);
       await loadData();
     } catch (err) {
       setError("Failed to add serials");
@@ -356,9 +364,13 @@ export default function ProductManagement({ token }) {
   const confirmBulkAdd = async () => {
     try {
       setSerialLoading(true);
-      await addProductSerials(selectedProduct.id, bulkSerialPreview, token);
+      const prodId = selectedProduct._id || selectedProduct.id;
+      
+      // FIX: Correctly pass the arguments expected by enhanced backend generator
+      await addProductSerials(prodId, bulkSerialPreview.length, "ANRI", token);
+      
       setBulkSerialPreview([]);
-      await loadProductSerials(selectedProduct.id);
+      await loadProductSerials(prodId);
       await loadData();
     } catch (err) {
       setBulkSerialError("Failed to import serials");
@@ -370,9 +382,10 @@ export default function ProductManagement({ token }) {
   const handleEditSerial = async (serialId, newSerial) => {
     try {
       setSerialLoading(true);
-      await updateProductSerial(selectedProduct.id, serialId, newSerial, token);
+      const prodId = selectedProduct._id || selectedProduct.id;
+      await updateProductSerial(prodId, serialId, newSerial, token);
       setEditingSerial(null);
-      await loadProductSerials(selectedProduct.id);
+      await loadProductSerials(prodId);
     } catch (err) {
       setError("Failed to update serial");
     } finally {
@@ -384,8 +397,9 @@ export default function ProductManagement({ token }) {
     if (window.confirm(`Delete serial "${serialNumber}"?`)) {
       try {
         setSerialLoading(true);
-        await deleteProductSerial(selectedProduct.id, serialId, token);
-        await loadProductSerials(selectedProduct.id);
+        const prodId = selectedProduct._id || selectedProduct.id;
+        await deleteProductSerial(prodId, serialId, token);
+        await loadProductSerials(prodId);
         await loadData();
       } catch (err) {
         setError("Failed to delete serial");
@@ -483,7 +497,7 @@ export default function ProductManagement({ token }) {
                     >
                       <option value="">Select</option>
                       {categories.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
+                        <option key={c._id || c.id} value={c._id || c.id}>{c.name}</option>
                       ))}
                     </select>
                   </div>
@@ -500,7 +514,7 @@ export default function ProductManagement({ token }) {
                       {subcategories
                         .filter((sc) => String(sc.category_id) === String(form.category_id))
                         .map((sc) => (
-                          <option key={sc.id} value={sc.id}>{sc.name}</option>
+                          <option key={sc._id || sc.id} value={sc._id || sc.id}>{sc.name}</option>
                         ))}
                     </select>
                   </div>
@@ -671,10 +685,10 @@ export default function ProductManagement({ token }) {
               </thead>
               <tbody className="divide-y divide-slate-800/50">
                 {paginatedProducts.map((product) => (
-                  <tr key={product.id} className="hover:bg-cyan-500/[0.02] transition-colors group">
+                  <tr key={product._id || product.id} className="hover:bg-cyan-500/[0.02] transition-colors group">
                     <td className="px-6 py-4">
                       <div className="font-bold text-slate-200 group-hover:text-cyan-400 transition-colors">{product.name}</div>
-                      <div className="text-[10px] text-slate-600 font-mono mt-1 tracking-tighter">REF# {product.id}</div>
+                      <div className="text-[10px] text-slate-600 font-mono mt-1 tracking-tighter">REF# {product._id || product.id}</div>
                     </td>
                     <td className="px-6 py-4 font-mono font-bold text-cyan-400">
                       <IndianRupee className="h-3 w-3 inline mb-0.5" /> 
@@ -691,7 +705,7 @@ export default function ProductManagement({ token }) {
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-xs text-slate-400 bg-slate-800/50 px-2 py-1 rounded border border-slate-700/50">
-                        {categories.find(c => c.id === product.category_id)?.name || "UNCATEGORIZED"}
+                        {categories.find(c => (c._id || c.id) === product.category_id)?.name || "UNCATEGORIZED"}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -711,7 +725,7 @@ export default function ProductManagement({ token }) {
                           <Edit3 className="h-4 w-4" />
                         </button>
                         <button 
-                          onClick={() => handleRemove(product.id)} 
+                          onClick={() => handleRemove(product)} 
                           className="p-2 bg-slate-800/50 border border-slate-700 rounded-lg hover:bg-rose-500/10 hover:border-rose-500/50 hover:text-rose-500 transition-all"
                           title="Delete"
                         >
@@ -844,13 +858,13 @@ export default function ProductManagement({ token }) {
                       onChange={e => setSerialSearch(e.target.value)} 
                     />
                   </div>
-                  <button onClick={() => loadProductSerials(selectedProduct.id)} className="p-1.5 hover:rotate-180 transition-all duration-700 text-slate-500 hover:text-cyan-400">
+                  <button onClick={() => loadProductSerials(selectedProduct._id || selectedProduct.id)} className="p-1.5 hover:rotate-180 transition-all duration-700 text-slate-500 hover:text-cyan-400">
                     <RefreshCw className="h-4 w-4"/>
                   </button>
                 </div>
                 <div className="divide-y divide-slate-800/50 max-h-60 overflow-y-auto custom-scrollbar">
                   {paginatedSerials.map(serial => (
-                    <div key={serial.id} className="p-3 flex items-center justify-between hover:bg-cyan-500/[0.03] transition-colors">
+                    <div key={serial._id || serial.id} className="p-3 flex items-center justify-between hover:bg-cyan-500/[0.03] transition-colors">
                       <div className="font-mono text-xs font-bold text-slate-300 tracking-tighter">{serial.serial}</div>
                       <div className="flex items-center gap-3">
                         <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest ${
@@ -861,7 +875,7 @@ export default function ProductManagement({ token }) {
                           {serial.status === 'registered' ? 'ASSIGNED' : 'READY'}
                         </span>
                         {serial.status !== 'registered' && (
-                          <button onClick={() => handleDeleteSerial(serial.id, serial.serial)} className="text-slate-600 hover:text-rose-500 p-1 rounded transition-colors">
+                          <button onClick={() => handleDeleteSerial(serial._id || serial.id, serial.serial)} className="text-slate-600 hover:text-rose-500 p-1 rounded transition-colors">
                             <Trash className="h-3.5 w-3.5"/>
                           </button>
                         )}
@@ -905,7 +919,6 @@ export default function ProductManagement({ token }) {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #334155; }
         
-        /* Neon text pulse */
         .neon-pulse { animation: neonPulse 2s infinite alternate; }
         @keyframes neonPulse {
           from { text-shadow: 0 0 5px rgba(6,182,212,0.2); }
