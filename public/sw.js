@@ -15,8 +15,3 @@ self.addEventListener('activate', (event) => {
     })
   );
 });
-
-// Pass through all requests without caching
-self.addEventListener('fetch', (event) => {
-  // Do nothing - let requests go through normally
-});
