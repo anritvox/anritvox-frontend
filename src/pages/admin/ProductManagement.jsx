@@ -75,8 +75,10 @@ export default function ProductManagement({ token }) {
   const [serialStats, setSerialStats] = useState({});
   const [serialLoading, setSerialLoading] = useState(false);
   const [newSerials, setNewSerials] = useState("");
+  const [editingSerial, setEditingSerial] = useState(null);
   const [serialSearch, setSerialSearch] = useState("");
   const [serialAddMethod, setSerialAddMethod] = useState("manual");
+  const [bulkSerialError, setBulkSerialError] = useState("");
   const [bulkSerialPreview, setBulkSerialPreview] = useState([]);
 
   const formRef = useRef(null);
@@ -113,6 +115,8 @@ export default function ProductManagement({ token }) {
     if (token) loadData();
   }, [token]);
 
+  // ================= SERIAL MANAGEMENT BLOCK =================
+
   const loadProductSerials = async (productId) => {
     setSerialLoading(true);
     try {
@@ -125,6 +129,86 @@ export default function ProductManagement({ token }) {
       setSerialLoading(false);
     }
   };
+
+  const openSerialModal = async (product) => {
+    setSelectedProduct(product);
+    setShowSerialModal(true);
+    await loadProductSerials(product.id);
+  };
+
+  const closeSerialModal = () => {
+    setShowSerialModal(false);
+    setSelectedProduct(null);
+    setProductSerials([]);
+    setSerialStats({});
+    setNewSerials("");
+    setEditingSerial(null);
+    setSerialSearch("");
+    setBulkSerialError("");
+    setBulkSerialPreview([]);
+  };
+
+  const handleAddNewSerials = async () => {
+    if (!newSerials.trim()) return;
+    try {
+      setSerialLoading(true);
+      const serialArray = newSerials.split(/[\n,]+/).map((s) => s.trim()).filter((s) => s.length > 0);
+      
+      await addProductSerials(selectedProduct.id, serialArray.length, "ANRI", token);
+      
+      setNewSerials("");
+      await loadProductSerials(selectedProduct.id);
+      await loadData();
+    } catch (err) {
+      setError("Failed to add serials");
+    } finally {
+      setSerialLoading(false);
+    }
+  };
+
+  const confirmBulkAdd = async () => {
+    try {
+      setSerialLoading(true);
+      await addProductSerials(selectedProduct.id, bulkSerialPreview.length, "ANRI", token);
+      setBulkSerialPreview([]);
+      await loadProductSerials(selectedProduct.id);
+      await loadData();
+    } catch (err) {
+      setBulkSerialError("Failed to import serials");
+    } finally {
+      setSerialLoading(false);
+    }
+  };
+
+  const handleEditSerial = async (serialId, newSerial) => {
+    try {
+      setSerialLoading(true);
+      await updateProductSerial(selectedProduct.id, serialId, newSerial, token);
+      setEditingSerial(null);
+      await loadProductSerials(selectedProduct.id);
+    } catch (err) {
+      setError("Failed to update serial");
+    } finally {
+      setSerialLoading(false);
+    }
+  };
+
+  const handleDeleteSerial = async (serialId, serialNumber) => {
+    if (window.confirm(`Delete serial "${serialNumber}"?`)) {
+      try {
+        setSerialLoading(true);
+        await deleteProductSerial(selectedProduct.id, serialId, token);
+        await loadProductSerials(selectedProduct.id);
+        await loadData();
+      } catch (err) {
+        setError("Failed to delete serial");
+      } finally {
+        setSerialLoading(false);
+      }
+    }
+  };
+
+  // ================= END SERIAL MANAGEMENT BLOCK =================
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -244,7 +328,6 @@ export default function ProductManagement({ token }) {
     }
   };
 
-  // RESTORED: MySQL id-based logic
   const handleEdit = (product) => {
     setEditProductId(product.id);
     setForm({
@@ -273,38 +356,6 @@ export default function ProductManagement({ token }) {
     }
   };
 
-  const openSerialModal = async (product) => {
-    setSelectedProduct(product);
-    setShowSerialModal(true);
-    await loadProductSerials(product.id);
-  };
-
-  const closeSerialModal = () => {
-    setShowSerialModal(false);
-    setSelectedProduct(null);
-    setProductSerials([]);
-    setSerialStats({});
-    setNewSerials("");
-    setSerialSearch("");
-    setBulkSerialPreview([]);
-  };
-
-  const handleAddNewSerials = async () => {
-    if (!newSerials.trim()) return;
-    try {
-      setSerialLoading(true);
-      const serialArray = newSerials.split(/[\n,]+/).map((s) => s.trim()).filter((s) => s.length > 0);
-      await addProductSerials(selectedProduct.id, serialArray.length, "ANRI", token);
-      setNewSerials("");
-      await loadProductSerials(selectedProduct.id);
-      await loadData();
-    } catch (err) {
-      setError("Failed to add serials");
-    } finally {
-      setSerialLoading(false);
-    }
-  };
-
   const handleExcelUploadForSerials = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !file.name.match(/\.(xlsx|xls)$/)) return;
@@ -316,36 +367,7 @@ export default function ProductManagement({ token }) {
       const serials = rows.map((row) => row[0]).filter((val) => val != null && String(val).trim() !== "").map((s) => String(s).trim().toUpperCase());
       setBulkSerialPreview(serials);
     } catch (err) {
-      setError("Error reading Excel file.");
-    }
-  };
-
-  const confirmBulkAdd = async () => {
-    try {
-      setSerialLoading(true);
-      await addProductSerials(selectedProduct.id, bulkSerialPreview.length, "ANRI", token);
-      setBulkSerialPreview([]);
-      await loadProductSerials(selectedProduct.id);
-      await loadData();
-    } catch (err) {
-      setError("Failed to import serials");
-    } finally {
-      setSerialLoading(false);
-    }
-  };
-
-  const handleDeleteSerial = async (serialId, serialNumber) => {
-    if (window.confirm(`Delete serial "${serialNumber}"?`)) {
-      try {
-        setSerialLoading(true);
-        await deleteProductSerial(selectedProduct.id, serialId, token);
-        await loadProductSerials(selectedProduct.id);
-        await loadData();
-      } catch (err) {
-        setError("Failed to delete serial");
-      } finally {
-        setSerialLoading(false);
-      }
+      setBulkSerialError("Error reading Excel file.");
     }
   };
 
@@ -360,6 +382,7 @@ export default function ProductManagement({ token }) {
 
   return (
     <div className="min-h-screen bg-[#0a0a0c] font-sans text-slate-100 p-4 sm:p-6 animate-fade-in text-[12px]">
+      {/* Header */}
       <div className="bg-[#16161a] border border-cyan-500/30 p-4 -mx-4 -mt-4 mb-8 flex items-center justify-between shadow-[0_0_20px_rgba(6,182,212,0.15)] rounded-b-xl">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-cyan-500/10 rounded-lg border border-cyan-500/20 shadow-[0_0_10px_rgba(6,182,212,0.2)]">
@@ -717,6 +740,9 @@ export default function ProductManagement({ token }) {
                       </div>
                     </div>
                   ))}
+                  {filteredSerials.length === 0 && (
+                    <div className="p-8 text-center text-slate-600 italic">No matching records found.</div>
+                  )}
                 </div>
               </div>
             </div>
