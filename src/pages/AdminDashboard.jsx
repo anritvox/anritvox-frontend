@@ -1,24 +1,22 @@
 import React, { useState } from 'react';
-import { 
-  FiHome, FiBox, FiDatabase, FiFolder, FiShoppingCart, 
-  FiRefreshCcw, FiTag, FiUsers, FiLayout, FiFileText, 
-  FiMail, FiSettings 
+import {
+  FiHome, FiBox, FiDatabase, FiFolder, FiShoppingCart,
+  FiRefreshCcw, FiTag, FiUsers, FiLayout, FiFileText,
+  FiMail, FiSettings
 } from 'react-icons/fi';
 
-// ─── IMPORTANT: CHECK FILENAMES IN YOUR FOLDER ───────────────────
-// If your file is "dashboardOverview.jsx", change the import to match!
-import DashboardOverview from '../components/admin/DashboardOverview';
-import ProductManagement from '../components/admin/ProductManagement';
-import InventoryManagement from '../components/admin/InventoryManagement';
-import CategoryManagement from '../components/admin/CategoryManagement';
-import OrderManagement from '../components/admin/OrderManagement';
-import ReturnManagement from '../components/admin/ReturnManagement';
-import CouponManagement from '../components/admin/CouponManagement';
-import UserManagement from '../components/admin/UserManagement';
-import BannerManagement from '../components/admin/BannerManagement';
-import EWarrantyManagement from '../components/admin/EWarrantyManagement';
-import ContactManagement from '../components/admin/ContactManagement';
-import AdminSettings from '../components/admin/AdminSettings';
+import DashboardOverview from './admin/DashboardOverview';
+import ProductManagement from './admin/ProductManagement';
+import InventoryManagement from './admin/InventoryManagement';
+import CategoryManagement from './admin/CategoryManagement';
+import OrderManagement from './admin/OrderManagement';
+import ReturnManagement from './admin/ReturnManagement';
+import CouponManagement from './admin/CouponManagement';
+import UserManagement from './admin/UserManagement';
+import BannerManagement from './admin/BannerManagement';
+import EWarrantyManagement from './admin/EWarrantyManagement';
+import ContactManagement from './admin/ContactManagement';
+import AdminSettings from './admin/AdminSettings';
 
 const AdminDashboard = () => {
   const [section, setSection] = useState("dashboard");
@@ -41,9 +39,6 @@ const AdminDashboard = () => {
 
   const renderSection = () => {
     const props = { token, setSection };
-    
-    // Safety check: If a component is missing during development, 
-    // it will throw an error here.
     switch (section) {
       case "dashboard": return <DashboardOverview {...props} />;
       case "inventory": return <InventoryManagement {...props} />;
@@ -63,26 +58,24 @@ const AdminDashboard = () => {
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">
-      <aside className="w-64 bg-gray-800 border-r border-gray-700 overflow-y-auto">
-        <div className="p-6 font-bold text-xl border-b border-gray-700 text-cyan-400">
-          Admin Panel
-        </div>
-        <nav className="p-4 space-y-2">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setSection(item.id)}
-              className={`flex items-center w-full p-3 rounded-lg transition ${
-                section === item.id ? 'bg-gray-700 ring-1 ring-cyan-500' : 'hover:bg-gray-700'
-              }`}
-            >
-              <item.icon className={`mr-3 ${item.color}`} />
-              <span className="text-sm">{item.label}</span>
-            </button>
-          ))}
-        </nav>
+      <aside className="w-64 bg-gray-800 p-4 flex flex-col gap-2 overflow-y-auto">
+        <h1 className="text-xl font-bold text-cyan-400 mb-4">Admin Panel</h1>
+        {menuItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => setSection(item.id)}
+            className={`flex items-center w-full p-3 rounded-lg transition ${
+              section === item.id
+                ? 'bg-gray-700 ring-1 ring-cyan-500'
+                : 'hover:bg-gray-700'
+            }`}
+          >
+            <item.icon className={`mr-3 ${item.color}`} />
+            {item.label}
+          </button>
+        ))}
       </aside>
-      <main className="flex-1 p-8 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto p-6">
         {renderSection()}
       </main>
     </div>
