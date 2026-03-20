@@ -145,7 +145,7 @@ export default function EWarranty() {
               <div className="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
                 <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-4">Product Found</p>
                 <img 
-                  src={productData.images?.[0] || 'https://via.placeholder.com/300'} 
+                  src={productData.images?.[0] || 'https://data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='16' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E#/300'} 
                   alt={productData.product_name}
                   className="w-full aspect-square object-contain bg-slate-50 rounded-2xl mb-4"
                 />
