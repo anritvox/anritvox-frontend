@@ -321,4 +321,68 @@ export async function checkSerialAvailability(serial) {
   const res = await fetch(`${BASE_URL}/api/serials/check/${encodeURIComponent(serial)}`);
   return res.json();
 }
+
+// ─── EWARRANTY REGISTRATION ─────────────────────────────────────────────────
+export async function registerWarranty(data) {
+  const res = await fetch(`${BASE_URL}/api/warranty/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+// ─── USER: PROFILE & ORDERS ──────────────────────────────────────────────────
+export async function fetchMyOrders(token) {
+  const res = await fetch(`${BASE_URL}/api/orders/my`, { headers: authHeader(token) });
+  return res.json();
+}
+export async function changePassword(currentPassword, newPassword, token) {
+  const res = await fetch(`${BASE_URL}/api/users/change-password`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  return res.json();
+}
+export async function updateProfile(data, token) {
+  const res = await fetch(`${BASE_URL}/api/users/profile`, {
+    method: 'PUT',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+// ─── CHECKOUT: ADDRESS & ORDER ────────────────────────────────────────────────
+export async function fetchAddressesAPI(token) {
+  const res = await fetch(`${BASE_URL}/api/addresses`, { headers: authHeader(token) });
+  return res.json();
+}
+export async function saveAddressAPI(data, token) {
+  const res = await fetch(`${BASE_URL}/api/addresses`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+export async function placeOrderAPI(data, token) {
+  const res = await fetch(`${BASE_URL}/api/orders`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+// ─── CONTACT FORM ────────────────────────────────────────────────────────────
+export async function submitContact(data) {
+  const res = await fetch(`${BASE_URL}/api/contact`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
 export default api;
