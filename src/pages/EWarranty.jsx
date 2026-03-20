@@ -10,7 +10,8 @@ import {
   ArrowRight,
   Download
 } from 'lucide-react';
-import { checkSerialAvailability, registerWarranty } from '../services/api';
+// Updated import to include BASE_URL
+import { checkSerialAvailability, registerWarranty, BASE_URL } from '../services/api';
 
 export default function EWarranty() {
   const [serial, setSerial] = useState('');
@@ -32,7 +33,6 @@ export default function EWarranty() {
     setError('');
     setLoading(true);
     try {
-      // In your api.js, ensure checkSerialAvailability calls GET /api/serials/check/:serial
       const data = await checkSerialAvailability(serial);
       
       if (data.status === 'registered') {
@@ -145,7 +145,13 @@ export default function EWarranty() {
               <div className="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
                 <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-4">Product Found</p>
                 <img 
-                  src={productData.images?.[0] || 'https://data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='16' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E#/300'} 
+                  src={
+                    productData.images?.[0] 
+                      ? (productData.images[0].startsWith('http') 
+                          ? productData.images[0] 
+                          : `${BASE_URL}/${productData.images[0].replace(/^[\/\\]/, '').startsWith('uploads/') ? '' : 'uploads/'}${productData.images[0].replace(/^[\/\\]/, '')}`)
+                      : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='16' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E"
+                  } 
                   alt={productData.product_name}
                   className="w-full aspect-square object-contain bg-slate-50 rounded-2xl mb-4"
                 />
