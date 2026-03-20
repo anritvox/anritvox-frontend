@@ -75,7 +75,7 @@ export default function ProductManagement({ token }) {
   const [productSerials, setProductSerials] = useState([]);
   const [serialStats, setSerialStats] = useState({});
   const [serialLoading, setSerialLoading] = useState(false);
-  const [newSerials, setNewSerials] = useState("");
+  const [newSerials, setNewSerials] = useState("");   const [serialCount, setSerialCount] = useState(1);   const [serialPrefix, setSerialPrefix] = useState("ANRI");
   const [editingSerial, setEditingSerial] = useState(null);
   const [serialSearch, setSerialSearch] = useState("");
   const [serialAddMethod, setSerialAddMethod] = useState("manual");
