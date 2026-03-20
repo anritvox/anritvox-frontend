@@ -69,7 +69,8 @@ export async function deleteProduct(id, token) {
   });
   return res.json();
 }
-// ─── ADMIN: SERIAL MANAGEMENT ────────────────────────────
+
+// ─── ADMIN: SERIAL MANAGEMENT (FIXED) ──────────────────────────────────────
 export async function fetchProductSerials(productId, token, page = 1, limit = 100) {
   const res = await fetch(`${BASE_URL}/api/serials/product/${productId}?page=${page}&limit=${limit}`, {
     headers: authHeader(token)
@@ -87,36 +88,9 @@ export async function addProductSerials(productId, count, prefix = 'ANRI', token
   return res.json();
 }
 
-export async function updateProductSerial(productId, serialId, newSerial, token) {
-  const res = await fetch(`${BASE_URL}/api/serials/${serialId}`, {
-    method: 'PUT',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ productId, serial: newSerial }),
-  });
-  return res.json();
-}
-
-export async function deleteProductSerial(productId, serialId, token) {
-  const res = await fetch(`${BASE_URL}/api/serials/${serialId}`, {
-    method: 'DELETE',
-    headers: authHeader(token),
-  });
-  return res.json();
-}
-  // Ensure prefix is exactly 4 chars as required by the backend enhanced serial generator
-  const cleanPrefix = String(prefix || 'ANRI').substring(0, 4).toUpperCase().padEnd(4, 'X');
-  const res = await fetch(`${BASE_URL}/api/serials/generate`, {
-    method: 'POST',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ productId, count, prefix: cleanPrefix, batchNumber: Date.now() }),
-  });
-  return res.json();
-}
-
 export async function bulkAddProductSerials(productId, serials, token) {
-  // Same endpoint as addProductSerials - backend generates them
   const count = Array.isArray(serials) ? serials.length : parseInt(serials);
-  return addProductSerials(productId, count, 'AV', token);
+  return addProductSerials(productId, count, 'ANRI', token);
 }
 
 export async function updateProductSerial(productId, serialId, newSerial, token) {
@@ -192,7 +166,7 @@ export async function changeAdminPassword(currentPassword, newPassword, token) {
   return res.json();
 }
 
-// ─── CATEGORIES & SUBCATEGORIES (FIXED ENDPOINTS) ──────────────────────────
+// ─── CATEGORIES & SUBCATEGORIES ────────────────────────────────────────────
 export async function fetchSubcategories(token) {
   const res = await fetch(`${BASE_URL}/api/subcategories`, { headers: authHeader(token) });
   return res.json();
@@ -250,7 +224,7 @@ export async function deleteSubcategory(id, token) {
   return res.json();
 }
 
-// ─── ADMIN FEATURES (COUPONS, RETURNS, WARRANTY, USERS, ORDERS) ───────────
+// ─── ADMIN FEATURES ────────────────────────────────────────────────────────
 export async function fetchCouponsAdmin(token) {
   const res = await fetch(`${BASE_URL}/api/coupons`, { headers: authHeader(token) });
   return res.json();
@@ -303,13 +277,13 @@ export async function fetchPublicSettings() {
   return res.json();
 }
 
-// ─── PUBLIC BANNERS (FIXED ENDPOINT) ───────────────────────────────────────
+// ─── PUBLIC BANNERS ────────────────────────────────────────────────────────
 export async function fetchActiveBanners() {
   const res = await fetch(`${BASE_URL}/api/banners`);
   return res.json();
 }
 
-// ─── ADMIN: BANNER MANAGEMENT (FIXED ENDPOINT) ─────────────────────────────
+// ─── ADMIN: BANNER MANAGEMENT ──────────────────────────────────────────────
 export async function fetchBannersAdmin(token) {
   const res = await fetch(`${BASE_URL}/api/banners/admin/all`, { headers: authHeader(token) });
   return res.json();
@@ -351,7 +325,7 @@ export async function registerWarranty(data) {
   return res.json();
 }
 
-// ─── USER: PROFILE & ORDERS ──────────────────────────────────────────────────
+// ─── USER: PROFILE & ORDERS ────────────────────────────────────────────────
 export async function fetchMyOrders(token) {
   const res = await fetch(`${BASE_URL}/api/orders/my`, { headers: authHeader(token) });
   return res.json();
@@ -375,7 +349,7 @@ export async function updateProfile(data, token) {
   return res.json();
 }
 
-// ─── CHECKOUT: ADDRESS & ORDER ────────────────────────────────────────────────
+// ─── CHECKOUT: ADDRESS & ORDER ──────────────────────────────────────────────
 export async function fetchAddressesAPI(token) {
   const res = await fetch(`${BASE_URL}/api/addresses`, { headers: authHeader(token) });
   return res.json();
@@ -399,7 +373,7 @@ export async function placeOrderAPI(data, token) {
   return res.json();
 }
 
-// ─── CONTACT FORM ────────────────────────────────────────────────────────────
+// ─── CONTACT FORM ──────────────────────────────────────────────────────────
 export async function submitContact(data) {
   const res = await fetch(`${BASE_URL}/api/contact`, {
     method: 'POST',
