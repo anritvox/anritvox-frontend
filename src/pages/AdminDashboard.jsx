@@ -20,7 +20,7 @@ import AdminSettings from './admin/AdminSettings';
 
 const AdminDashboard = () => {
   const [section, setSection] = useState("dashboard");
-  const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem('ms_token') || localStorage.getItem('token');
 
   const menuItems = [
     { id: "dashboard", label: "Overview", icon: FiHome, color: "text-cyan-400" },
