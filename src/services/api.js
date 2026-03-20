@@ -71,8 +71,8 @@ export async function deleteProduct(id, token) {
 }
 
 // ─── ADMIN: SERIAL MANAGEMENT (FIXED ENDPOINTS) ────────────────────────────
-export async function fetchProductSerials(token, productId) {
-  const res = await fetch(`${BASE_URL}/api/serials/product/${productId}`, {
+export async function fetchProductSerials(token, productId, page = 1, limit = 100) {
+  const res = await fetch(`${BASE_URL}/api/serials/product/${productId}?page=${page}&limit=${limit}`, {
     headers: authHeader(token)
   });
   return res.json();
