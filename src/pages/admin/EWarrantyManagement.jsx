@@ -15,7 +15,8 @@ import {
   Loader2, Search, Trash2, Edit3, CheckCircle, Clock, XCircle, 
   QrCode, Printer, Download, Upload, Plus, Package, 
   FileBarChart, Filter, RefreshCw, X, Save, AlertCircle, 
-  Sparkles, Zap, ShieldCheck, Hash, Copy, Check, ArrowUpRight, SearchCode 
+  Sparkles, Zap, ShieldCheck, Hash, Copy, Check, ArrowUpRight, SearchCode,
+  ChevronLeft, ChevronRight
 } from "lucide-react";
 import QRCode from "qrcode";
 
@@ -39,6 +40,9 @@ export default function EWarrantyManagement({ token }) {
   const [serialCount, setSerialCount] = useState(10);
   const [selectedSerials, setSelectedSerials] = useState([]);
   const [copiedSerial, setCopiedSerial] = useState("");
+  
+  // Pagination State
+  const [serialPagination, setSerialPagination] = useState({ page: 1, total: 0, totalPages: 1 });
 
   useEffect(() => {
     loadWarrantyData();
@@ -47,7 +51,9 @@ export default function EWarrantyManagement({ token }) {
 
   useEffect(() => {
     if (selectedProduct) {
-      loadProductSerials(selectedProduct.id);
+      // Reset page when changing products
+      setSerialPagination(prev => ({ ...prev, page: 1 }));
+      loadProductSerials(selectedProduct.id, 1);
     }
   }, [selectedProduct]);
 
@@ -76,16 +82,31 @@ export default function EWarrantyManagement({ token }) {
     }
   };
 
-  const loadProductSerials = async (productId) => {
+  const loadProductSerials = async (productId, page = 1) => {
     setSerialsLoading(true);
     try {
-      const data = await fetchProductSerials(token, productId);
-    setProductSerials(Array.isArray(data) ? data : (data.serials || []));
+      const data = await fetchProductSerials(token, productId, page);
+      setProductSerials(Array.isArray(data) ? data : (data.serials || []));
+      
+      // Update pagination state based on API response
+      if (data.pagination) {
+        setSerialPagination({
+          page: data.pagination.page || page,
+          total: data.pagination.total || 0,
+          totalPages: data.pagination.totalPages || 1
+        });
+      }
     } catch (err) {
       console.error("Serials load error:", err);
       setProductSerials([]);
     } finally {
       setSerialsLoading(false);
+    }
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= serialPagination.totalPages) {
+      loadProductSerials(selectedProduct.id, newPage);
     }
   };
 
@@ -142,12 +163,9 @@ export default function EWarrantyManagement({ token }) {
     setIsUpdating(true);
 
     try {
-      // Send the request to the backend to generate them securely
-    const paddedPrefix = (serialPrefix || 'AV').toUpperCase().substring(0, 4).padEnd(4, 'X');
+      const paddedPrefix = (serialPrefix || 'AV').toUpperCase().substring(0, 4).padEnd(4, 'X');
       await addProductSerials(selectedProduct.id, serialCount, paddedPrefix, token);
-      
-      // Reload the list
-      await loadProductSerials(selectedProduct.id);
+      await loadProductSerials(selectedProduct.id, 1);
       setIsGeneratorOpen(false);
     } catch (err) {
       alert(err.message || "Failed to generate serials");
@@ -211,8 +229,8 @@ export default function EWarrantyManagement({ token }) {
 
   const filteredWarranties = warranties.filter(w => {
     const matchesSearch = w.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         w.serial?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         w.user_email?.toLowerCase().includes(searchTerm.toLowerCase());
+                          w.serial?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          w.user_email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || w.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -353,7 +371,9 @@ export default function EWarrantyManagement({ token }) {
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0a0c10] border border-white/5 p-6 rounded-3xl">
                     <div>
                       <h2 className="text-xl font-black text-white tracking-tight">{selectedProduct.name}</h2>
-                      <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">{productSerials.length} Active Identifiers</p>
+                      <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">
+                        {serialPagination.total} Total Identifiers
+                      </p>
                     </div>
                     <div className="flex gap-3">
                       <button onClick={() => setIsGeneratorOpen(true)} className="px-5 py-2.5 bg-purple-500 hover:bg-purple-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg shadow-purple-500/20">
@@ -361,18 +381,50 @@ export default function EWarrantyManagement({ token }) {
                       </button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {productSerials.map(s => (
-                      <div key={s.id} className="bg-[#0a0c10] border border-white/5 p-4 rounded-2xl flex items-center justify-between group hover:border-white/10 transition-all">
-                        <div className="font-mono text-sm font-bold text-white tracking-wider">{s.serial_number || s.serial}</div>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                          <button onClick={() => copyToClipboard(s.serial_number || s.serial)} className="p-1.5 hover:bg-white/10 rounded-lg text-gray-500 hover:text-white">
-                            {copiedSerial === (s.serial_number || s.serial) ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+
+                  {serialsLoading ? (
+                    <div className="flex justify-center py-20">
+                      <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {productSerials.map(s => (
+                          <div key={s.id} className="bg-[#0a0c10] border border-white/5 p-4 rounded-2xl flex items-center justify-between group hover:border-white/10 transition-all">
+                            <div className="font-mono text-sm font-bold text-white tracking-wider">{s.serial_number || s.serial}</div>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                              <button onClick={() => copyToClipboard(s.serial_number || s.serial)} className="p-1.5 hover:bg-white/10 rounded-lg text-gray-500 hover:text-white">
+                                {copiedSerial === (s.serial_number || s.serial) ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Serial Pagination Controls */}
+                      <div className="flex items-center justify-between pt-6 border-t border-white/5">
+                        <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.2em]">
+                          Page {serialPagination.page} of {serialPagination.totalPages}
+                        </p>
+                        <div className="flex gap-2">
+                          <button 
+                            disabled={serialPagination.page <= 1}
+                            onClick={() => handlePageChange(serialPagination.page - 1)}
+                            className="p-2 bg-white/5 hover:bg-white/10 disabled:opacity-20 rounded-xl transition-all"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                          <button 
+                            disabled={serialPagination.page >= serialPagination.totalPages}
+                            onClick={() => handlePageChange(serialPagination.page + 1)}
+                            className="p-2 bg-white/5 hover:bg-white/10 disabled:opacity-20 rounded-xl transition-all"
+                          >
+                            <ChevronRight className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </>
+                  )}
                 </>
               )}
             </div>
