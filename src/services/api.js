@@ -247,4 +247,78 @@ export async function fetchPublicSettings() {
   const res = await fetch(`${BASE_URL}/api/settings/public`);
   return res.json();
 }
+
+// ─── PUBLIC BANNERS ───────────────────────────────────────────────────────────
+export async function fetchActiveBanners() {
+  const res = await fetch(`${BASE_URL}/api/banners/active`);
+  return res.json();
+}
+
+// ─── ADMIN: BANNER MANAGEMENT ─────────────────────────────────────────────────
+export async function fetchBannersAdmin(token) {
+  const res = await fetch(`${BASE_URL}/api/banners`, { headers: authHeader(token) });
+  return res.json();
+}
+export async function createBannerAdmin(formData, token) {
+  const res = await fetch(`${BASE_URL}/api/banners`, {
+    method: 'POST',
+    headers: authHeader(token),
+    body: formData,
+  });
+  return res.json();
+}
+export async function updateBannerAdmin(id, formData, token) {
+  const res = await fetch(`${BASE_URL}/api/banners/${id}`, {
+    method: 'PUT',
+    headers: authHeader(token),
+    body: formData,
+  });
+  return res.json();
+}
+export async function deleteBannerAdmin(id, token) {
+  const res = await fetch(`${BASE_URL}/api/banners/${id}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  return res.json();
+}
+
+// ─── ADMIN: SUBCATEGORY MANAGEMENT ────────────────────────────────────────────
+export async function createSubcategory(data, token) {
+  const res = await fetch(`${BASE_URL}/api/categories/subcategories`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+export async function updateSubcategory(id, data, token) {
+  const res = await fetch(`${BASE_URL}/api/categories/subcategories/${id}`, {
+    method: 'PUT',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+export async function deleteSubcategory(id, token) {
+  const res = await fetch(`${BASE_URL}/api/categories/subcategories/${id}`, {
+    method: 'DELETE',
+    headers: authHeader(token),
+  });
+  return res.json();
+}
+
+// ─── ADMIN: BULK SERIAL MANAGEMENT ────────────────────────────────────────────
+export async function bulkAddProductSerials(productId, serials, token) {
+  const res = await fetch(`${BASE_URL}/api/serials/bulk`, {
+    method: 'POST',
+    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId, serials }),
+  });
+  return res.json();
+}
+export async function checkSerialAvailability(serial) {
+  const res = await fetch(`${BASE_URL}/api/serials/check/${encodeURIComponent(serial)}`);
+  return res.json();
+}
 export default api;
