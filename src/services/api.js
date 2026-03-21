@@ -22,7 +22,7 @@ function authHeader(token) {
   return { Authorization: `Bearer ${token}` };
 }
 
-// ─── PUBLIC API ────────────────────────────────────────────────────────────
+// ─── PUBLIC API ───────────────────────────────────────────────────────────
 export async function fetchCategories() {
   const res = await fetch(`${BASE_URL}/api/categories`);
   return res.json();
