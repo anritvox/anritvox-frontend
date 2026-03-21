@@ -1,3 +1,5 @@
+import About from './pages/About';
+import Legal from './pages/Legal';
 import React, { lazy, Suspense, Component } from "react";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
