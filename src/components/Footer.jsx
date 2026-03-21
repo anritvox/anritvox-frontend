@@ -75,7 +75,7 @@ export default function Footer() {
            <Link to="/privacy" className="hover:underline">Interest-Based Ads</Link>
         </div>
         <p className="text-[10px] text-gray-400">
-          © {currentYear} Anritvox. All rights reserved. Developed by Pranav Kumar
+          © {currentYear} Anritvox. All rights reserved. Developed by Akash Prasad
         </p>
       </div>
     </footer>
