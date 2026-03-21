@@ -1,3 +1,45 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --olive-stripe: rgba(128, 128, 0, 0.05);
+}
+
+body {
+  background-color: #fdfdfb;
+  color: #1a1c18;
+  overflow-x: hidden;
+}
+
+.bg-striped-olive {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 20px,
+    var(--olive-stripe) 20px,
+    var(--olive-stripe) 40px
+  );
+}
+
+.fluid-blob {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(128, 128, 0, 0.15) 0%, transparent 70%);
+  filter: blur(80px);
+  border-radius: 50%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(128, 128, 0, 0.1);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
