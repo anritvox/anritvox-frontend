@@ -9,7 +9,7 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Helper for tokens
+// Helper for tokens: Automatically attach token to EVERY request
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token') || localStorage.getItem('ms_token');
   if (token) {
@@ -18,369 +18,258 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-function authHeader(token) {
-  return { Authorization: `Bearer ${token}` };
-}
-
 // ─── PUBLIC API ───────────────────────────────────────────────────────────
 export async function fetchCategories() {
-  const res = await fetch(`${BASE_URL}/api/categories`);
-  return res.json();
+  const res = await api.get(`/categories`);
+  return res.data;
 }
 
 export async function fetchProducts() {
-  const res = await fetch(`${BASE_URL}/api/products`);
-  return res.json();
+  const res = await api.get(`/products`);
+  return res.data;
 }
 
 export async function fetchProductById(id) {
-  const res = await fetch(`${BASE_URL}/api/products/${id}`);
-  return res.json();
+  const res = await api.get(`/products/${id}`);
+  return res.data;
 }
 
 // ─── ADMIN: PRODUCT MANAGEMENT ────────────────────────────────────────────
-export async function fetchProductsAdmin(token) {
-  const res = await fetch(`${BASE_URL}/api/products`, { headers: authHeader(token) });
-  return res.json();
+export async function fetchProductsAdmin() {
+  const res = await api.get(`/products`);
+  return res.data;
 }
 
-export async function createProduct(formData, token) {
-  const res = await fetch(`${BASE_URL}/api/products`, {
-    method: 'POST',
-    headers: authHeader(token),
-    body: formData,
-  });
-  return res.json();
+export async function createProduct(formData) {
+  const res = await api.post(`/products`, formData);
+  return res.data;
 }
 
-export async function updateProduct(id, formData, token) {
-  const res = await fetch(`${BASE_URL}/api/products/${id}`, {
-    method: 'PUT',
-    headers: authHeader(token),
-    body: formData,
-  });
-  return res.json();
+export async function updateProduct(id, formData) {
+  const res = await api.put(`/products/${id}`, formData);
+  return res.data;
 }
 
-export async function deleteProduct(id, token) {
-  const res = await fetch(`${BASE_URL}/api/products/${id}`, {
-    method: 'DELETE',
-    headers: authHeader(token),
-  });
-  return res.json();
+export async function deleteProduct(id) {
+  const res = await api.delete(`/products/${id}`);
+  return res.data;
 }
 
-// ─── ADMIN: SERIAL MANAGEMENT (FIXED ENDPOINTS) ────────────────────────────
-export async function fetchProductSerials(productId, token, page = 1, limit = 100) {
-  const res = await fetch(`${BASE_URL}/api/serials/product/${productId}?page=${page}&limit=${limit}`, {
-    headers: authHeader(token)
-  });
-  return res.json();
+// ─── ADMIN: SERIAL MANAGEMENT ────────────────────────────
+export async function fetchProductSerials(productId, page = 1, limit = 100) {
+  const res = await api.get(`/serials/product/${productId}?page=${page}&limit=${limit}`);
+  return res.data;
 }
 
-export async function addProductSerials(productId, count, prefix = 'ANRI', token) {
+export async function addProductSerials(productId, count, prefix = 'ANRI') {
   const cleanPrefix = String(prefix || 'ANRI').substring(0, 4).toUpperCase().padEnd(4, 'X');
-  const res = await fetch(`${BASE_URL}/api/serials/generate`, {
-    method: 'POST',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ productId, count, prefix: cleanPrefix, batchNumber: Date.now() }),
-  });
-  return res.json();
+  const res = await api.post(`/serials/generate`, { productId, count, prefix: cleanPrefix, batchNumber: Date.now() });
+  return res.data;
 }
 
-export async function bulkAddProductSerials(productId, serials, token) {
+export async function bulkAddProductSerials(productId, serials) {
   const count = Array.isArray(serials) ? serials.length : parseInt(serials);
-  return addProductSerials(productId, count, 'ANRI', token);
+  return addProductSerials(productId, count, 'ANRI');
 }
 
-export async function updateProductSerial(productId, serialId, newSerial, token) {
-  const res = await fetch(`${BASE_URL}/api/serials/${serialId}`, {
-    method: 'PUT',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ productId, serial: newSerial }),
-  });
-  return res.json();
+export async function updateProductSerial(productId, serialId, newSerial) {
+  const res = await api.put(`/serials/${serialId}`, { productId, serial: newSerial });
+  return res.data;
 }
 
-export async function deleteProductSerial(productId, serialId, token) {
-  const res = await fetch(`${BASE_URL}/api/serials/${serialId}`, {
-    method: 'DELETE',
-    headers: authHeader(token),
-  });
-  return res.json();
+export async function deleteProductSerial(productId, serialId) {
+  const res = await api.delete(`/serials/${serialId}`);
+  return res.data;
 }
 
 export async function checkSerialAvailability(serial) {
-  const res = await fetch(`${BASE_URL}/api/serials/check/${encodeURIComponent(serial)}`);
-  return res.json();
+  const res = await api.get(`/serials/check/${encodeURIComponent(serial)}`);
+  return res.data;
 }
 
 // ─── CART SYSTEM ───────────────────────────────────────────────────────────
-export async function fetchCart(token) {
-  const res = await fetch(`${BASE_URL}/api/cart`, { headers: authHeader(token) });
-  if (!res.ok) throw new Error('Failed to load cart');
-  return res.json();
+export async function fetchCart() {
+  const res = await api.get(`/cart`);
+  return res.data;
 }
 
-export async function addToCartAPI(token, productId, quantity) {
-  const res = await fetch(`${BASE_URL}/api/cart`, {
-    method: 'POST',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ productId, quantity }),
-  });
-  return res.json();
+export async function addToCartAPI(productId, quantity) {
+  const res = await api.post(`/cart`, { productId, quantity });
+  return res.data;
 }
 
-export async function removeFromCartAPI(token, productId) {
-  const res = await fetch(`${BASE_URL}/api/cart/${productId}`, {
-    method: 'DELETE',
-    headers: authHeader(token),
-  });
-  return res.json();
+export async function removeFromCartAPI(productId) {
+  const res = await api.delete(`/cart/${productId}`);
+  return res.data;
 }
 
-export async function clearCartAPI(token) {
-  const res = await fetch(`${BASE_URL}/api/cart`, {
-    method: 'DELETE',
-    headers: authHeader(token),
-  });
-  return res.json();
+export async function clearCartAPI() {
+  const res = await api.delete(`/cart`);
+  return res.data;
 }
 
 // ─── AUTH & ADMIN ──────────────────────────────────────────────────────────
 export async function adminLogin(credentials) {
-  const res = await fetch(`${BASE_URL}/api/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(credentials),
-  });
-  return res.json();
+  const res = await api.post(`/auth/login`, credentials);
+  return res.data;
 }
 
-export async function changeAdminPassword(currentPassword, newPassword, token) {
-  const res = await fetch(`${BASE_URL}/api/users/change-password`, {
-    method: 'POST',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ currentPassword, newPassword }),
-  });
-  return res.json();
+export async function changeAdminPassword(currentPassword, newPassword) {
+  const res = await api.post(`/users/change-password`, { currentPassword, newPassword });
+  return res.data;
 }
 
 // ─── CATEGORIES & SUBCATEGORIES ──────────────────────────
-export async function fetchSubcategories(token) {
-  const res = await fetch(`${BASE_URL}/api/subcategories`, { headers: authHeader(token) });
-  return res.json();
+export async function fetchSubcategories() {
+  const res = await api.get(`/subcategories`);
+  return res.data;
 }
 
-export async function updateCategory(id, data, token) {
-  const res = await fetch(`${BASE_URL}/api/categories/${id}`, {
-    method: 'PUT',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  return res.json();
+export async function updateCategory(id, data) {
+  const res = await api.put(`/categories/${id}`, data);
+  return res.data;
 }
 
-export async function createCategory(data, token) {
-  const res = await fetch(`${BASE_URL}/api/categories`, {
-    method: 'POST',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  return res.json();
+export async function createCategory(data) {
+  const res = await api.post(`/categories`, data);
+  return res.data;
 }
 
-export async function deleteCategory(id, token) {
-  const res = await fetch(`${BASE_URL}/api/categories/${id}`, {
-    method: 'DELETE',
-    headers: authHeader(token),
-  });
-  return res.json();
+export async function deleteCategory(id) {
+  const res = await api.delete(`/categories/${id}`);
+  return res.data;
 }
 
-export async function createSubcategory(data, token) {
-  const res = await fetch(`${BASE_URL}/api/subcategories`, {
-    method: 'POST',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  return res.json();
+export async function createSubcategory(data) {
+  const res = await api.post(`/subcategories`, data);
+  return res.data;
 }
 
-export async function updateSubcategory(id, data, token) {
-  const res = await fetch(`${BASE_URL}/api/subcategories/${id}`, {
-    method: 'PUT',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  return res.json();
+export async function updateSubcategory(id, data) {
+  const res = await api.put(`/subcategories/${id}`, data);
+  return res.data;
 }
 
-export async function deleteSubcategory(id, token) {
-  const res = await fetch(`${BASE_URL}/api/subcategories/${id}`, {
-    method: 'DELETE',
-    headers: authHeader(token),
-  });
-  return res.json();
+export async function deleteSubcategory(id) {
+  const res = await api.delete(`/subcategories/${id}`);
+  return res.data;
 }
 
-// ─── ADMIN FEATURES (COUPONS, RETURNS, WARRANTY, USERS, ORDERS) ───────────
-export async function fetchCouponsAdmin(token) {
-  const res = await fetch(`${BASE_URL}/api/coupons`, { headers: authHeader(token) });
-  return res.json();
+// ─── ADMIN FEATURES ────────────────────────────────────────────────────────
+export async function fetchCouponsAdmin() {
+  const res = await api.get(`/coupons`);
+  return res.data;
 }
 
-export async function fetchReturnsAdmin(token) {
-  const res = await fetch(`${BASE_URL}/api/returns`, { headers: authHeader(token) });
-  return res.json();
+export async function fetchReturnsAdmin() {
+  const res = await api.get(`/returns`);
+  return res.data;
 }
 
-export async function fetchWarrantyAdmin(token) {
-  const res = await fetch(`${BASE_URL}/api/warranty/admin`, { headers: authHeader(token) });
-  return res.json();
+export async function fetchWarrantyAdmin() {
+  const res = await api.get(`/warranty/admin`);
+  return res.data;
 }
 
-export async function fetchAdminUsers(token) {
-  const res = await fetch(`${BASE_URL}/api/admin/users`, { headers: authHeader(token) });
-  return res.json();
+export async function fetchAdminUsers() {
+  const res = await api.get(`/admin/users`);
+  return res.data;
 }
 
-export async function fetchAdminOrders(token) {
-  const res = await fetch(`${BASE_URL}/api/admin/orders`, { headers: authHeader(token) });
-  return res.json();
+export async function fetchAdminOrders() {
+  const res = await api.get(`/admin/orders`);
+  return res.data;
 }
 
-export async function fetchContactsAdmin(token) {
-  const res = await fetch(`${BASE_URL}/api/contact`, { headers: authHeader(token) });
-  return res.json();
+export async function fetchContactsAdmin() {
+  const res = await api.get(`/contact`);
+  return res.data;
 }
 
-export async function updateWarrantyStatusAdmin(token, id, status) {
-  const res = await fetch(`${BASE_URL}/api/warranty/admin/${id}`, {
-    method: 'PUT',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status }),
-  });
-  return res.json();
+export async function updateWarrantyStatusAdmin(id, status) {
+  const res = await api.put(`/warranty/admin/${id}`, { status });
+  return res.data;
 }
 
-export async function deleteWarrantyAdmin(token, id) {
-  const res = await fetch(`${BASE_URL}/api/warranty/admin/${id}`, {
-    method: 'DELETE',
-    headers: authHeader(token),
-  });
-  return res.json();
+export async function deleteWarrantyAdmin(id) {
+  const res = await api.delete(`/warranty/admin/${id}`);
+  return res.data;
 }
 
 export async function fetchPublicSettings() {
-  const res = await fetch(`${BASE_URL}/api/settings/public`);
-  return res.json();
+  const res = await api.get(`/settings/public`);
+  return res.data;
 }
 
 // ─── PUBLIC BANNERS ───────────────────────────────────────
 export async function fetchActiveBanners() {
-  const res = await fetch(`${BASE_URL}/api/banners`);
-  return res.json();
+  const res = await api.get(`/banners`);
+  return res.data;
 }
 
 // ─── ADMIN: BANNER MANAGEMENT ─────────────────────────────
-export async function fetchBannersAdmin(token) {
-  const res = await fetch(`${BASE_URL}/api/banners/admin/all`, { headers: authHeader(token) });
-  return res.json();
+export async function fetchBannersAdmin() {
+  const res = await api.get(`/banners/admin/all`);
+  return res.data;
 }
 
-export async function createBannerAdmin(formData, token) {
-  const res = await fetch(`${BASE_URL}/api/banners`, {
-    method: 'POST',
-    headers: authHeader(token),
-    body: formData,
-  });
-  return res.json();
+export async function createBannerAdmin(formData) {
+  const res = await api.post(`/banners`, formData);
+  return res.data;
 }
 
-export async function updateBannerAdmin(id, formData, token) {
-  const res = await fetch(`${BASE_URL}/api/banners/${id}`, {
-    method: 'PUT',
-    headers: authHeader(token),
-    body: formData,
-  });
-  return res.json();
+export async function updateBannerAdmin(id, formData) {
+  const res = await api.put(`/banners/${id}`, formData);
+  return res.data;
 }
 
-export async function deleteBannerAdmin(id, token) {
-  const res = await fetch(`${BASE_URL}/api/banners/${id}`, {
-    method: 'DELETE',
-    headers: authHeader(token),
-  });
-  return res.json();
+export async function deleteBannerAdmin(id) {
+  const res = await api.delete(`/banners/${id}`);
+  return res.data;
 }
 
 // ─── EWARRANTY REGISTRATION ─────────────────────────────────────────────────
 export async function registerWarranty(data) {
-  const res = await fetch(`${BASE_URL}/api/warranty/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  return res.json();
+  const res = await api.post(`/warranty/register`, data);
+  return res.data;
 }
 
 // ─── USER: PROFILE & ORDERS ──────────────────────────────────────────────────
-export async function fetchMyOrders(token) {
-  const res = await fetch(`${BASE_URL}/api/orders/my`, { headers: authHeader(token) });
-  return res.json();
+export async function fetchMyOrders() {
+  const res = await api.get(`/orders/my`);
+  return res.data;
 }
 
-export async function changePassword(currentPassword, newPassword, token) {
-  const res = await fetch(`${BASE_URL}/api/users/change-password`, {
-    method: 'POST',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ currentPassword, newPassword }),
-  });
-  return res.json();
+export async function changePassword(currentPassword, newPassword) {
+  const res = await api.post(`/users/change-password`, { currentPassword, newPassword });
+  return res.data;
 }
 
-export async function updateProfile(data, token) {
-  const res = await fetch(`${BASE_URL}/api/users/profile`, {
-    method: 'PUT',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  return res.json();
+export async function updateProfile(data) {
+  const res = await api.put(`/users/profile`, data);
+  return res.data;
 }
 
 // ─── CHECKOUT: ADDRESS & ORDER ────────────────────────────────────────────────
-export async function fetchAddressesAPI(token) {
-  const res = await fetch(`${BASE_URL}/api/addresses`, { headers: authHeader(token) });
-  return res.json();
+export async function fetchAddressesAPI() {
+  const res = await api.get(`/addresses`);
+  return res.data;
 }
 
-export async function saveAddressAPI(data, token) {
-  const res = await fetch(`${BASE_URL}/api/addresses`, {
-    method: 'POST',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  return res.json();
+export async function saveAddressAPI(data) {
+  const res = await api.post(`/addresses`, data);
+  return res.data;
 }
 
-export async function placeOrderAPI(data, token) {
-  const res = await fetch(`${BASE_URL}/api/orders`, {
-    method: 'POST',
-    headers: { ...authHeader(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  return res.json();
+export async function placeOrderAPI(data) {
+  const res = await api.post(`/orders`, data);
+  return res.data;
 }
 
 // ─── CONTACT FORM ────────────────────────────────────────────────────────────
 export async function submitContact(data) {
-  const res = await fetch(`${BASE_URL}/api/contact`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  return res.json();
+  const res = await api.post(`/contact`, data);
+  return res.data;
 }
 
 export default api;
