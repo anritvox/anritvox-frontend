@@ -1,144 +1,141 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { fetchCart, addToCartAPI, removeFromCartAPI, clearCartAPI } from '../services/api';
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { useAuth } from "./AuthContext";
+import { fetchCart, addToCartAPI, removeFromCartAPI, clearCartAPI } from "../services/api";
 
 const CartContext = createContext();
-export const useCart = () => useContext(CartContext);
 
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [cartLoading, setCartLoading] = useState(false);
+  const { isAuthenticated } = useAuth();
 
-  const getToken = () => localStorage.getItem('user_token');
-
-  // Load cart: from API if logged in, else from localStorage
   const loadCart = useCallback(async () => {
-    const token = getToken();
-    if (token) {
+    if (isAuthenticated) {
+      setCartLoading(true);
       try {
-        setCartLoading(true);
-        const data = await fetchCart(token);
+        const data = await fetchCart();
         setCart(data.items || []);
-        return;
       } catch (error) {
-        console.error("Cart fetch error:", error);
-      } finally { 
-        setCartLoading(false); 
+        setCart([]);
+      } finally {
+        setCartLoading(false);
+      }
+    } else {
+      const saved = localStorage.getItem("guest_cart");
+      try {
+        setCart(saved ? JSON.parse(saved) : []);
+      } catch {
+        setCart([]);
       }
     }
-    // Guest fallback
-    try {
-      const saved = localStorage.getItem('cart');
-      setCart(saved ? JSON.parse(saved) : []);
-    } catch {
-      setCart([]);
-    }
-  }, []);
+  }, [isAuthenticated]);
 
-  // 🔴 UI FIX: Actually listen for the sync event from AuthContext
-  useEffect(() => { 
-    loadCart(); 
-    
-    const handleSync = () => loadCart();
-    window.addEventListener('cart-synced', handleSync);
-    
-    return () => window.removeEventListener('cart-synced', handleSync);
+  useEffect(() => {
+    loadCart();
+    window.addEventListener("cart-synced", loadCart);
+    return () => window.removeEventListener("cart-synced", loadCart);
   }, [loadCart]);
 
-  // Persist guest cart
-  useEffect(() => {
-    if (!getToken()) {
-      localStorage.setItem('cart', JSON.stringify(cart));
-    }
-  }, [cart]);
-
   const addToCart = useCallback(async (product, quantity = 1) => {
-    const token = getToken();
-    const pId = product.id || product.product_id;
+    const pId = product._id || product.id || product.product_id;
     
-    if (token) {
+    if (isAuthenticated) {
       try {
-        const data = await addToCartAPI(token, pId, quantity);
+        const data = await addToCartAPI(pId, quantity);
         setCart(data.items || []);
-        return;
-      } catch (error) { 
-        console.error("Error adding to cart:", error);
-        throw error; // 🔴 UI FIX: Re-throw so components can show "Out of Stock" toasts
+      } catch (error) {
+        throw error;
       }
+    } else {
+      setCart(prev => {
+        const existing = prev.find(i => (i._id === pId || i.id === pId || i.product_id === pId));
+        let newCart;
+        if (existing) {
+          newCart = prev.map(i =>
+            (i._id === pId || i.id === pId || i.product_id === pId)
+              ? { ...i, quantity: (i.quantity || 1) + quantity }
+              : i
+          );
+        } else {
+          newCart = [...prev, { ...product, quantity }];
+        }
+        localStorage.setItem("guest_cart", JSON.stringify(newCart));
+        return newCart;
+      });
     }
-    
-    // Guest fallback
-    setCart(prev => {
-      const safePrev = Array.isArray(prev) ? prev : [];
-      const existing = safePrev.find(i => (i.id === pId || i.product_id === pId));
-      if (existing) {
-        return safePrev.map(i =>
-          (i.id === pId || i.product_id === pId)
-            ? { ...i, quantity: (i.quantity || i.qty || 1) + quantity }
-            : i
-        );
-      }
-      return [...safePrev, { ...product, product_id: pId, quantity }];
-    });
-  }, []);
+  }, [isAuthenticated]);
 
   const updateQuantity = useCallback(async (productId, quantity) => {
     if (quantity < 1) return removeFromCart(productId);
-    const token = getToken();
-    if (token) {
-      try {
-        const data = await addToCartAPI(token, productId, quantity);
-        setCart(data.items || []); 
-        return; 
-      } catch (error) { 
-        console.error("Error updating quantity:", error);
-        throw error; // 🔴 UI FIX: Re-throw for UI handling
-      }
-    }
-    setCart(prev => {
-      const safePrev = Array.isArray(prev) ? prev : [];
-      return safePrev.map(i =>
-        (i.product_id === productId || i.id === productId) ? { ...i, quantity } : i
-      );
-    });
-  }, [/* removeFromCart is referenced, let's keep it clean */]);
 
-  const removeFromCart = useCallback(async (productId) => {
-    const token = getToken();
-    if (token) {
+    if (isAuthenticated) {
       try {
-        const data = await removeFromCartAPI(token, productId);
-        setCart(data.items || []); 
-        return; 
-      } catch (error) { 
-        console.error(error); 
+        const data = await addToCartAPI(productId, quantity);
+        setCart(data.items || []);
+      } catch (error) {
         throw error;
       }
+    } else {
+      setCart(prev => {
+        const newCart = prev.map(i =>
+          (i._id === productId || i.id === productId || i.product_id === productId) 
+            ? { ...i, quantity } 
+            : i
+        );
+        localStorage.setItem("guest_cart", JSON.stringify(newCart));
+        return newCart;
+      });
     }
-    setCart(prev => {
-      const safePrev = Array.isArray(prev) ? prev : [];
-      return safePrev.filter(i => i.product_id !== productId && i.id !== productId);
-    });
-  }, []);
+  }, [isAuthenticated]);
+
+  const removeFromCart = useCallback(async (productId) => {
+    if (isAuthenticated) {
+      try {
+        const data = await removeFromCartAPI(productId);
+        setCart(data.items || []);
+      } catch (error) {
+        throw error;
+      }
+    } else {
+      setCart(prev => {
+        const newCart = prev.filter(i => 
+          i._id !== productId && i.id !== productId && i.product_id !== productId
+        );
+        localStorage.setItem("guest_cart", JSON.stringify(newCart));
+        return newCart;
+      });
+    }
+  }, [isAuthenticated]);
 
   const clearCart = useCallback(async () => {
-    const token = getToken();
-    if (token) {
-      try { await clearCartAPI(token); } catch (error) { console.error(error); }
+    if (isAuthenticated) {
+      try {
+        await clearCartAPI();
+      } catch (error) {
+        console.error(error);
+      }
     }
     setCart([]);
-    localStorage.removeItem('cart');
-  }, []);
+    localStorage.removeItem("guest_cart");
+  }, [isAuthenticated]);
 
-  const safeCart = Array.isArray(cart) ? cart : [];
-  const cartCount = safeCart.reduce((s, i) => s + (i.quantity || 1), 0);
-  const cartTotal = safeCart.reduce((s, i) => s + parseFloat(i.price || 0) * (i.quantity || 1), 0);
+  const cartCount = cart.reduce((total, item) => total + (item.quantity || 1), 0);
+  const cartTotal = cart.reduce((total, item) => total + (parseFloat(item.price || 0) * (item.quantity || 1)), 0);
 
   return (
     <CartContext.Provider value={{
-      cart: safeCart, cartCount, cartTotal, cartLoading,
+      cart, cartCount, cartTotal, cartLoading,
       addToCart, removeFromCart, updateQuantity, clearCart, loadCart
     }}>
       {children}
     </CartContext.Provider>
   );
+};
+
+export const useCart = () => {
+  const context = useContext(CartContext);
+  if (!context) {
+    throw new Error("useCart must be used within a CartProvider");
+  }
+  return context;
 };
