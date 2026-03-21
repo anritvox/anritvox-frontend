@@ -11,7 +11,8 @@ import {
   FiSearch as Search, 
   FiCheck as Check, 
   FiShoppingCart as ShoppingCart,
-  FiSliders as Sliders
+  FiSliders as Sliders,
+  FiArrowRight as ArrowRight
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 
