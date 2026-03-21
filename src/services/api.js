@@ -223,7 +223,10 @@ export async function updateBannerAdmin(id, formData) {
 }
 
 export async function deleteBannerAdmin(id) {
-  const res = await api.delete(`/banners/${id}`);
+  if (!id || typeof id === 'object') {
+    throw new Error("Invalid Banner ID provided");
+  }
+  const res = await api.delete(`/banners/admin/${id}`);
   return res.data;
 }
 
