@@ -23,18 +23,18 @@ export default function Footer() {
         <div>
           <h3 className="font-bold text-base mb-4 text-white">Get to Know Us</h3>
           <ul className="space-y-2 text-sm text-gray-300">
-            <li><Link to="/" className="hover:underline">About Anritvox</Link></li>
-            <li><Link to="/contact" className="hover:underline">Careers</Link></li>
-            <li><Link to="/contact" className="hover:underline">Press Releases</Link></li>
-            <li><Link to="/contact" className="hover:underline">Anritvox Science</Link></li>
+            <li><Link to="/about" className="hover:underline">About Anritvox</Link></li>
+            <li><Link to="/about#careers" className="hover:underline">Careers</Link></li>
+            <li><Link to="/about" className="hover:underline">Press Releases</Link></li>
+            <li><Link to="/about" className="hover:underline">Anritvox Science</Link></li>
           </ul>
         </div>
         <div>
           <h3 className="font-bold text-base mb-4 text-white">Connect with Us</h3>
           <ul className="space-y-2 text-sm text-gray-300">
             <li><a href="https://www.instagram.com/the_rsenterprises" target="_blank" rel="noreferrer" className="hover:underline">Instagram</a></li>
-            <li><a href="#" className="hover:underline">Facebook</a></li>
-            <li><a href="#" className="hover:underline">Twitter</a></li>
+            <li><a href="https://facebook.com/anritvox" target="_blank" rel="noreferrer" className="hover:underline">Facebook</a></li>
+            <li><a href="https://twitter.com/anritvox" target="_blank" rel="noreferrer" className="hover:underline">X (Twitter)</a></li>
           </ul>
         </div>
         <div>
@@ -50,7 +50,7 @@ export default function Footer() {
           <ul className="space-y-2 text-sm text-gray-300">
             <li><Link to="/ewarranty" className="hover:underline">E-Warranty Registration</Link></li>
             <li><Link to="/contact" className="hover:underline">Returns Centre</Link></li>
-            <li><Link to="/contact" className="hover:underline">100% Purchase Protection</Link></li>
+            <li><Link to="/terms" className="hover:underline">100% Purchase Protection</Link></li>
             <li><Link to="/contact" className="hover:underline">Help</Link></li>
           </ul>
         </div>
@@ -72,7 +72,7 @@ export default function Footer() {
         <div className="flex flex-wrap justify-center gap-4 text-xs font-medium mb-3 text-gray-300">
            <Link to="/terms" className="hover:underline">Conditions of Use & Sale</Link>
            <Link to="/privacy" className="hover:underline">Privacy Notice</Link>
-           <Link to="/contact" className="hover:underline">Interest-Based Ads</Link>
+           <Link to="/privacy" className="hover:underline">Interest-Based Ads</Link>
         </div>
         <p className="text-[10px] text-gray-400">
           © {currentYear} Anritvox. All rights reserved. Developed by Pranav Kumar
