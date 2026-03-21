@@ -8,6 +8,8 @@ import { CartProvider } from "./context/CartContext.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { ToastProvider } from "./context/ToastContext";
 import { WishlistProvider } from "./context/WishlistContext";
+import Returns from './pages/Returns';
+import Affiliate from './pages/Affiliate';
 import "./index.css";
 
 // Lazy load pages
@@ -82,6 +84,8 @@ function AppContent() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/returns" element={<Returns />} />
+          <Route path="/affiliate" element={<Affiliate />} />
           <Route path="/about" element={<About />} />
           <Route path="/privacy" element={<Legal />} />
           <Route path="/terms" element={<Legal />} />
