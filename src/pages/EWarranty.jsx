@@ -10,7 +10,8 @@ import {
   ArrowRight,
   Download
 } from 'lucide-react';
-import { checkSerialAvailability, registerWarranty, BASE_URL } from '../services/api';
+// IMPORT FIXED: Using the base api instance directly
+import api, { registerWarranty, BASE_URL } from '../services/api';
 
 export default function EWarranty() {
   const [serial, setSerial] = useState('');
@@ -27,7 +28,6 @@ export default function EWarranty() {
     invoiceNumber: ''
   });
 
-  // Fixed the nested quote issue by using backticks for the SVG string
   const FALLBACK_IMAGE = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='16' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E`;
 
   const handleCheckSerial = async (e) => {
@@ -35,7 +35,10 @@ export default function EWarranty() {
     setError('');
     setLoading(true);
     try {
-      const data = await checkSerialAvailability(serial);
+      // FIX 1: Use the dedicated warranty validation endpoint
+      const response = await api.get(`/warranty/validate/${encodeURIComponent(serial)}`);
+      const data = response.data;
+
       if (data.status === 'registered') {
         setError('This product is already registered for warranty.');
       } else {
@@ -43,7 +46,8 @@ export default function EWarranty() {
         setStep(2);
       }
     } catch (err) {
-      setError(err.message || 'Serial number not found in our database.');
+      // FIX 2: Correctly extract the backend error message instead of the generic Axios 400 error
+      setError(err.response?.data?.message || err.message || 'Serial number not found in our database.');
     } finally {
       setLoading(false);
     }
@@ -60,7 +64,8 @@ export default function EWarranty() {
       });
       setStep(3);
     } catch (err) {
-      setError('Registration failed. Please try again.');
+      // Also fixed here
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
