@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// Correctly use Vite environment variables
 export const BASE_URL = import.meta.env.VITE_BASE_URL || 'https://service.anritvox.com';
 const API_BASE_URL = `${BASE_URL}/api`;
 
@@ -9,7 +8,6 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Helper for tokens: Automatically attach token to EVERY request
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token') || localStorage.getItem('ms_token');
   if (token) {
@@ -55,29 +53,37 @@ export async function deleteProduct(id) {
   return res.data;
 }
 
-// ─── ADMIN: SERIAL MANAGEMENT ────────────────────────────
-export async function fetchProductSerials(productId, page = 1, limit = 100) {
-  const res = await api.get(`/serials/product/${productId}?page=${page}&limit=${limit}`);
+// ─── ADMIN: ADVANCED SERIAL MANAGEMENT ────────────────────────────
+export async function fetchProductSerials(productId, page = 1, limit = 100, sortBy = 'created_at', sortOrder = 'DESC') {
+  const res = await api.get(`/serials/product/${productId}?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
   return res.data;
 }
 
-export async function addProductSerials(productId, count, prefix = 'ANRI') {
+export async function addProductSerials(productId, count, prefix = 'ANRI', batchNumber = '', notes = '') {
   const cleanPrefix = String(prefix || 'ANRI').substring(0, 4).toUpperCase().padEnd(4, 'X');
-  const res = await api.post(`/serials/generate`, { productId, count, prefix: cleanPrefix, batchNumber: Date.now() });
+  const payload = {
+    productId,
+    count,
+    prefix: cleanPrefix,
+    batchNumber: batchNumber || `BATCH-${Date.now()}`,
+    notes: notes || null
+  };
+  const res = await api.post(`/serials/generate`, payload);
   return res.data;
 }
 
-export async function bulkAddProductSerials(productId, serials) {
-  const count = Array.isArray(serials) ? serials.length : parseInt(serials);
-  return addProductSerials(productId, count, 'ANRI');
-}
-
-export async function updateProductSerial(productId, serialId, newSerial) {
-  const res = await api.put(`/serials/${serialId}`, { productId, serial: newSerial });
+export async function exportSerialsExcel(filters = {}) {
+  const params = new URLSearchParams(filters);
+  const res = await api.get(`/serials/export/excel?${params}`, { responseType: 'blob' });
   return res.data;
 }
 
-export async function deleteProductSerial(productId, serialId) {
+export async function updateProductSerial(serialId, status, notes) {
+  const res = await api.put(`/serials/${serialId}`, { status, notes });
+  return res.data;
+}
+
+export async function deleteProductSerial(serialId) {
   const res = await api.delete(`/serials/${serialId}`);
   return res.data;
 }
@@ -201,13 +207,11 @@ export async function fetchPublicSettings() {
   return res.data;
 }
 
-// ─── PUBLIC BANNERS ───────────────────────────────────────
 export async function fetchActiveBanners() {
   const res = await api.get(`/banners`);
   return res.data;
 }
 
-// ─── ADMIN: BANNER MANAGEMENT ─────────────────────────────
 export async function fetchBannersAdmin() {
   const res = await api.get(`/banners/admin/all`);
   return res.data;
@@ -228,13 +232,11 @@ export async function deleteBannerAdmin(id) {
   return res.data;
 }
 
-// ─── EWARRANTY REGISTRATION ─────────────────────────────────────────────────
 export async function registerWarranty(data) {
   const res = await api.post(`/warranty/register`, data);
   return res.data;
 }
 
-// ─── USER: PROFILE & ORDERS ──────────────────────────────────────────────────
 export async function fetchMyOrders() {
   const res = await api.get(`/orders/my`);
   return res.data;
@@ -250,7 +252,6 @@ export async function updateProfile(data) {
   return res.data;
 }
 
-// ─── CHECKOUT: ADDRESS & ORDER ────────────────────────────────────────────────
 export async function fetchAddressesAPI() {
   const res = await api.get(`/addresses`);
   return res.data;
@@ -266,7 +267,6 @@ export async function placeOrderAPI(data) {
   return res.data;
 }
 
-// ─── CONTACT FORM ────────────────────────────────────────────────────────────
 export async function submitContact(data) {
   const res = await api.post(`/contact`, data);
   return res.data;
