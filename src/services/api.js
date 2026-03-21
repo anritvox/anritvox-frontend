@@ -14,9 +14,10 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
+}, (error) => {
+  return Promise.reject(error);
 });
 
-// ─── PUBLIC API ───────────────────────────────────────────────────────────
 export async function fetchCategories() {
   const res = await api.get(`/categories`);
   return res.data;
@@ -32,7 +33,6 @@ export async function fetchProductById(id) {
   return res.data;
 }
 
-// ─── ADMIN: PRODUCT MANAGEMENT ────────────────────────────────────────────
 export async function fetchProductsAdmin() {
   const res = await api.get(`/products`);
   return res.data;
@@ -53,7 +53,6 @@ export async function deleteProduct(id) {
   return res.data;
 }
 
-// ─── ADMIN: ADVANCED SERIAL MANAGEMENT ────────────────────────────
 export async function fetchProductSerials(productId, page = 1, limit = 100, sortBy = 'created_at', sortOrder = 'DESC') {
   const res = await api.get(`/serials/product/${productId}?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
   return res.data;
@@ -93,7 +92,6 @@ export async function checkSerialAvailability(serial) {
   return res.data;
 }
 
-// ─── CART SYSTEM ───────────────────────────────────────────────────────────
 export async function fetchCart() {
   const res = await api.get(`/cart`);
   return res.data;
@@ -114,7 +112,6 @@ export async function clearCartAPI() {
   return res.data;
 }
 
-// ─── AUTH & ADMIN ──────────────────────────────────────────────────────────
 export async function adminLogin(credentials) {
   const res = await api.post(`/auth/login`, credentials);
   return res.data;
@@ -125,7 +122,6 @@ export async function changeAdminPassword(currentPassword, newPassword) {
   return res.data;
 }
 
-// ─── CATEGORIES & SUBCATEGORIES ──────────────────────────
 export async function fetchSubcategories() {
   const res = await api.get(`/subcategories`);
   return res.data;
@@ -161,7 +157,6 @@ export async function deleteSubcategory(id) {
   return res.data;
 }
 
-// ─── ADMIN FEATURES ────────────────────────────────────────────────────────
 export async function fetchCouponsAdmin() {
   const res = await api.get(`/coupons`);
   return res.data;
