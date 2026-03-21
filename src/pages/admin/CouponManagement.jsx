@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import api from '../../services/api'; // FIX: Using centralized API instance
 
 export default function CouponManagement() {
-  const { token } = useAuth();
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -15,50 +12,50 @@ export default function CouponManagement() {
   });
   const [msg, setMsg] = useState('');
 
-  useEffect(() => { fetchCoupons(); }, []);
+  useEffect(() => { 
+    fetchCoupons(); 
+  }, []);
 
   const fetchCoupons = async () => {
     try {
-      const res = await fetch(`${API}/api/coupons`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setCoupons(data.coupons || data || []);
+      // FIX: Using correct axios instance
+      const res = await api.get('/coupons');
+      setCoupons(res.data.coupons || res.data || []);
     } catch (e) {
       console.error(e);
-    } finally { setLoading(false); }
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const method = editCoupon ? 'PUT' : 'POST';
-    const url = editCoupon ? `${API}/api/coupons/${editCoupon._id}` : `${API}/api/coupons`;
     try {
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form)
-      });
-      if (res.ok) {
-        setMsg(editCoupon ? 'Coupon updated!' : 'Coupon created!');
-        setShowForm(false);
-        setEditCoupon(null);
-        resetForm();
-        fetchCoupons();
+      if (editCoupon) {
+        await api.put(`/coupons/${editCoupon._id}`, form);
+        setMsg('Coupon updated!');
       } else {
-        const d = await res.json();
-        setMsg(d.message || 'Error saving coupon');
+        await api.post(`/coupons`, form);
+        setMsg('Coupon created!');
       }
-    } catch (e) { setMsg('Network error'); }
+      setShowForm(false);
+      setEditCoupon(null);
+      resetForm();
+      fetchCoupons();
+    } catch (e) { 
+      // FIX: Better error extraction with Axios
+      setMsg(e.response?.data?.message || 'Error saving coupon'); 
+    }
   };
 
   const deleteCoupon = async (id) => {
     if (!window.confirm('Delete this coupon?')) return;
-    await fetch(`${API}/api/coupons/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    fetchCoupons();
+    try {
+      await api.delete(`/coupons/${id}`);
+      fetchCoupons();
+    } catch (e) {
+      alert(e.response?.data?.message || 'Failed to delete coupon');
+    }
   };
 
   const resetForm = () => setForm({ code: '', discountType: 'percentage', discountValue: '', minOrderAmount: '', maxUses: '', expiresAt: '', isActive: true });
@@ -162,7 +159,7 @@ export default function CouponManagement() {
               {coupons.length === 0 ? (
                 <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-500">No coupons found</td></tr>
               ) : coupons.map(c => (
-                <tr key={c._id} className="hover:bg-gray-800/50 transition-colors">
+                <tr key={c._id || c.id} className="hover:bg-gray-800/50 transition-colors">
                   <td className="px-4 py-3 font-mono font-bold text-cyan-300">{c.code}</td>
                   <td className="px-4 py-3">
                     {c.discountType === 'percentage' ? `${c.discountValue}%` : `₹${c.discountValue}`}
@@ -179,7 +176,7 @@ export default function CouponManagement() {
                     <div className="flex gap-2">
                       <button onClick={() => startEdit(c)}
                         className="px-2 py-1 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 text-xs rounded transition-colors">Edit</button>
-                      <button onClick={() => deleteCoupon(c._id)}
+                      <button onClick={() => deleteCoupon(c._id || c.id)}
                         className="px-2 py-1 bg-red-500/20 text-red-400 hover:bg-red-500/30 text-xs rounded transition-colors">Delete</button>
                     </div>
                   </td>
