@@ -25,8 +25,9 @@ import {
   Tag,
 } from "lucide-react";
 
-const StatCard = ({ title, count, icon: Icon, trend, trendValue, subtitle, color = "text-[#232f3e]" }) => (
-  <div className="bg-white p-5 rounded-lg border border-[#d5d9d9] shadow-[0_2px_5px_0_rgba(213,217,217,.5)] hover:shadow-md transition-all group cursor-pointer">
+// 1. Added onClick prop and attached it to the root div of the card
+const StatCard = ({ title, count, icon: Icon, trend, trendValue, subtitle, color = "text-[#232f3e]", onClick }) => (
+  <div onClick={onClick} className="bg-white p-5 rounded-lg border border-[#d5d9d9] shadow-[0_2px_5px_0_rgba(213,217,217,.5)] hover:shadow-md transition-all group cursor-pointer">
     <div className="flex justify-between items-start mb-4">
       <div className="p-2.5 bg-gray-50 rounded-lg group-hover:bg-[#f0f2f2] transition-colors">
         <Icon className={`h-6 w-6 ${color}`} />
@@ -50,7 +51,8 @@ const StatCard = ({ title, count, icon: Icon, trend, trendValue, subtitle, color
   </div>
 );
 
-export default function DashboardOverview({ token, isRealTimeSync }) {
+// 2. Extracted setSection from the incoming props
+export default function DashboardOverview({ token, isRealTimeSync, setSection }) {
   const [stats, setStats] = useState({
     products: 0,
     categories: 0,
@@ -122,18 +124,17 @@ export default function DashboardOverview({ token, isRealTimeSync }) {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Stats Grid */}
+      {/* 3. Added the corresponding onClick handlers to navigate to the correct sections */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <StatCard title="Total Products" count={stats.products} icon={Package} subtitle="IN CATALOG" color="text-purple-600" />
-        <StatCard title="Categories" count={stats.categories} icon={Tag} subtitle="ACTIVE" color="text-pink-600" />
-        <StatCard title="Total Users" count={stats.users} icon={Users} subtitle="REGISTERED" color="text-teal-600" />
-        <StatCard title="Total Orders" count={stats.orders} icon={ShoppingCart} subtitle="ALL TIME" color="text-blue-600" />
-        <StatCard title="Pending Orders" count={stats.pendingOrders} icon={Clock} subtitle="NEEDS ACTION" color="text-orange-600" trend={stats.pendingOrders > 0 ? 'up' : undefined} trendValue={stats.pendingOrders > 0 ? `${stats.pendingOrders} new` : ''} />
-        <StatCard title="Warranties" count={stats.warranties} icon={Shield} subtitle="REGISTERED" color="text-emerald-600" />
-        <StatCard title="Messages" count={stats.contacts} icon={MessageSquare} subtitle="RECEIVED" color="text-yellow-600" />
+        <StatCard title="Total Products" count={stats.products} icon={Package} subtitle="IN CATALOG" color="text-purple-600" onClick={() => setSection("products")} />
+        <StatCard title="Categories" count={stats.categories} icon={Tag} subtitle="ACTIVE" color="text-pink-600" onClick={() => setSection("categories")} />
+        <StatCard title="Total Users" count={stats.users} icon={Users} subtitle="REGISTERED" color="text-teal-600" onClick={() => setSection("users")} />
+        <StatCard title="Total Orders" count={stats.orders} icon={ShoppingCart} subtitle="ALL TIME" color="text-blue-600" onClick={() => setSection("orders")} />
+        <StatCard title="Pending Orders" count={stats.pendingOrders} icon={Clock} subtitle="NEEDS ACTION" color="text-orange-600" trend={stats.pendingOrders > 0 ? 'up' : undefined} trendValue={stats.pendingOrders > 0 ? `${stats.pendingOrders} new` : ''} onClick={() => setSection("orders")} />
+        <StatCard title="Warranties" count={stats.warranties} icon={Shield} subtitle="REGISTERED" color="text-emerald-600" onClick={() => setSection("ewarranty")} />
+        <StatCard title="Messages" count={stats.contacts} icon={MessageSquare} subtitle="RECEIVED" color="text-yellow-600" onClick={() => setSection("contacts")} />
       </div>
 
-      {/* Recent Messages Table */}
       <div className="bg-white rounded-lg border border-[#d5d9d9] shadow-[0_2px_5px_0_rgba(213,217,217,.5)] overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
           <h3 className="font-semibold text-[#0f1111]">Recent Communications</h3>
@@ -170,7 +171,8 @@ export default function DashboardOverview({ token, isRealTimeSync }) {
           </table>
         </div>
         <div className="px-5 py-3 border-t border-gray-200 text-right">
-          <a href="#" className="text-sm text-[#007185] hover:text-[#c45500] font-bold">View all communications</a>
+          {/* 4. Connected the bottom link to the contacts section */}
+          <a href="#" onClick={(e) => { e.preventDefault(); setSection("contacts"); }} className="text-sm text-[#007185] hover:text-[#c45500] font-bold">View all communications</a>
         </div>
       </div>
     </div>
