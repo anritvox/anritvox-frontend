@@ -1,7 +1,5 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { addToCartAPI } from '../services/api'; 
-
-const BASE_URL = import.meta.env.VITE_BASE_URL;
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import api, { getProfile, addToCartAPI } from "../services/api";
 
 const AuthContext = createContext(null);
 
@@ -10,118 +8,106 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    try {
-      const storedToken = localStorage.getItem('user_token');
-      const storedUser = localStorage.getItem('user');
-      if (storedToken && storedUser) {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-      }
-    } catch {}
-    setLoading(false);
-  }, []);
-
-  // 🔴 SECURITY FIX: Resilient Cart Sync
-  // Uses Promise.allSettled so if one item is out of stock, it doesn't crash the whole login
-  const syncCartOnAuth = async (authToken) => {
-    const savedCart = localStorage.getItem('cart');
+  const syncCartOnAuth = async () => {
+    const savedCart = localStorage.getItem("cart");
     if (savedCart) {
       try {
         const guestItems = JSON.parse(savedCart);
         if (Array.isArray(guestItems) && guestItems.length > 0) {
-          
           await Promise.allSettled(
             guestItems.map(async (item) => {
-              const pId = item.id || item.product_id;
+              const pId = item.id || item.product_id || item._id;
               if (pId) {
-                await addToCartAPI(authToken, pId, item.quantity || 1);
+                await addToCartAPI(pId, item.quantity || 1);
               }
             })
           );
-          
-          // Wipe local storage so it doesn't duplicate on next login
-          localStorage.removeItem('cart');
+          localStorage.removeItem("cart");
         }
       } catch (err) {
-        console.error("Failed to sync guest cart:", err);
+        console.error(err);
       }
     }
-    // Always dispatch a custom event to tell CartContext to refresh from DB
-    window.dispatchEvent(new Event('cart-synced'));
+    window.dispatchEvent(new Event("cart-synced"));
   };
 
-  const register = useCallback(async ({ name, email, password, phone }) => {
-    const res = await fetch(`${BASE_URL}/api/users/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, phone }),
-    });
-    const body = await res.json();
-    if (!res.ok) throw new Error(body.message || 'Registration failed');
-    
-    localStorage.setItem('user_token', body.token);
-    localStorage.setItem('user', JSON.stringify(body.user));
-    setToken(body.token);
-    setUser(body.user);
-
-    await syncCartOnAuth(body.token);
-
-    return body.user;
-  }, []);
-
-  const login = useCallback(async ({ email, password }) => {
-    const res = await fetch(`${BASE_URL}/api/users/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    const body = await res.json();
-    if (!res.ok) throw new Error(body.message || 'Login failed');
-    
-    localStorage.setItem('user_token', body.token);
-    localStorage.setItem('user', JSON.stringify(body.user));
-    setToken(body.token);
-    setUser(body.user);
-
-    await syncCartOnAuth(body.token);
-
-    return body.user;
-  }, []);
-
   const logout = useCallback(() => {
-    localStorage.removeItem('user_token');
-    localStorage.removeItem('user');
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setToken(null);
     setUser(null);
-    
-    // Tell cart context to clear out user data and revert to guest
-    window.dispatchEvent(new Event('cart-synced'));
+    window.dispatchEvent(new Event("cart-synced"));
   }, []);
 
-  const authFetch = useCallback(async (url, options = {}) => {
-    const t = token || localStorage.getItem('user_token');
-    const res = await fetch(url, {
-      ...options,
-      headers: {
-        ...options.headers,
-        ...(t ? { Authorization: `Bearer ${t}` } : {}),
-        ...(options.body && !(options.body instanceof FormData)
-          ? { 'Content-Type': 'application/json' }
-          : {}),
-      },
-    });
-    return res;
-  }, [token]);
+  useEffect(() => {
+    const initAuth = async () => {
+      const storedToken = localStorage.getItem("token");
+      const storedUser = localStorage.getItem("user");
+
+      if (storedToken) {
+        setToken(storedToken);
+        if (storedUser) {
+          try {
+            setUser(JSON.parse(storedUser));
+          } catch (e) {
+            localStorage.removeItem("user");
+          }
+        }
+        try {
+          const res = await getProfile();
+          const userData = res.data?.user || res.data || res;
+          setUser(userData);
+          localStorage.setItem("user", JSON.stringify(userData));
+        } catch (error) {
+          logout();
+        }
+      }
+      setLoading(false);
+    };
+    initAuth();
+  }, [logout]);
+
+  const login = useCallback(async (credentials) => {
+    const res = await api.post("/auth/login", credentials);
+    const data = res.data || res;
+    const newToken = data.token;
+    const newUser = data.user || data;
+
+    localStorage.setItem("token", newToken);
+    localStorage.setItem("user", JSON.stringify(newUser));
+    setToken(newToken);
+    setUser(newUser);
+
+    await syncCartOnAuth();
+    return newUser;
+  }, []);
+
+  const register = useCallback(async (userData) => {
+    const res = await api.post("/auth/register", userData);
+    const data = res.data || res;
+    const newToken = data.token;
+    const newUser = data.user || data;
+
+    localStorage.setItem("token", newToken);
+    localStorage.setItem("user", JSON.stringify(newUser));
+    setToken(newToken);
+    setUser(newUser);
+
+    await syncCartOnAuth();
+    return newUser;
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, register, authFetch }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, register, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
-  return useContext(AuthContext);
-}
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
