@@ -3,43 +3,64 @@
 @tailwind utilities;
 
 :root {
-  --olive-stripe: rgba(128, 128, 0, 0.05);
+  --olive-stripe: rgba(128, 128, 0, 0.06);
+  --alabaster: #FDFDFB;
 }
 
 body {
-  background-color: #fdfdfb;
-  color: #1a1c18;
+  background-color: var(--alabaster);
+  color: #1A1C18;
   overflow-x: hidden;
 }
 
-.bg-striped-olive {
-  background-image: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 20px,
-    var(--olive-stripe) 20px,
-    var(--olive-stripe) 40px
-  );
+@layer components {
+  .bg-alabaster {
+    background-color: var(--alabaster);
+  }
+
+  .bg-striped-olive {
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 20px,
+      var(--olive-stripe) 20px,
+      var(--olive-stripe) 40px
+    );
+    background-size: 100% 100%;
+  }
+
+  .glass-light {
+    @apply bg-white/70 backdrop-blur-xl border border-olive-500/10;
+  }
+
+  .fluid-blob {
+    @apply absolute w-[600px] h-[600px] rounded-full blur-[100px] pointer-events-none;
+    background: radial-gradient(circle, rgba(128, 128, 0, 0.12) 0%, transparent 70%);
+    z-index: 0;
+  }
+
+  .animate-fluid-drift {
+    animation: fluid-drift 22s infinite ease-in-out;
+  }
 }
 
-.fluid-blob {
-  position: absolute;
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(128, 128, 0, 0.15) 0%, transparent 70%);
-  filter: blur(80px);
-  border-radius: 50%;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.glass-light {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(128, 128, 0, 0.1);
+@keyframes fluid-drift {
+  0%, 100% { 
+    transform: translate(0, 0) scale(1); 
+  }
+  33% { 
+    transform: translate(40px, -60px) scale(1.15); 
+  }
+  66% { 
+    transform: translate(-30px, 30px) scale(0.9); 
+  }
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from { 
+    transform: rotate(0deg); 
+  }
+  to { 
+    transform: rotate(360deg); 
+  }
 }
