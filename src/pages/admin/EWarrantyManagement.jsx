@@ -52,10 +52,10 @@ export default function EWarrantyManagement({ token }) {
     }
   }, [selectedProduct]);
 
-  const loadWarrantyData = async () => {
+ const loadWarrantyData = async () => {
     setLoading(true);
     try {
-      const data = await fetchWarrantyAdmin(token);
+     const data = await fetchWarrantyAdmin();
       const normalizedData = Array.isArray(data) ? data : (data.warranties || []);
       setWarranties(normalizedData);
     } catch (err) {
@@ -66,9 +66,9 @@ export default function EWarrantyManagement({ token }) {
     }
   };
 
-  const loadProductsData = async () => {
+ const loadProductsData = async () => {
     try {
-      const data = await fetchProductsAdmin(token);
+     const data = await fetchProductsAdmin();
       const normalizedData = Array.isArray(data) ? data : (data.products || []);
       setProducts(normalizedData);
     } catch (err) {
@@ -81,9 +81,11 @@ export default function EWarrantyManagement({ token }) {
   const loadProductSerials = async (productId, page = 1) => {
     setSerialsLoading(true);
     try {
-      const data = await fetchProductSerials(token, productId, page);
+     const loadProductSerials = async (productId, page = 1) => {
+    setSerialsLoading(true);
+    try {
+      const data = await fetchProductSerials(productId, page);
       setProductSerials(Array.isArray(data) ? data : (data.serials || []));
-      // Capture the pagination data from the backend
       if (data.pagination) {
         setSerialPagination(data.pagination);
       }
@@ -95,11 +97,11 @@ export default function EWarrantyManagement({ token }) {
     }
   };
 
-  const handleUpdate = async () => {
+ const handleUpdate = async () => {
     if (!selectedWarranty) return;
     setIsUpdating(true);
     try {
-      await updateWarrantyStatusAdmin(token, selectedWarranty.id, selectedWarranty.status);
+      await updateWarrantyStatusAdmin(selectedWarranty.id, selectedWarranty.status);
       setIsEditModalOpen(false);
       loadWarrantyData();
     } catch (err) {
@@ -109,10 +111,10 @@ export default function EWarrantyManagement({ token }) {
     }
   };
 
-  const handleDelete = async (id) => {
+ const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this warranty record?")) {
       try {
-        await deleteWarrantyAdmin(token, id);
+        await deleteWarrantyAdmin(id);
         loadWarrantyData();
       } catch (err) {
         alert("Failed to delete record.");
@@ -149,7 +151,13 @@ export default function EWarrantyManagement({ token }) {
 
     try {
       const paddedPrefix = (serialPrefix || 'AV').toUpperCase().substring(0, 4).padEnd(4, 'X');
-      await addProductSerials(selectedProduct.id, serialCount, paddedPrefix, token);
+      const generateSerials = async () => {
+    if (!selectedProduct) return;
+    setIsUpdating(true);
+
+    try {
+      const paddedPrefix = (serialPrefix || 'AV').toUpperCase().substring(0, 4).padEnd(4, 'X');
+      await addProductSerials(selectedProduct.id, serialCount, paddedPrefix);
       await loadProductSerials(selectedProduct.id, 1);
       setIsGeneratorOpen(false);
     } catch (err) {
