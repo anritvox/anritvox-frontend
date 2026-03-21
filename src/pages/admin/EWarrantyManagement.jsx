@@ -52,10 +52,10 @@ export default function EWarrantyManagement({ token }) {
     }
   }, [selectedProduct]);
 
- const loadWarrantyData = async () => {
+  const loadWarrantyData = async () => {
     setLoading(true);
     try {
-     const data = await fetchWarrantyAdmin();
+      const data = await fetchWarrantyAdmin();
       const normalizedData = Array.isArray(data) ? data : (data.warranties || []);
       setWarranties(normalizedData);
     } catch (err) {
@@ -66,9 +66,9 @@ export default function EWarrantyManagement({ token }) {
     }
   };
 
- const loadProductsData = async () => {
+  const loadProductsData = async () => {
     try {
-     const data = await fetchProductsAdmin();
+      const data = await fetchProductsAdmin();
       const normalizedData = Array.isArray(data) ? data : (data.products || []);
       setProducts(normalizedData);
     } catch (err) {
@@ -77,11 +77,7 @@ export default function EWarrantyManagement({ token }) {
     }
   };
 
-  // Step B: Updated loadProductSerials to handle the page parameter
   const loadProductSerials = async (productId, page = 1) => {
-    setSerialsLoading(true);
-    try {
-     const loadProductSerials = async (productId, page = 1) => {
     setSerialsLoading(true);
     try {
       const data = await fetchProductSerials(productId, page);
@@ -97,7 +93,7 @@ export default function EWarrantyManagement({ token }) {
     }
   };
 
- const handleUpdate = async () => {
+  const handleUpdate = async () => {
     if (!selectedWarranty) return;
     setIsUpdating(true);
     try {
@@ -111,7 +107,7 @@ export default function EWarrantyManagement({ token }) {
     }
   };
 
- const handleDelete = async (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this warranty record?")) {
       try {
         await deleteWarrantyAdmin(id);
@@ -146,12 +142,6 @@ export default function EWarrantyManagement({ token }) {
   };
 
   const generateSerials = async () => {
-    if (!selectedProduct) return;
-    setIsUpdating(true);
-
-    try {
-      const paddedPrefix = (serialPrefix || 'AV').toUpperCase().substring(0, 4).padEnd(4, 'X');
-      const generateSerials = async () => {
     if (!selectedProduct) return;
     setIsUpdating(true);
 
@@ -222,7 +212,6 @@ export default function EWarrantyManagement({ token }) {
 
         {activeTab === "warranties" ? (
           <>
-            {/* Warranty Content... (omitted for brevity but kept in your local file) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
                 { label: 'Authenticated', val: stats.active, icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-500/5', border: 'border-emerald-500/10' },
@@ -318,7 +307,6 @@ export default function EWarrantyManagement({ token }) {
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0a0c10] border border-white/5 p-6 rounded-3xl">
                     <div>
                       <h2 className="text-xl font-black text-white tracking-tight">{selectedProduct.name}</h2>
-                      {/* Step C: Fix the Active Identifiers counter */}
                       <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">
                         {serialPagination.total || productSerials.length} Total Identifiers
                       </p>
@@ -330,7 +318,6 @@ export default function EWarrantyManagement({ token }) {
                     </div>
                   </div>
 
-                  {/* Step D: Serial Grid & Pagination Controls */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {productSerials.map(s => (
                       <div key={s.id} className="bg-[#0a0c10] border border-white/5 p-4 rounded-2xl flex items-center justify-between group hover:border-white/10 transition-all">
@@ -344,7 +331,6 @@ export default function EWarrantyManagement({ token }) {
                     ))}
                   </div>
 
-                  {/* Pagination Block */}
                   {serialPagination.totalPages > 1 && (
                     <div className="flex items-center justify-between mt-6 bg-[#0a0c10] border border-white/5 p-4 rounded-2xl">
                       <button 
@@ -373,7 +359,6 @@ export default function EWarrantyManagement({ token }) {
         )}
       </div>
 
-      {/* Modals and Styles (omitted but preserve) */}
       {isGeneratorOpen && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-4">
           <div className="bg-[#0a0c10] border border-white/10 w-full max-w-lg rounded-[40px] overflow-hidden shadow-2xl animate-fade-in">
