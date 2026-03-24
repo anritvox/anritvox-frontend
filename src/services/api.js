@@ -54,7 +54,7 @@ export async function deleteProduct(id) {
 }
 
 export async function fetchProductSerials(productId, page = 1, limit = 100, sortBy = 'created_at', sortOrder = 'DESC') {
-  const res = await api.get(`/serials/product/${productId}?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
+  const res = await api.get(`/serials/${productId}?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
   return res.data;
 }
 
