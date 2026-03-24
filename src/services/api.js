@@ -1,6 +1,6 @@
-import axios from 'axios';
+import axios from "axios";
 
-export const BASE_URL = import.meta.env.VITE_BASE_URL || 'https://service.anritvox.com';
+export const BASE_URL = import.meta.env.VITE_BASE_URL || "https://service.anritvox.com";
 const API_BASE_URL = `${BASE_URL}/api`;
 
 const api = axios.create({
@@ -9,7 +9,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token') || localStorage.getItem('ms_token');
+  const token = localStorage.getItem("token") || localStorage.getItem("ms_token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -53,27 +53,30 @@ export async function deleteProduct(id) {
   return res.data;
 }
 
-export async function fetchProductSerials(productId, page = 1, limit = 100, sortBy = 'created_at', sortOrder = 'DESC') {
+export async function fetchProductSerials(productId, page = 1, limit = 100, sortBy = "created_at", sortOrder = "DESC") {
   const res = await api.get(`/serials/${productId}?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
   return res.data;
 }
 
-export async function addProductSerials(productId, count, prefix = 'CUSTOM', batchNumber = '', notes = '') {
-  const cleanPrefix = String(prefix || 'CUSTOM').substring(0, 6).toUpperCase().padEnd(6, 'X');
+export async function addProductSerials(productId, count, prefix = "CUSTOM", batchNumber = "", notes = "") {
+  const cleanPrefix = String(prefix || "CUSTOM").substring(0, 6).toUpperCase().padEnd(6, "X");
+  const finalBatchNumber = batchNumber ? batchNumber : "BATCH" + Date.now().toString();
+  
   const payload = {
-    productId,
-    count,
+    productId: productId,
+    count: count,
     prefix: cleanPrefix,
-    batchNumber: batchNumber || `BATCH${Date.now()}`,
-    notes: notes || null
+    batchNumber: finalBatchNumber,
+    notes: notes ? notes : null
   };
+  
   const res = await api.post(`/serials/generate`, payload);
   return res.data;
 }
 
 export async function exportSerialsExcel(filters = {}) {
   const params = new URLSearchParams(filters);
-  const res = await api.get(`/serials/export/excel?${params}`, { responseType: 'blob' });
+  const res = await api.get(`/serials/export/excel?${params}`, { responseType: "blob" });
   return res.data;
 }
 
@@ -223,7 +226,7 @@ export async function updateBannerAdmin(id, formData) {
 }
 
 export async function deleteBannerAdmin(id) {
-  if (!id || typeof id === 'object') {
+  if (!id || typeof id === "object") {
     throw new Error("Invalid Banner ID provided");
   }
   const res = await api.delete(`/banners/admin/${id}`);
