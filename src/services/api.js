@@ -64,7 +64,7 @@ export async function addProductSerials(productId, count, prefix = 'CUSTOM', bat
     productId,
     count,
     prefix: cleanPrefix,
-    batchNumber: batchNumber || `BATCH-${Date.now()}`,
+    batchNumber: batchNumber || `BATCH${Date.now()}`,
     notes: notes || null
   };
   const res = await api.post(`/serials/generate`, payload);
