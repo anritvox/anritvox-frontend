@@ -58,8 +58,8 @@ export async function fetchProductSerials(productId, page = 1, limit = 100, sort
   return res.data;
 }
 
-export async function addProductSerials(productId, count, prefix = 'ANRI', batchNumber = '', notes = '') {
-  const cleanPrefix = String(prefix || 'ANRI').substring(0, 4).toUpperCase().padEnd(4, 'X');
+export async function addProductSerials(productId, count, prefix = 'CUSTOM', batchNumber = '', notes = '') {
+  const cleanPrefix = String(prefix || 'CUSTOM').substring(0, 6).toUpperCase().padEnd(6, 'X');
   const payload = {
     productId,
     count,
