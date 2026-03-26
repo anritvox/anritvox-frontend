@@ -248,7 +248,7 @@ export async function changePassword(currentPassword, newPassword) {
   return res.data;
 }
 
-// ---> MISSING FUNCTION INJECTED HERE <---
+// ---> MISSING FUNCTION INJECTED HERE
 export async function getProfile() {
   const res = await api.get(`/users/profile`);
   return res.data;
