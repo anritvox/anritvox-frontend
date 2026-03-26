@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { adminLogin } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import { FiEye, FiEyeOff, FiAlertCircle, FiLock, FiMail, FiShield, FiRefreshCw } from "react-icons/fi";
 
 export default function AdminLogin() {
@@ -10,6 +10,7 @@ export default function AdminLogin() {
   const [showNotification, setShowNotification] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -21,12 +22,20 @@ export default function AdminLogin() {
     setLoading(true);
     setError("");
     try {
-      const { token } = await adminLogin(credentials);
-      localStorage.setItem("ms_token", token);
+      // Use AuthContext.login() so user state is set correctly - fixes the double redirect bug
+      const user = await login(credentials);
+      if (!user || user.role !== "admin") {
+        // Not an admin - clear auth and show error
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        setError("Access Denied: Admin privileges required.");
+        setLoading(false);
+        return;
+      }
       setShowNotification(true);
       setTimeout(() => {
         navigate("/admin/dashboard");
-      }, 1500);
+      }, 1000);
     } catch (e) {
       setError(e.message || "Access Denied: Invalid Authentication Credentials.");
     } finally {
@@ -57,95 +66,73 @@ export default function AdminLogin() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-xs text-gray-500 font-medium uppercase tracking-[0.2em] mb-3">Identity Vector</label>
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Admin Email</label>
               <div className="relative">
-                <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 h-4 w-4" />
+                <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-500/60 h-4 w-4" />
                 <input
-                  id="email"
-                  name="email"
                   type="email"
-                  required
-                  placeholder="admin@anritvox.com"
+                  name="email"
                   value={credentials.email}
                   onChange={handleChange}
-                  className="w-full bg-[#161b22]/50 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-gray-700 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
-                  disabled={loading}
+                  required
+                  placeholder="admin@anritvox.com"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-cyan-500/50 focus:bg-cyan-500/5 transition-all"
                 />
               </div>
             </div>
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-xs text-gray-500 font-medium uppercase tracking-[0.2em] mb-3">Access Protocol</label>
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Password</label>
               <div className="relative">
-                <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 h-4 w-4" />
+                <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-500/60 h-4 w-4" />
                 <input
-                  id="password"
-                  name="password"
                   type={showPassword ? "text" : "password"}
-                  required
-                  placeholder="••••••••"
+                  name="password"
                   value={credentials.password}
                   onChange={handleChange}
-                  className="w-full bg-[#161b22]/50 border border-white/10 rounded-2xl py-4 pl-12 pr-12 text-white placeholder:text-gray-700 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
-                  disabled={loading}
+                  required
+                  placeholder="••••••••••••"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-12 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-cyan-500/50 focus:bg-cyan-500/5 transition-all"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white transition-colors"
-                >
-                  {showPassword ? <FiEyeOff /> : <FiEye />}
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-cyan-400 transition-colors">
+                  {showPassword ? <FiEyeOff className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
 
-            {/* Error Notification */}
+            {/* Error */}
             {error && (
-              <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">
-                <FiAlertCircle className="text-red-400 h-4 w-4 flex-shrink-0" />
+              <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+                <FiAlertCircle className="text-red-400 h-5 w-5 flex-shrink-0" />
                 <p className="text-red-400 text-sm">{error}</p>
               </div>
             )}
 
-            {/* Submit Button */}
+            {/* Success */}
+            {showNotification && (
+              <div className="flex items-center gap-3 bg-green-500/10 border border-green-500/20 rounded-xl p-4">
+                <FiShield className="text-green-400 h-5 w-5 flex-shrink-0" />
+                <p className="text-green-400 text-sm">Access Granted! Redirecting...</p>
+              </div>
+            )}
+
+            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold rounded-2xl hover:from-cyan-400 hover:to-purple-500 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(34,211,238,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl text-sm tracking-wider uppercase transition-all shadow-[0_0_20px_rgba(34,211,238,0.3)] hover:shadow-[0_0_30px_rgba(34,211,238,0.5)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <FiRefreshCw className="animate-spin h-4 w-4" /> Authenticating...
-                </span>
-              ) : (
-                <span className="flex items-center justify-center gap-2">
-                  <FiShield className="h-4 w-4" /> INITIALIZE ACCESS
-                </span>
-              )}
+              {loading ? <FiRefreshCw className="h-4 w-4 animate-spin" /> : <FiShield className="h-4 w-4" />}
+              {loading ? "Authenticating..." : "Access Dashboard"}
             </button>
           </form>
-
-          {/* Footer links */}
-          <div className="mt-8 text-center">
-            <p className="text-gray-700 text-xs">Request Hardware Key</p>
-            <p className="text-gray-800 text-[10px] mt-4">© 2026 ANRITVOX SECURE SYSTEMS</p>
-          </div>
         </div>
+
+        <p className="text-center text-gray-700 text-xs mt-8">
+          Anritvox Admin Terminal &copy; {new Date().getFullYear()}
+        </p>
       </div>
-
-      {/* Login Successful Notification */}
-      {showNotification && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-[#0f111a] border border-cyan-500/30 rounded-3xl p-10 text-center shadow-2xl">
-            <div className="h-16 w-16 bg-gradient-to-tr from-cyan-400 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <FiShield className="h-8 w-8 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Access Granted</h2>
-            <p className="text-gray-400">Handshaking with terminal... redirecting</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
