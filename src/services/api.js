@@ -61,15 +61,7 @@ export async function fetchProductSerials(productId, page = 1, limit = 100, sort
 export async function addProductSerials(productId, count, prefix = "CUSTOM", batchNumber = "", notes = "") {
   const cleanPrefix = String(prefix || "CUSTOM").substring(0, 6).toUpperCase().padEnd(6, "X");
   const finalBatchNumber = batchNumber ? batchNumber : "BATCH" + Date.now().toString();
-  
-  const payload = {
-    productId: productId,
-    count: count,
-    prefix: cleanPrefix,
-    batchNumber: finalBatchNumber,
-    notes: notes ? notes : null
-  };
-  
+  const payload = { productId, count, prefix: cleanPrefix, batchNumber: finalBatchNumber, notes: notes ? notes : null };
   const res = await api.post(`/serials/generate`, payload);
   return res.data;
 }
@@ -92,6 +84,17 @@ export async function deleteProductSerial(serialId) {
 
 export async function checkSerialAvailability(serial) {
   const res = await api.get(`/serials/check/${encodeURIComponent(serial)}`);
+  return res.data;
+}
+
+// Warranty Serial Management
+export async function fetchAllSerialsAdmin() {
+  const res = await api.get(`/warranty/serials`);
+  return res.data;
+}
+
+export async function deleteWarrantySerial(serialId) {
+  const res = await api.delete(`/warranty/serials/${serialId}`);
   return res.data;
 }
 
@@ -229,7 +232,7 @@ export async function deleteBannerAdmin(id) {
   if (!id || typeof id === "object") {
     throw new Error("Invalid Banner ID provided");
   }
-  const res = await api.delete(`/banners/admin/${id}`);
+  const res = await api.delete(`/banners/${id}`);
   return res.data;
 }
 
@@ -248,7 +251,6 @@ export async function changePassword(currentPassword, newPassword) {
   return res.data;
 }
 
-// ---> MISSING FUNCTION INJECTED HERE
 export async function getProfile() {
   const res = await api.get(`/users/profile`);
   return res.data;
@@ -276,6 +278,12 @@ export async function placeOrderAPI(data) {
 
 export async function submitContact(data) {
   const res = await api.post(`/contact`, data);
+  return res.data;
+}
+
+// Inventory - add stock adjustment
+export async function adjustStock(productId, adjustment) {
+  const res = await api.post(`/products/${productId}/stock`, { adjustment });
   return res.data;
 }
 
