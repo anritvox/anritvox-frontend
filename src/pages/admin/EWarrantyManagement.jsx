@@ -206,9 +206,9 @@ export default function EWarrantyManagement() {
     setTimeout(() => setCopiedSerial(""), 2000);
   };
 
-  const filteredWarranties = warranties.filter(w => {
+ const filteredWarranties = warranties.filter(w => {
     const matchesSearch = w.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          w.serial?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          w.registered_serial?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           w.user_email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || w.status === statusFilter;
     return matchesSearch && matchesStatus;
@@ -301,27 +301,27 @@ export default function EWarrantyManagement() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {filteredWarranties.map((w) => (
-                      <tr key={w.id} className="group hover:bg-white/[0.02] transition-colors">
-                        <td className="px-6 py-5">
-                          <div className="font-bold text-white">{w.user_name}</div>
-                          <div className="text-xs text-gray-500 font-mono mt-0.5">{w.user_email}</div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <code className="text-purple-400 font-bold bg-purple-500/5 px-2 py-1 rounded-lg">#{w.serial}</code>
-                        </td>
-                        <td className="px-6 py-5 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button onClick={() => { setSelectedWarranty(w); setIsEditModalOpen(true); }} className="p-2 bg-white/5 hover:bg-purple-500/20 text-purple-400 rounded-xl transition-all">
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => handleDelete(w.id)} className="p-2 bg-white/5 hover:bg-red-500/20 text-red-400 rounded-xl transition-all">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                   {filteredWarranties.map((w) => (
+    <tr key={w.id} className="group hover:bg-white/[0.02] transition-colors">
+      <td className="px-6 py-5">
+        <div className="font-bold text-white">{w.user_name}</div>
+        <div className="text-xs text-gray-500 font-mono mt-0.5">{w.user_email}</div>
+      </td>
+      <td className="px-6 py-5">
+        <code className="text-purple-400 font-bold bg-purple-500/5 px-2 py-1 rounded-lg">#{w.registered_serial}</code>
+      </td>
+      <td className="px-6 py-5 text-right">
+        <div className="flex items-center justify-end gap-2">
+          <button onClick={() => { setSelectedWarranty(w); setIsEditModalOpen(true); }} className="p-2 bg-white/5 hover:bg-purple-500/20 text-purple-400 rounded-xl transition-all">
+            <Edit3 className="w-4 h-4" />
+          </button>
+          <button onClick={() => handleDelete(w.id)} className="p-2 bg-white/5 hover:bg-red-500/20 text-red-400 rounded-xl transition-all">
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </td>
+    </tr>
+  ))}
                   </tbody>
                 </table>
               </div>
