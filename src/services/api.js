@@ -287,4 +287,28 @@ export async function adjustStock(productId, adjustment) {
   return res.data;
 }
 
+
+// Admin Dashboard - summary stats
+export async function fetchAdminDashboard() {
+  const res = await api.get(`/admin/dashboard`);
+  return res.data;
+}
+
+// Admin - export orders as CSV (returns blob URL)
+export async function exportOrdersCSV() {
+  const res = await api.get(`/admin/orders/export/csv`, { responseType: 'blob' });
+  return res.data;
+}
+
+// Admin - bulk update order status
+export async function bulkUpdateOrderStatus(orderIds, status) {
+  const res = await api.post(`/admin/orders/bulk-status`, { orderIds, status });
+  return res.data;
+}
+
+// Admin - customer segments (VIP + new customers)
+export async function fetchCustomerSegments() {
+  const res = await api.get(`/admin/customers/segments`);
+  return res.data;
+}
 export default api;
