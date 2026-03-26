@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-// ========== BACK TO TOP BUTTON ==========
+// ========== BACK TO TOP BUTTON =========
 export function BackToTop() {
   const [visible, setVisible] = useState(false);
 
