@@ -8,6 +8,7 @@ import {
   fetchProductsAdmin, 
   fetchProductSerials, 
   addProductSerials, 
+    deleteProductSerial,
   exportSerialsExcel
 } from "../../services/api";
 import { 
@@ -32,6 +33,7 @@ export default function EWarrantyManagement() {
   const [productSerials, setProductSerials] = useState([]);
   const [serialsLoading, setSerialsLoading] = useState(false);
   const [copiedSerial, setCopiedSerial] = useState("");
+    const [deletingSerial, setDeletingSerial] = useState(null);
   
   // Advanced Generator State
   const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
