@@ -10,8 +10,9 @@ import {
   ArrowRight,
   Download
 } from 'lucide-react';
-// IMPORT FIXED: Using the base api instance directly
-import api, { registerWarranty, BASE_URL } from '../services/api';
+// FIX: We only import the base 'api' instance and BASE_URL. 
+// We DO NOT import the standalone registerWarranty function.
+import api, { BASE_URL } from '../services/api';
 
 export default function EWarranty() {
   const [serial, setSerial] = useState('');
@@ -35,7 +36,7 @@ export default function EWarranty() {
     setError('');
     setLoading(true);
     try {
-      // FIX 1: Use the dedicated warranty validation endpoint
+      // Use the base api instance directly
       const response = await api.get(`/warranty/validate/${encodeURIComponent(serial)}`);
       const data = response.data;
 
@@ -46,7 +47,6 @@ export default function EWarranty() {
         setStep(2);
       }
     } catch (err) {
-      // FIX 2: Correctly extract the backend error message instead of the generic Axios 400 error
       setError(err.response?.data?.message || err.message || 'Serial number not found in our database.');
     } finally {
       setLoading(false);
@@ -56,15 +56,20 @@ export default function EWarranty() {
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
     try {
-      await registerWarranty({
+      const payload = {
         serialNumber: serial,
         productId: productData.product_id,
         ...formData
-      });
+      };
+      
+      // FIX: Use api.post directly to guarantee interceptors and preflight headers are attached perfectly
+      await api.post('/warranty/register', payload);
+      
       setStep(3);
     } catch (err) {
-      // Also fixed here
+      console.error("Registration Error:", err);
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
@@ -170,6 +175,15 @@ export default function EWarranty() {
             <div className="md:col-span-2">
               <div className="bg-white rounded-3xl shadow-xl p-8 border border-slate-100">
                 <h2 className="text-2xl font-bold text-slate-800 mb-6">Customer Details</h2>
+                
+                {/* Display Form-level Error if registration fails */}
+                {error && (
+                  <div className="flex items-center gap-3 p-4 mb-6 bg-red-50 text-red-600 rounded-2xl border border-red-100">
+                    <AlertCircle size={20} />
+                    <span className="font-medium text-sm">{error}</span>
+                  </div>
+                )}
+
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2 md:col-span-1">
@@ -223,9 +237,13 @@ export default function EWarranty() {
                   <button 
                     type="submit" 
                     disabled={loading}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg mt-6"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg mt-6 flex justify-center items-center disabled:opacity-50"
                   >
-                    {loading ? 'Activating...' : 'Activate Warranty'}
+                    {loading ? (
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      'Activate Warranty'
+                    )}
                   </button>
                 </form>
               </div>
