@@ -22,7 +22,7 @@ export default function AdminLogin() {
     setLoading(true);
     setError("");
     try {
-      // Use AuthContext.login() so user state is set correctly - fixes the double redirect bug
+      // Use AuthContext.login() so user state is set correctly
       const user = await login(credentials);
       if (!user || user.role !== "admin") {
         // Not an admin - clear auth and show error
@@ -37,7 +37,9 @@ export default function AdminLogin() {
         navigate("/admin/dashboard");
       }, 1000);
     } catch (e) {
-      setError(e.message || "Access Denied: Invalid Authentication Credentials.");
+      // Correctly extract the backend error message if available
+      const errorMessage = e.response?.data?.message || e.message || "Access Denied: Invalid Authentication Credentials.";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
