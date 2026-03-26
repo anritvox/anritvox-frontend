@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import api, { getProfile, addToCartAPI } from "../services/api";
+import api from "../services/api";
 
 const AuthContext = createContext(null);
 
@@ -18,14 +18,15 @@ export function AuthProvider({ children }) {
             guestItems.map(async (item) => {
               const pId = item.id || item.product_id || item._id;
               if (pId) {
-                await addToCartAPI(pId, item.quantity || 1);
+                // Refactored: Inline API call to prevent Rollup TDZ
+                await api.post(`/cart`, { productId: pId, quantity: item.quantity || 1 });
               }
             })
           );
           localStorage.removeItem("cart");
         }
       } catch (err) {
-        console.error(err);
+        console.error("Cart sync error:", err);
       }
     }
     window.dispatchEvent(new Event("cart-synced"));
@@ -43,19 +44,14 @@ export function AuthProvider({ children }) {
     const initAuth = async () => {
       const storedToken = localStorage.getItem("token");
       const storedUser = localStorage.getItem("user");
-
+      
       if (storedToken) {
         setToken(storedToken);
-        if (storedUser) {
-          try {
-            setUser(JSON.parse(storedUser));
-          } catch (e) {
-            localStorage.removeItem("user");
-          }
-        }
         try {
-          const res = await getProfile();
-          const userData = res.data?.user || res.data || res;
+          // Refactored: Inline API call to prevent Rollup TDZ
+          const res = await api.get(`/users/profile`);
+          const userData = res.data?.user || res.data;
+          
           setUser(userData);
           localStorage.setItem("user", JSON.stringify(userData));
         } catch (error) {
