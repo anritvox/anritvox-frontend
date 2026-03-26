@@ -17,6 +17,8 @@ import BannerManagement from './admin/BannerManagement';
 import EWarrantyManagement from './admin/EWarrantyManagement';
 import ContactManagement from './admin/ContactManagement';
 import AdminSettings from './admin/AdminSettings';
+import AnalyticsManagement from './admin/AnalyticsManagement';
+import ReviewManagement from './admin/ReviewManagement';
 
 const AdminDashboard = () => {
   const [section, setSection] = useState("dashboard");
@@ -35,6 +37,8 @@ const AdminDashboard = () => {
     { id: "ewarranty", label: "Warranty", icon: FiFileText, color: "text-emerald-400" },
     { id: "contacts", label: "Messages", icon: FiMail, color: "text-yellow-400" },
     { id: "settings", label: "Settings", icon: FiSettings, color: "text-gray-400" },
+        { id: "analytics", label: "Analytics", icon: FiDatabase, color: "text-green-400" },
+    { id: "reviews", label: "Reviews", icon: FiTag, color: "text-orange-400" },
   ];
 
   const renderSection = () => {
@@ -52,6 +56,8 @@ const AdminDashboard = () => {
       case "banners": return <BannerManagement {...props} />;
       case "users": return <UserManagement {...props} />;
       case "settings": return <AdminSettings {...props} />;
+              case "analytics": return <AnalyticsManagement {...props} />;
+      case "reviews": return <ReviewManagement {...props} />;
       default: return <DashboardOverview {...props} />;
     }
   };
