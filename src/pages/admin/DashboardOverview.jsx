@@ -6,6 +6,7 @@ import {
   fetchContactsAdmin,
   fetchAdminUsers,
   fetchAdminOrders,
+  fetchAdminDashboard,
 } from "../../services/api";
 import {
   Loader2,
@@ -25,7 +26,7 @@ import {
   Tag,
 } from "lucide-react";
 
-// 1. Added onClick prop and attached it to the root div of the card
+// Added onClick prop and attached it to the root div of the card
 const StatCard = ({ title, count, icon: Icon, trend, trendValue, subtitle, color = "text-[#232f3e]", onClick }) => (
   <div onClick={onClick} className="bg-white p-5 rounded-lg border border-[#d5d9d9] shadow-[0_2px_5px_0_rgba(213,217,217,.5)] hover:shadow-md transition-all group cursor-pointer">
     <div className="flex justify-between items-start mb-4">
@@ -51,7 +52,6 @@ const StatCard = ({ title, count, icon: Icon, trend, trendValue, subtitle, color
   </div>
 );
 
-// 2. Extracted setSection from the incoming props
 export default function DashboardOverview({ token, isRealTimeSync, setSection }) {
   const [stats, setStats] = useState({
     products: 0,
@@ -61,6 +61,7 @@ export default function DashboardOverview({ token, isRealTimeSync, setSection })
     users: 0,
     orders: 0,
     pendingOrders: 0,
+    totalRevenue: 0,
     recentContacts: [],
   });
   const [loading, setLoading] = useState(true);
@@ -70,7 +71,9 @@ export default function DashboardOverview({ token, isRealTimeSync, setSection })
     if (showLoader) setLoading(true);
     else setRefreshing(true);
     try {
-      const [wData, cData, pData, contactsData, usersData, ordersData] = await Promise.allSettled([
+      // Use dashboard endpoint for fast summary stats + individual endpoints for detailed data
+      const [dashRes, wData, cData, pData, contactsData, usersData, ordersData] = await Promise.allSettled([
+        fetchAdminDashboard(),
         fetchWarrantyAdmin(token),
         fetchCategories(token),
         fetchProductsAdmin(token),
@@ -79,23 +82,26 @@ export default function DashboardOverview({ token, isRealTimeSync, setSection })
         fetchAdminOrders(token),
       ]);
 
+      // Use dashboard API stats if available (more accurate - direct DB queries)
+      const dashStats = dashRes.status === 'fulfilled' ? dashRes.value : null;
+
       const warranties = wData.status === 'fulfilled' ? (Array.isArray(wData.value) ? wData.value : (wData.value?.warranties || [])) : [];
       const categories = cData.status === 'fulfilled' ? (Array.isArray(cData.value) ? cData.value : (cData.value?.categories || [])) : [];
       const products = pData.status === 'fulfilled' ? (Array.isArray(pData.value) ? pData.value : (pData.value?.products || [])) : [];
       const contacts = contactsData.status === 'fulfilled' ? (Array.isArray(contactsData.value) ? contactsData.value : (contactsData.value?.contacts || contactsData.value?.messages || [])) : [];
       const users = usersData.status === 'fulfilled' ? (Array.isArray(usersData.value) ? usersData.value : []) : [];
       const orders = ordersData.status === 'fulfilled' ? (Array.isArray(ordersData.value) ? ordersData.value : []) : [];
-
       const pendingOrders = orders.filter(o => o.status === 'pending').length;
 
       setStats({
         warranties: warranties.length,
-        categories: categories.length,
-        products: products.length,
+        categories: dashStats?.totalProducts !== undefined ? categories.length : categories.length,
+        products: dashStats?.totalProducts ?? products.length,
         contacts: contacts.length,
-        users: users.length,
-        orders: orders.length,
-        pendingOrders,
+        users: dashStats?.totalUsers ?? users.length,
+        orders: dashStats?.totalOrders ?? orders.length,
+        pendingOrders: dashStats?.pendingOrders ?? pendingOrders,
+        totalRevenue: dashStats?.totalRevenue ?? 0,
         recentContacts: contacts.slice(0, 5),
       });
     } catch (err) {
@@ -124,13 +130,13 @@ export default function DashboardOverview({ token, isRealTimeSync, setSection })
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* 3. Added the corresponding onClick handlers to navigate to the correct sections */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <StatCard title="Total Products" count={stats.products} icon={Package} subtitle="IN CATALOG" color="text-purple-600" onClick={() => setSection("products")} />
         <StatCard title="Categories" count={stats.categories} icon={Tag} subtitle="ACTIVE" color="text-pink-600" onClick={() => setSection("categories")} />
         <StatCard title="Total Users" count={stats.users} icon={Users} subtitle="REGISTERED" color="text-teal-600" onClick={() => setSection("users")} />
         <StatCard title="Total Orders" count={stats.orders} icon={ShoppingCart} subtitle="ALL TIME" color="text-blue-600" onClick={() => setSection("orders")} />
         <StatCard title="Pending Orders" count={stats.pendingOrders} icon={Clock} subtitle="NEEDS ACTION" color="text-orange-600" trend={stats.pendingOrders > 0 ? 'up' : undefined} trendValue={stats.pendingOrders > 0 ? `${stats.pendingOrders} new` : ''} onClick={() => setSection("orders")} />
+        <StatCard title="Total Revenue" count={`₹${parseFloat(stats.totalRevenue || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}`} icon={Activity} subtitle="EXCL. CANCELLED" color="text-green-600" onClick={() => setSection("orders")} />
         <StatCard title="Warranties" count={stats.warranties} icon={Shield} subtitle="REGISTERED" color="text-emerald-600" onClick={() => setSection("ewarranty")} />
         <StatCard title="Messages" count={stats.contacts} icon={MessageSquare} subtitle="RECEIVED" color="text-yellow-600" onClick={() => setSection("contacts")} />
       </div>
@@ -171,7 +177,6 @@ export default function DashboardOverview({ token, isRealTimeSync, setSection })
           </table>
         </div>
         <div className="px-5 py-3 border-t border-gray-200 text-right">
-          {/* 4. Connected the bottom link to the contacts section */}
           <a href="#" onClick={(e) => { e.preventDefault(); setSection("contacts"); }} className="text-sm text-[#007185] hover:text-[#c45500] font-bold">View all communications</a>
         </div>
       </div>
