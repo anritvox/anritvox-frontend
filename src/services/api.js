@@ -57,6 +57,10 @@ export async function fetchProductSerials(productId, page = 1, limit = 100, sort
   const res = await api.get(`/serials/${productId}?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
   return res.data;
 }
+export async function getProfile() {
+  const res = await api.get(`/users/profile`);
+  return res.data;
+}
 
 export async function addProductSerials(productId, count, prefix = "CUSTOM", batchNumber = "", notes = "") {
   const cleanPrefix = String(prefix || "CUSTOM").substring(0, 6).toUpperCase().padEnd(6, "X");
