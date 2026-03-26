@@ -18,7 +18,6 @@ export function AuthProvider({ children }) {
             guestItems.map(async (item) => {
               const pId = item.id || item.product_id || item._id;
               if (pId) {
-                // Refactored: Inline API call to prevent Rollup TDZ
                 await api.post(`/cart`, { productId: pId, quantity: item.quantity || 1 });
               }
             })
@@ -47,15 +46,34 @@ export function AuthProvider({ children }) {
       
       if (storedToken) {
         setToken(storedToken);
+        
+        // Optimistic UI load: Parse the cached user immediately
+        let parsedUser = null;
+        if (storedUser) {
+          try {
+            parsedUser = JSON.parse(storedUser);
+            setUser(parsedUser);
+          } catch (e) {}
+        }
+
         try {
-          // Refactored: Inline API call to prevent Rollup TDZ
-          const res = await api.get(`/users/profile`);
+          // Smart Routing: Admins go to /auth/me, Customers go to /users/profile
+          const isAdmin = parsedUser?.role === 'admin';
+          const endpoint = isAdmin ? '/auth/me' : '/users/profile';
+          
+          const res = await api.get(endpoint);
           const userData = res.data?.user || res.data;
           
           setUser(userData);
           localStorage.setItem("user", JSON.stringify(userData));
         } catch (error) {
-          logout();
+          // Graceful Error Handling: Only log out if the token is explicitly rejected (401)
+          if (error.response && error.response.status === 401) {
+            logout();
+          } else if (parsedUser) {
+            // Keep the user logged in if it's just a 404 or network hiccup
+            setUser(parsedUser);
+          }
         }
       }
       setLoading(false);
