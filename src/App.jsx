@@ -75,11 +75,11 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
-// Admin route - redirects to /admin (admin login) if not admin
+// Admin route - redirects to /admin/login if not admin
 function AdminRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <PageLoader />;
-  if (!user || user.role !== 'admin') return <Navigate to="/admin" replace />;
+  if (!user || user.role !== 'admin') return <Navigate to="/admin/login" replace />;
   return children;
 }
 
@@ -118,8 +118,9 @@ function AppContent() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* Admin Auth Route - shows admin login form */}
-          <Route path="/admin" element={<AdminLogin />} />
+          {/* Admin Auth Routes - redirects /admin to /admin/login and explicitly maps the login form */}
+          <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
 
           {/* Admin Protected Routes */}
           <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
