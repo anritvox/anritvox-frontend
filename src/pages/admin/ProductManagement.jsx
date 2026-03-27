@@ -253,9 +253,12 @@ export default function ProductManagement({ token }) {
       formData.append("category_id", form.category_id);
       if (form.subcategory_id) formData.append("subcategory_id", form.subcategory_id);
       
-      if (!editProductId) {
+     if (!editProductId) {
         formData.append("quantity", form.quantity);
         formData.append("serials", JSON.stringify(form.serials));
+      } else {
+      
+        formData.append("existing_images", JSON.stringify(existingImages.map(img => img.url)));
       }
 
       compressedImages.forEach((image) => formData.append("images", image));
