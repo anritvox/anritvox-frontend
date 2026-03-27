@@ -56,9 +56,40 @@ const ErrorFallback = ({ error, resetError }) => (
 );
 
 class ErrorBoundary extends Component {
-  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
-  static getDerivedStateFromError(error) { return { hasError: true, error }; }
-  componentDidCatch(error, info) { console.error("ErrorBoundary caught:", error, info); }
+  constructor(props) { 
+    super(props); 
+    this.state = { hasError: false, error: null }; 
+  }
+
+  static getDerivedStateFromError(error) { 
+    // Detect Vercel chunk loading errors caused by new deployments
+    const isChunkLoadFailed = error.message && (
+      error.message.includes('Failed to fetch dynamically imported module') ||
+      error.message.includes('Importing a module script failed')
+    );
+
+    if (isChunkLoadFailed) {
+      // Set a session flag to prevent infinite reload loops in case the build is genuinely corrupted
+      const chunkReloaded = sessionStorage.getItem('chunk_reloaded');
+      if (!chunkReloaded) {
+        sessionStorage.setItem('chunk_reloaded', 'true');
+        window.location.reload();
+        return { hasError: false, error: null };
+      }
+    }
+    
+    return { hasError: true, error }; 
+  }
+
+  componentDidCatch(error, info) { 
+    console.error("ErrorBoundary caught:", error, info); 
+  }
+
+  componentDidMount() {
+    // Clear the recovery flag on successful mount
+    sessionStorage.removeItem('chunk_reloaded');
+  }
+
   render() {
     if (this.state.hasError) {
       return <ErrorFallback error={this.state.error} resetError={() => this.setState({ hasError: false, error: null })} />;
@@ -118,7 +149,7 @@ function AppContent() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* Admin Auth Routes - redirects /admin to /admin/login and explicitly maps the login form */}
+          {/* Admin Auth Routes */}
           <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
           <Route path="/admin/login" element={<AdminLogin />} />
 
