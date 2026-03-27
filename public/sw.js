@@ -1,7 +1,6 @@
 // Anritvox Service Worker - PWA Install + Caching
-const CACHE_NAME = 'anritvox-v2';
-const STATIC_CACHE = 'anritvox-static-v2';
-const API_ORIGIN = 'https://service.anritvox.com';
+const CACHE_NAME = 'anritvox-v3';
+const STATIC_CACHE = 'anritvox-static-v3';
 
 // Assets to pre-cache (static shell only)
 const PRECACHE_URLS = [
@@ -13,7 +12,7 @@ const PRECACHE_URLS = [
 ];
 
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
+  self.skipWaiting(); // Force the waiting service worker to become the active service worker.
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
       return cache.addAll(PRECACHE_URLS).catch((err) => {
@@ -29,7 +28,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames
           .filter((name) => name !== CACHE_NAME && name !== STATIC_CACHE)
-          .map((name) => caches.delete(name))
+          .map((name) => caches.delete(name)) // Clear all old caches when updating
       );
     }).then(() => self.clients.claim())
   );
@@ -39,22 +38,26 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // CRITICAL: Never intercept cross-origin API requests.
-  // Let the browser handle them natively with proper CORS headers.
-  // Intercepting cross-origin fetches in a SW causes CORS failures
-  // because the SW cannot forward credentials/CORS headers correctly.
   if (url.origin !== self.location.origin) {
-    return; // Do NOT call event.respondWith() - browser handles it natively
+    return; 
   }
 
-  // For navigation requests (SPA), serve index.html
-  if (event.request.mode === 'navigate') {
+  // NETWORK-FIRST STRATEGY FOR HTML/SPA NAVIGATION
+  // This guarantees the user ALWAYS gets your latest Vercel deployment instantly.
+  if (event.request.mode === 'navigate' || event.request.headers.get('accept').includes('text/html')) {
     event.respondWith(
-      caches.match('/index.html').then((cached) => cached || fetch(event.request))
+      fetch(event.request)
+        .then((response) => {
+          const clone = response.clone();
+          caches.open(STATIC_CACHE).then((cache) => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(() => caches.match('/index.html')) // Fallback to cached version only if offline
     );
     return;
   }
 
-  // Cache-first for same-origin static assets
+  // CACHE-FIRST STRATEGY FOR STATIC ASSETS (Images, JS, CSS)
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
@@ -64,7 +67,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
         return response;
-      }).catch(() => caches.match('/index.html'));
+      });
     })
   );
 });
