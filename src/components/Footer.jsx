@@ -59,7 +59,7 @@ export default function Footer() {
       {/* Secondary Footer */}
       <div className="border-t border-gray-700 py-10 flex flex-col items-center gap-6">
         <Link to="/">
-         <img src={logo} alt="Anritvox" className="h-10 object-contain rounded" />
+         <img src={logo} alt="Anritvox" className="h-10 object-contain square" />
         </Link>
         <div className="flex flex-wrap justify-center gap-4 text-xs text-gray-300 px-4">
            <span className="border border-gray-600 px-3 py-1 rounded-sm cursor-pointer hover:bg-gray-700 transition-colors">English</span>
