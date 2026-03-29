@@ -1,424 +1,918 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  FiSearch, FiMenu, FiShoppingCart, FiArrowRight, 
-  FiShield, FiTruck, FiHeadphones, FiCheckCircle, 
-  FiStar, FiChevronUp, FiHeart, FiTrendingUp, FiZap
-} from "react-icons/fi";
+import React, { useState, useEffect, useRef } from "react";
+import imageCompression from "browser-image-compression";
+import * as XLSX from "xlsx";
+import {
+  fetchProductsAdmin,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  fetchCategories,
+  fetchSubcategories,
+  fetchProductSerials,
+  addProductSerials,
+  bulkAddProductSerials,
+  updateProductSerial,
+  deleteProductSerial,
+} from "../../services/api";
+import {
+  Package,
+  Edit3,
+  Trash2,
+  Upload,
+  FileSpreadsheet,
+  Plus,
+  Save,
+  X,
+  Loader2,
+  Image as ImageIcon,
+  Tag,
+  IndianRupee,
+  Hash,
+  AlertCircle,
+  CheckCircle2,
+  Folder,
+  Grid3x3,
+  Settings2,
+  Download,
+  Search,
+  RefreshCw,
+  PlusCircle,
+  ChevronLeft,
+  ChevronRight,
+  Camera,
+  Trash,
+  Info,
+} from "lucide-react";
 
-// Services & Context
-import { fetchProducts, fetchActiveBanners, fetchCategories } from "../services/api";
-import { useSettings } from "../context/SettingsContext";
-import { useCart } from "../context/CartContext";
-
-const FALLBACK_IMG = "https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&q=80&w=1200";
-
-const DEFAULT_BANNERS = [
-  {
-    imageUrl: FALLBACK_IMG,
-    title: "PREMIUM <br/><span class='text-olive-500'>CAR TECH</span>",
-    subtitle: "ELITE SERIES",
-    description: "Upgrade your drive with our next-generation automotive accessories.",
-    link: "/shop",
-    position: "hero"
-  }
-];
-
-export default function Home() {
-  const [currentIndex, setCurrentIndex] = useState(0);
+export default function ProductManagement({ token }) {
   const [products, setProducts] = useState([]);
-  const [heroBanners, setHeroBanners] = useState([]); 
-  const [promoBanners, setPromoBanners] = useState([]); 
-  const [dynamicCategories, setDynamicCategories] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+    price: "",
+    quantity: "",
+    category_id: "",
+    subcategory_id: "",
+    images: [],
+    serials: [],
+  });
+  const [existingImages, setExistingImages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [addedToCart, setAddedToCart] = useState({});
-  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
+  const [imageCompressing, setImageCompressing] = useState(false);
+  const [error, setError] = useState(null);
+  const [editProductId, setEditProductId] = useState(null);
+  const [serialMethod, setSerialMethod] = useState("manual");
+  const [fileError, setFileError] = useState("");
+  const [currentProductPage, setCurrentProductPage] = useState(1);
+  const [productsPerPage] = useState(10);
+  
+  // Serial Management State
+  const [showSerialModal, setShowSerialModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [productSerials, setProductSerials] = useState([]);
+  const [serialStats, setSerialStats] = useState({});
+  const [serialLoading, setSerialLoading] = useState(false);
+  const [newSerials, setNewSerials] = useState("");   
+  const [serialCount, setSerialCount] = useState(1);   
+  const [serialPrefix, setSerialPrefix] = useState("ANRI");
+  const [editingSerial, setEditingSerial] = useState(null);
+  const [serialSearch, setSerialSearch] = useState("");
+  const [serialAddMethod, setSerialAddMethod] = useState("manual");
+  const [bulkSerialError, setBulkSerialError] = useState("");
+  const [bulkSerialPreview, setBulkSerialPreview] = useState([]);
+  const [currentSerialPage, setCurrentSerialPage] = useState(1);
+  const [serialsPerPage] = useState(20);
 
-  const { addToCart = () => {} } = useCart() || {};
-  const { settings = {} } = useSettings() || {}; 
+  const formRef = useRef(null);
 
-  useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        setLoading(true); 
-        const [p, b, c] = await Promise.all([
-          fetchProducts().catch(() => []),
-          fetchActiveBanners().catch(() => []),
-          fetchCategories().catch(() => [])
-        ]);
-        
-        setProducts(Array.isArray(p) && p.length > 0 ? p : []);
-        setDynamicCategories(Array.isArray(c) ? c : []);
+  const totalProductPages = Math.ceil(products.length / productsPerPage);
+  const paginatedProducts = products.slice(
+    (currentProductPage - 1) * productsPerPage,
+    currentProductPage * productsPerPage
+  );
 
-        // Filter Banners by Position
-        const activeBanners = Array.isArray(b) && b.length > 0 ? b : DEFAULT_BANNERS;
-        const heroes = activeBanners.filter(banner => banner.position === 'hero' || !banner.position);
-        const promos = activeBanners.filter(banner => banner.position === 'promo');
-        
-        setHeroBanners(heroes.length > 0 ? heroes : DEFAULT_BANNERS);
-        setPromoBanners(promos);
+  const filteredSerials = productSerials.filter((serial) =>
+    (serial.serial || "").toLowerCase().includes(serialSearch.toLowerCase())
+  );
+  const totalSerialPages = Math.ceil(filteredSerials.length / serialsPerPage);
+  const paginatedSerials = filteredSerials.slice(
+    (currentSerialPage - 1) * serialsPerPage,
+    currentSerialPage * serialsPerPage
+  );
 
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadInitialData();
-    
-    const handleScroll = () => setShowScrollTop(window.scrollY > 400);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []); 
-
-  // Auto-rotate Hero Banners
-  useEffect(() => {
-    if (heroBanners.length <= 1) return;
-    const interval = setInterval(() => {
-      setCurrentIndex((p) => (p + 1) % heroBanners.length);
-    }, 6000);
-    return () => clearInterval(interval);
-  }, [heroBanners.length]);
-
-  const handleAddToCart = async (e, product) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const id = product._id || product.id;
-    await addToCart(product, 1);
-    setAddedToCart(prev => ({ ...prev, [id]: true }));
-    setTimeout(() => setAddedToCart(prev => ({ ...prev, [id]: false })), 2000);
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [prodData, catData, subData] = await Promise.all([
+        fetchProductsAdmin(token),
+        fetchCategories(token),
+        fetchSubcategories(token),
+      ]);
+      setProducts(prodData);
+      setCategories(catData);
+      setSubcategories(subData);
+    } catch (e) {
+      setError("Failed to load data. Please refresh the page.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const currentBanner = heroBanners[currentIndex] || DEFAULT_BANNERS[0];
+  useEffect(() => {
+    if (token) loadData();
+  }, [token]);
+
+  const loadProductSerials = async (productId) => {
+    setSerialLoading(true);
+    try {
+      const data = await fetchProductSerials(productId, token);
+      setProductSerials(data.serials || []);
+      setSerialStats(data.statistics || {});
+    } catch (e) {
+      setError("Failed to load product serials.");
+    } finally {
+      setSerialLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+    if (name === "images") {
+      const allowed = ["image/jpeg", "image/png", "image/webp"];
+      const fileList = Array.from(files);
+      const invalidFiles = fileList.filter((file) => !allowed.includes(file.type));
+      
+      if (invalidFiles.length > 0) {
+        alert("Invalid formats. Only JPEG, PNG, and WEBP are allowed.");
+        return;
+      }
+      setForm((prev) => ({ ...prev, images: fileList }));
+    } else if (name === "quantity") {
+      const qty = Math.max(0, Number(value));
+      setForm((prev) => ({
+        ...prev,
+        quantity: String(qty),
+        serials: Array(qty).fill(""),
+      }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleSerialChange = (index, value) => {
+    const newSerials = [...form.serials];
+    newSerials[index] = value.trim().toUpperCase();
+    setForm((prev) => ({ ...prev, serials: newSerials }));
+  };
+
+  const handleExcelUpload = async (e) => {
+    setFileError("");
+    const file = e.target.files?.[0];
+    if (!file || !file.name.endsWith(".xlsx")) {
+      setFileError("Invalid file. Please upload a .xlsx file.");
+      return;
+    }
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      
+      const serials = rows
+        .map((row) => row[0])
+        .filter((val) => val != null && String(val).trim() !== "")
+        .map((s) => String(s).trim().toUpperCase());
+
+      setForm((prev) => ({
+        ...prev,
+        quantity: serials.length,
+        serials
+      }));
+    } catch (err) {
+      setFileError("Error reading Excel file.");
+    }
+  };
+
+  const resetForm = () => {
+    setForm({
+      name: "",
+      description: "",
+      price: "",
+      quantity: "",
+      category_id: "",
+      subcategory_id: "",
+      images: [],
+      serials: [],
+    });
+    setExistingImages([]);
+    setEditProductId(null);
+    setSerialMethod("manual");
+    setFileError("");
+    setError(null);
+  };
+
+  const compressImages = async (imageFiles) => {
+    setImageCompressing(true);
+    try {
+      return await Promise.all(
+        imageFiles.map(async (file) => {
+          const options = {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1280,
+            useWebWorker: true,
+            fileType: "image/webp"
+          };
+          const compressedFile = await imageCompression(file, options);
+          return new File([compressedFile], file.name.replace(/\.\w+$/, ".webp"), { type: "image/webp" });
+        })
+      );
+    } finally {
+      setImageCompressing(false);
+    }
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setFormLoading(true);
+    setError(null);
+
+    try {
+      let compressedImages = [];
+      if (form.images.length > 0) {
+        compressedImages = await compressImages(Array.from(form.images));
+      }
+
+      const formData = new FormData();
+      formData.append("name", form.name.trim());
+      formData.append("description", form.description.trim());
+      formData.append("price", form.price);
+      formData.append("category_id", form.category_id);
+      if (form.subcategory_id) formData.append("subcategory_id", form.subcategory_id);
+      
+     if (!editProductId) {
+        formData.append("quantity", form.quantity);
+        formData.append("serials", JSON.stringify(form.serials));
+      } else {
+      
+        formData.append("existing_images", JSON.stringify(existingImages.map(img => img.url)));
+      }
+
+      compressedImages.forEach((image) => formData.append("images", image));
+
+      if (editProductId) {
+        await updateProduct(editProductId, formData, token);
+      } else {
+        await createProduct(formData, token);
+      }
+      
+      resetForm();
+      await loadData();
+    } catch (err) {
+      setError(err.message || "An unexpected error occurred.");
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleEdit = (product) => {
+    setEditProductId(product.id);
+    setForm({
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      quantity: String(product.quantity),
+      category_id: product.category_id || "",
+      subcategory_id: product.subcategory_id || "",
+      images: [],
+      serials: [],
+    });
+    setExistingImages(product.images ? product.images.map((img, idx) => ({ id: idx, url: img, path: img })) : []);
+    setError(null);
+    formRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleRemove = async (productId) => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      try {
+        await deleteProduct(productId, token);
+        await loadData();
+      } catch (err) {
+        setError("Failed to delete product.");
+      }
+    }
+  };
+
+  const openSerialModal = async (product) => {
+    setSelectedProduct(product);
+    setShowSerialModal(true);
+    await loadProductSerials(product.id);
+  };
+
+  const closeSerialModal = () => {
+    setShowSerialModal(false);
+    setSelectedProduct(null);
+    setProductSerials([]);
+    setSerialStats({});
+    setNewSerials("");
+    setEditingSerial(null);
+    setSerialSearch("");
+    setBulkSerialError("");
+    setBulkSerialPreview([]);
+  };
+
+  const handleAddNewSerials = async () => {
+    if (!newSerials.trim()) return;
+    try {
+      setSerialLoading(true);
+      const serialArray = newSerials.split(/[\n,]+/).map((s) => s.trim()).filter((s) => s.length > 0);
+      
+      // Using accurate argument order for api.js
+      await addProductSerials(selectedProduct.id, serialArray.length, "ANRI", token);
+      
+      setNewSerials("");
+      await loadProductSerials(selectedProduct.id);
+      await loadData();
+    } catch (err) {
+      setError("Failed to add serials");
+    } finally {
+      setSerialLoading(false);
+    }
+  };
+
+  const handleExcelUploadForSerials = async (e) => {
+    setBulkSerialError("");
+    const file = e.target.files?.[0];
+    if (!file || !file.name.match(/\.(xlsx|xls)$/)) return;
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      
+      const serials = rows.map((row) => row[0]).filter((val) => val != null && String(val).trim() !== "").map((s) => String(s).trim().toUpperCase());
+      setBulkSerialPreview(serials);
+    } catch (err) {
+      setBulkSerialError("Error reading Excel file.");
+    }
+  };
+
+  const confirmBulkAdd = async () => {
+    try {
+      setSerialLoading(true);
+      await addProductSerials(selectedProduct.id, bulkSerialPreview.length, "ANRI", token);
+      setBulkSerialPreview([]);
+      await loadProductSerials(selectedProduct.id);
+      await loadData();
+    } catch (err) {
+      setBulkSerialError("Failed to import serials");
+    } finally {
+      setSerialLoading(false);
+    }
+  };
+
+  const handleEditSerial = async (serialId, newSerial) => {
+    try {
+      setSerialLoading(true);
+      await updateProductSerial(selectedProduct.id, serialId, newSerial, token);
+      setEditingSerial(null);
+      await loadProductSerials(selectedProduct.id);
+    } catch (err) {
+      setError("Failed to update serial");
+    } finally {
+      setSerialLoading(false);
+    }
+  };
+
+  const handleDeleteSerial = async (serialId, serialNumber) => {
+    if (window.confirm(`Delete serial "${serialNumber}"?`)) {
+      try {
+        setSerialLoading(true);
+        await deleteProductSerial(selectedProduct.id, serialId, token);
+        await loadProductSerials(selectedProduct.id);
+        await loadData();
+      } catch (err) {
+        setError("Failed to delete serial");
+      } finally {
+        setSerialLoading(false);
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0c] flex flex-col items-center justify-center gap-4">
+        <Loader2 className="h-10 w-10 text-cyan-500 animate-spin" />
+        <p className="text-cyan-500 font-bold tracking-widest animate-pulse">LOADING INVENTORY...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[#FDFDFB] font-sans text-gray-900 overflow-x-hidden relative selection:bg-olive-500 selection:text-white">
-      
-      {/* Refined Ambient Background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 flex justify-center items-center opacity-40">
-        <div className="absolute w-[80vw] h-[80vw] rounded-full bg-olive-100/30 blur-[120px] -top-20 -left-20" />
-        <div className="absolute w-[60vw] h-[60vw] rounded-full bg-gray-100/50 blur-[120px] bottom-0 right-0" />
-      </div>
-
-      {/* Glassmorphic Mobile Header */}
-      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100 lg:hidden shadow-sm">
-        <div className="flex items-center justify-between p-4 gap-4">
-          <button className="p-2 hover:bg-gray-50 rounded-xl transition-colors">
-            <FiMenu size={24} className="text-gray-900" />
-          </button>
-          
-          <div className="flex-1 relative group">
-            <input 
-              type="text" 
-              placeholder="Search Anritvox..." 
-              className="w-full bg-gray-50 border-transparent focus:bg-white border focus:border-olive-500/30 focus:ring-2 focus:ring-olive-500/10 rounded-xl py-2.5 px-10 text-sm transition-all outline-none" 
-            />
-            <FiSearch className="absolute left-3.5 top-3 text-gray-400 group-focus-within:text-olive-600 transition-colors" size={18} />
+    <div className="min-h-screen bg-[#0a0a0c] font-sans text-slate-100 p-4 sm:p-6 animate-fade-in text-[12px]">
+      {/* Neon Dark Admin Header */}
+      <div className="bg-[#16161a] border border-cyan-500/30 p-4 -mx-4 -mt-4 mb-8 flex items-center justify-between shadow-[0_0_20px_rgba(6,182,212,0.15)] rounded-b-xl">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-cyan-500/10 rounded-lg border border-cyan-500/20 shadow-[0_0_10px_rgba(6,182,212,0.2)]">
+            <Grid3x3 className="h-6 w-6 text-cyan-400" />
           </div>
-
-          <Link to="/cart" className="p-2 bg-white shadow-sm border border-gray-100 hover:border-olive-200 rounded-xl text-gray-900 transition-all relative">
-            <FiShoppingCart size={22} />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-olive-500 rounded-full border-2 border-white"></span>
-          </Link>
-        </div>
-      </div>
-
-      {/* Cinematic Professional Hero Section */}
-      <div className="relative max-w-[1500px] mx-auto lg:mt-8 lg:px-8 z-10">
-        <div className="relative w-full h-[60vh] lg:h-[70vh] rounded-none lg:rounded-tr-[5rem] lg:rounded-bl-[5rem] lg:rounded-tl-2xl lg:rounded-br-2xl overflow-hidden shadow-xl bg-gray-900">
-          {loading ? (
-             <div className="w-full h-full bg-gray-200 animate-pulse" />
-          ) : (
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentIndex}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.8, ease: "easeInOut" }}
-                className="absolute inset-0 flex items-center overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-gray-900/95 via-gray-900/60 to-transparent z-10 pointer-events-none" />
-                
-                <motion.img 
-                  initial={{ scale: 1.05 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 1.05 }}
-                  transition={{ duration: 6, ease: "easeOut" }}
-                  src={currentBanner.image_url || currentBanner.imageUrl || FALLBACK_IMG} 
-                  alt="Banner"
-                  className="absolute inset-0 w-full h-full object-cover opacity-80"
-                />
-                
-                <div className="relative z-20 w-full px-6 md:px-16 lg:px-24">
-                  <motion.div 
-                    initial={{ y: 20, opacity: 0 }} 
-                    animate={{ y: 0, opacity: 1 }} 
-                    transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}
-                    className="max-w-xl"
-                  >
-                    <div className="flex items-center gap-2 mb-6 border-l-2 border-olive-500 pl-3">
-                      <span className="text-olive-400 font-semibold tracking-[0.2em] uppercase text-xs">
-                        {currentBanner.subtitle || "New Arrivals"}
-                      </span>
-                    </div>
-                    <h1 
-                      className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] mb-6 tracking-tight" 
-                      dangerouslySetInnerHTML={{ __html: currentBanner.title }} 
-                    />
-                    <p className="text-gray-300 text-base md:text-lg mb-10 leading-relaxed font-light max-w-lg">
-                      {currentBanner.description}
-                    </p>
-                    <Link to={currentBanner.link_url || currentBanner.link || "/shop"} className="inline-flex items-center gap-3 px-8 py-4 bg-olive-600 text-white rounded-tr-2xl rounded-bl-2xl rounded-tl-md rounded-br-md font-bold hover:bg-olive-500 transition-all duration-300 group shadow-lg shadow-olive-600/20">
-                      Explore Collection <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                  </motion.div>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-          )}
-
-          {/* Minimalist Progress Indicators */}
-          {heroBanners.length > 1 && (
-            <div className="absolute bottom-8 left-6 md:left-16 lg:left-24 z-30 flex gap-2">
-              {heroBanners.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentIndex(i)}
-                  className={`h-1 transition-all duration-300 ${currentIndex === i ? 'w-8 bg-olive-500' : 'w-4 bg-white/30 hover:bg-white/50'}`}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Professional Category Scroll */}
-      <section className="max-w-[1500px] mx-auto px-4 lg:px-8 py-16 relative z-20">
-        <h3 className="text-xl font-bold text-gray-900 mb-8 lg:hidden">Shop by Category</h3>
-        <div className="flex overflow-x-auto hide-scrollbar gap-6 pb-4 snap-x snap-mandatory">
-          {loading ? (
-             [1, 2, 3, 4, 5, 6].map((_, i) => (
-              <div key={i} className="flex flex-col items-center gap-4 min-w-[100px]">
-                <div className="w-24 h-24 rounded-full bg-gray-200 animate-pulse" />
-                <div className="w-16 h-3 bg-gray-200 rounded animate-pulse" />
-              </div>
-            ))
-          ) : dynamicCategories.length > 0 ? dynamicCategories.map((cat, i) => (
-            <Link 
-              to={`/shop?category=${cat.slug || cat.name}`} 
-              key={cat.id || i} 
-              className="flex flex-col items-center gap-4 min-w-[100px] group snap-start"
-            >
-              <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center group-hover:shadow-md group-hover:border-olive-200 transition-all duration-300 p-5 relative overflow-hidden">
-                <div className="absolute inset-0 bg-olive-50/0 group-hover:bg-olive-50/50 transition-colors duration-300" />
-                {cat.image ? (
-                  <motion.img 
-                    whileHover={{ scale: 1.1 }} 
-                    transition={{ type: "spring", stiffness: 300 }}
-                    src={cat.image} 
-                    className="w-full h-full object-contain relative z-10" 
-                    alt={cat.name} 
-                  />
-                ) : (
-                  <FiCheckCircle size={28} className="text-gray-400 group-hover:text-olive-600 relative z-10 transition-colors" />
-                )}
-              </div>
-              <span className="text-[12px] md:text-sm font-semibold tracking-wide text-gray-500 group-hover:text-gray-900 text-center transition-colors">
-                {cat.name}
-              </span>
-            </Link>
-          )) : null}
-        </div>
-      </section>
-
-      {/* Asymmetric Promo Banners */}
-      {promoBanners.length > 0 && !loading && (
-        <section className="max-w-[1500px] mx-auto px-4 lg:px-8 pb-16 relative z-20">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-            {promoBanners.map((promo, idx) => (
-              <motion.div
-                key={promo.id || idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ delay: idx * 0.1, duration: 0.6 }}
-                className="relative rounded-tr-[4rem] rounded-bl-[4rem] rounded-tl-xl rounded-br-xl overflow-hidden shadow-lg group h-56 md:h-72 cursor-pointer bg-gray-900"
-              >
-                <Link to={promo.link_url || promo.link || "/shop"} className="block w-full h-full relative">
-                  <motion.img
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.8, ease: "easeOut" }}
-                    src={promo.image_url || promo.imageUrl}
-                    className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:opacity-50 transition-opacity"
-                    alt={promo.title || "Promo Banner"}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900/95 via-gray-900/20 to-transparent flex flex-col justify-end p-8 md:p-10">
-                    {promo.subtitle && <p className="text-olive-400 font-bold tracking-[0.15em] text-xs mb-2 uppercase">{promo.subtitle}</p>}
-                    <h3 className="text-white text-2xl md:text-3xl font-black tracking-tight leading-tight" dangerouslySetInnerHTML={{ __html: promo.title }}></h3>
-                    {promo.description && <p className="text-gray-300 text-sm mt-3 line-clamp-2 max-w-sm font-light">{promo.description}</p>}
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
+          <div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">
+              ANRITVOX | Product Management
+            </h1>
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Admin Control Panel</p>
           </div>
-        </section>
-      )}
-
-      {/* Unique Shape Product Grid */}
-      <section className="max-w-[1500px] mx-auto px-4 lg:px-8 pb-24 relative z-20">
-        <div className="flex justify-between items-end mb-10">
-          <div className="flex items-center gap-4">
-            <div className="w-2 h-10 bg-olive-500 rounded-full hidden md:block"></div>
-            <div>
-              <h2 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">Trending Series</h2>
-              <p className="text-sm md:text-base text-gray-500 mt-2 font-light">Engineered for absolute precision</p>
-            </div>
-          </div>
-          <Link to="/shop" className="hidden md:flex items-center gap-2 text-sm font-semibold text-gray-900 hover:text-olive-600 transition-colors bg-white px-6 py-3 rounded-tr-xl rounded-bl-xl rounded-tl-md rounded-br-md border border-gray-200 shadow-sm hover:shadow-md">
-            View Collection <FiArrowRight />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-8">
-          {loading ? (
-             [1, 2, 3, 4, 5].map((_, idx) => (
-              <div key={idx} className="bg-white rounded-tr-[3rem] rounded-bl-[3rem] rounded-tl-xl rounded-br-xl p-4 border border-gray-100 h-[320px] animate-pulse">
-                <div className="w-full aspect-square bg-gray-100 rounded-tr-[2.5rem] rounded-bl-[2.5rem] rounded-tl-lg rounded-br-lg mb-4" />
-                <div className="w-3/4 h-4 bg-gray-200 rounded mb-3" />
-                <div className="w-1/2 h-4 bg-gray-200 rounded" />
-              </div>
-             ))
-          ) : products.slice(0, 10).map((product, idx) => (
-            <motion.div 
-              key={product._id || product.id || idx} 
-              initial={{ opacity: 0, y: 20 }} 
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ delay: idx * 0.05 }}
-              className="group bg-white p-4 md:p-5 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] hover:border-olive-200 transition-all duration-500 relative flex flex-col h-full overflow-hidden rounded-tr-[3rem] rounded-bl-[3rem] rounded-tl-xl rounded-br-xl"
-            >
-              {/* Product Badges */}
-              <div className="absolute top-5 left-5 z-10 flex flex-col gap-2">
-                {product.discount && (
-                  <span className="bg-gray-900 text-white text-[10px] font-bold px-3 py-1 rounded-tr-lg rounded-bl-lg rounded-tl-sm rounded-br-sm shadow-sm tracking-wide">
-                    {product.discount}% OFF
-                  </span>
-                )}
-              </div>
-
-              <button className="absolute top-5 right-5 z-10 p-2 text-gray-400 hover:text-red-500 transition-colors bg-white/50 rounded-full backdrop-blur-sm opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
-                <FiHeart size={18} />
-              </button>
-
-              {/* Unique Shape Image Container */}
-              <Link to={`/product/${product._id || product.id}`} className="block relative aspect-square mb-6 bg-gray-50 rounded-tr-[2.5rem] rounded-bl-[2.5rem] rounded-tl-lg rounded-br-lg overflow-hidden group-hover:bg-olive-50/40 transition-colors">
-                <motion.img 
-                  whileHover={{ scale: 1.08 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                  src={product.image || product.images?.[0] || FALLBACK_IMG} 
-                  className="w-full h-full object-contain p-8 mix-blend-multiply drop-shadow-sm" 
-                  alt={product.name}
-                  loading="lazy"
-                />
-              </Link>
-
-              <div className="flex flex-col flex-1 px-2">
-                <div className="flex items-center gap-1 text-olive-500 mb-2">
-                  {[...Array(5)].map((_, i) => (
-                    <FiStar key={i} size={10} className={i < 4 ? "fill-current" : "text-gray-200"} />
-                  ))}
-                  <span className="text-[10px] font-medium text-gray-400 ml-1">(12)</span>
-                </div>
-                
-                <Link to={`/product/${product._id || product.id}`}>
-                  <h3 className="text-gray-900 font-semibold mb-1 line-clamp-2 text-sm md:text-base group-hover:text-olive-600 transition-colors leading-snug">
-                    {product.name || "Premium Accessory"}
-                  </h3>
-                </Link>
-
-                <div className="mt-auto pt-4 flex items-end justify-between">
-                  <div>
-                    {product.oldPrice && (
-                      <div className="text-[11px] text-gray-400 line-through mb-0.5">
-                        ₹{Number(product.oldPrice).toLocaleString()}
-                      </div>
-                    )}
-                    <div className="font-black text-lg md:text-xl text-gray-900 tracking-tight">
-                      ₹{Number(product.price || 999).toLocaleString()}
-                    </div>
-                  </div>
-                  
-                  <motion.button 
-                    whileTap={{ scale: 0.9 }}
-                    onClick={(e) => handleAddToCart(e, product)} 
-                    className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-tr-xl rounded-bl-xl rounded-tl-md rounded-br-md transition-all duration-300 shadow-sm ${
-                      addedToCart[product._id || product.id] 
-                      ? 'bg-olive-600 text-white' 
-                      : 'bg-gray-50 border border-gray-100 text-gray-900 hover:bg-gray-900 hover:border-gray-900 hover:text-white'
-                    }`}
-                  >
-                    {addedToCart[product._id || product.id] ? <FiCheckCircle size={18} /> : <FiShoppingCart size={18} />}
-                  </motion.button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
         </div>
         
-        <div className="mt-10 md:hidden">
-          <Link to="/shop" className="flex items-center justify-center w-full py-4 rounded-tr-2xl rounded-bl-2xl rounded-tl-md rounded-br-md border border-gray-200 text-gray-900 font-bold bg-white shadow-sm active:scale-95 transition-transform">
-            View All Products
-          </Link>
-        </div>
-      </section>
-
-      {/* Professional Trust & Value Proposition */}
-      <div className="border-t border-gray-200/50 bg-white relative z-20">
-        <div className="max-w-[1500px] mx-auto px-4 lg:px-8 py-20">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 divide-x-0 lg:divide-x divide-gray-100">
-            {[
-              { icon: <FiShield />, title: "Secure Checkout", desc: "Enterprise-grade encryption" },
-              { icon: <FiTruck />, title: "Express Delivery", desc: "Pan-India premium shipping" },
-              { icon: <FiCheckCircle />, title: "Quality Assured", desc: "Rigorous durability testing" },
-              { icon: <FiHeadphones />, title: "Dedicated Support", desc: "24/7 expert assistance" }
-            ].map((item, i) => (
-              <motion.div 
-                key={i} 
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className={`flex flex-col items-center text-center ${i !== 0 ? 'lg:pl-8' : ''}`}
-              >
-                <div className="w-14 h-14 bg-gray-50 rounded-tr-xl rounded-bl-xl rounded-tl-md rounded-br-md flex items-center justify-center text-olive-600 text-2xl mb-6 shadow-sm border border-gray-100">
-                  {item.icon}
-                </div>
-                <h5 className="font-bold text-gray-900 mb-2 tracking-tight">{item.title}</h5>
-                <p className="text-sm text-gray-500 font-light">{item.desc}</p>
-              </motion.div>
-            ))}
+        <div className="flex gap-4 text-sm">
+          <div className="text-center px-4 border-r border-slate-800">
+            <div className="font-bold text-cyan-400 text-lg leading-none">{products.length}</div>
+            <div className="text-[10px] text-slate-500 uppercase font-bold mt-1">Products</div>
+          </div>
+          <div className="text-center px-4">
+            <div className="font-bold text-fuchsia-400 text-lg leading-none">{categories.length}</div>
+            <div className="text-[10px] text-slate-500 uppercase font-bold mt-1">Categories</div>
           </div>
         </div>
       </div>
 
-      <AnimatePresence>
-        {showScrollTop && (
-          <motion.button 
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.5 }}
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} 
-            className="fixed bottom-6 right-6 lg:bottom-10 lg:right-10 bg-gray-900 text-white p-4 rounded-tr-2xl rounded-bl-2xl rounded-tl-md rounded-br-md shadow-2xl z-50 hover:bg-olive-600 transition-colors"
-          >
-            <FiChevronUp size={24} />
-          </motion.button>
-        )}
-      </AnimatePresence>
-      
-      <style dangerouslySetInnerHTML={{__html: `
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      `}} />
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Form Section */}
+        <div ref={formRef} className="bg-[#16161a] border border-slate-800 rounded-xl overflow-hidden shadow-2xl transition-all hover:border-cyan-500/20">
+          <div className="bg-slate-900/50 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+            <h2 className="text-lg font-bold flex items-center gap-2 text-slate-200">
+              {editProductId ? <Edit3 className="h-5 w-5 text-fuchsia-400" /> : <Plus className="h-5 w-5 text-cyan-400" />}
+              {editProductId ? "Edit Product Details" : "Add a New Product"}
+            </h2>
+          </div>
+
+          <form onSubmit={handleSave} className="p-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Product Name</label>
+                  <input
+                    name="name"
+                    type="text"
+                    required
+                    className="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg focus:border-cyan-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] outline-none transition-all text-slate-100"
+                    value={form.name}
+                    onChange={handleChange}
+                    disabled={formLoading}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Price (INR)</label>
+                  <input
+                    name="price"
+                    type="number"
+                    step="0.01"
+                    required
+                    className="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg focus:border-cyan-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] outline-none transition-all text-slate-100"
+                    value={form.price}
+                    onChange={handleChange}
+                    disabled={formLoading}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Category</label>
+                    <select
+                      name="category_id"
+                      required
+                      className="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg focus:border-cyan-500 outline-none text-slate-100"
+                      value={form.category_id}
+                      onChange={handleChange}
+                      disabled={formLoading}
+                    >
+                      <option value="">Select</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Subcategory</label>
+                    <select
+                      name="subcategory_id"
+                      className="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg focus:border-cyan-500 outline-none disabled:opacity-30 text-slate-100"
+                      value={form.subcategory_id}
+                      onChange={handleChange}
+                      disabled={formLoading || !form.category_id}
+                    >
+                      <option value="">Optional</option>
+                      {subcategories
+                        .filter((sc) => String(sc.category_id) === String(form.category_id))
+                        .map((sc) => (
+                          <option key={sc.id} value={sc.id}>{sc.name}</option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Description</label>
+                  <textarea
+                    name="description"
+                    rows="3"
+                    required
+                    className="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg focus:border-cyan-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] outline-none transition-all text-slate-100"
+                    value={form.description}
+                    onChange={handleChange}
+                    disabled={formLoading}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {/* Images Section */}
+                <div className="border border-slate-800 rounded-xl p-4 bg-slate-900/30">
+                  <h3 className="text-xs font-bold text-slate-300 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                    <ImageIcon className="h-4 w-4 text-cyan-400" /> Product Images
+                  </h3>
+                  <div className="flex flex-wrap gap-4">
+                    {editProductId && existingImages.map((img, i) => (
+                      <div key={i} className="relative border border-slate-700 p-1 rounded-lg group">
+                        <img src={img.url} className="w-20 h-20 object-cover rounded shadow-lg" alt="Existing" />
+                        <button 
+                          type="button" 
+                          onClick={() => setExistingImages(prev => prev.filter(x => x.id !== img.id))}
+                          className="absolute -top-2 -right-2 bg-rose-600 text-white rounded-full p-1 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3"/>
+                        </button>
+                      </div>
+                    ))}
+                    <label className="w-20 h-20 border-2 border-dashed border-slate-700 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-slate-800/50 hover:border-cyan-500/50 transition-all text-slate-500 hover:text-cyan-400">
+                      <Upload className="h-6 w-6" />
+                      <span className="text-[10px] uppercase font-bold mt-1">Add</span>
+                      <input name="images" type="file" multiple hidden accept="image/*" onChange={handleChange} />
+                    </label>
+                    {form.images.length > 0 && Array.from(form.images).map((file, i) => (
+                      <div key={i} className="relative border border-cyan-500/30 p-1 rounded-lg bg-cyan-500/5">
+                        <div className="w-20 h-20 flex items-center justify-center text-[10px] text-center text-cyan-400 p-1 break-all font-mono leading-tight">
+                          {file.name}
+                        </div>
+                        <button 
+                          type="button" 
+                          onClick={() => setForm(prev => ({...prev, images: prev.images.filter((_, idx) => idx !== i)}))}
+                          className="absolute -top-2 -right-2 bg-slate-700 text-white rounded-full p-1 shadow-lg"
+                        >
+                          <X className="h-3 w-3"/>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {!editProductId && (
+                  <div className="border border-slate-800 rounded-xl p-4 bg-slate-900/30 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-fuchsia-500/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-fuchsia-500/10 transition-all"></div>
+                    <h3 className="text-xs font-bold text-fuchsia-400 mb-4 flex items-center gap-2 uppercase tracking-wider">
+                      <Hash className="h-4 w-4" /> Initial Inventory Tracking
+                    </h3>
+                    <div className="flex gap-4 mb-4">
+                      <label className="flex items-center gap-2 cursor-pointer group/label">
+                        <input type="radio" checked={serialMethod === "manual"} onChange={() => setSerialMethod("manual")} className="accent-fuchsia-500" />
+                        <span className="text-xs font-medium text-slate-300 group-hover/label:text-fuchsia-400 transition-colors">Manual Entry</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer group/label">
+                        <input type="radio" checked={serialMethod === "excel"} onChange={() => setSerialMethod("excel")} className="accent-fuchsia-500" />
+                        <span className="text-xs font-medium text-slate-300 group-hover/label:text-fuchsia-400 transition-colors">Excel Import</span>
+                      </label>
+                    </div>
+
+                    {serialMethod === "manual" ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-4">
+                          <label className="text-xs font-bold text-slate-400">QUANTITY:</label>
+                          <input
+                            name="quantity"
+                            type="number"
+                            min="1"
+                            className="w-24 px-3 py-1 bg-[#0f172a] border border-slate-700 rounded focus:border-fuchsia-500 outline-none text-slate-100"
+                            value={form.quantity}
+                            onChange={handleChange}
+                          />
+                        </div>
+                        {Number(form.quantity) > 0 && (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-40 overflow-y-auto p-1 custom-scrollbar">
+                            {Array.from({ length: Number(form.quantity) }).map((_, i) => (
+                              <input
+                                key={i}
+                                placeholder={`SERIAL #${i + 1}`}
+                                className="text-[10px] p-2 bg-slate-900 border border-slate-800 rounded font-mono uppercase focus:border-fuchsia-500 outline-none text-slate-300"
+                                value={form.serials[i] || ""}
+                                onChange={(e) => handleSerialChange(i, e.target.value)}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="p-4 border border-dashed border-slate-700 rounded-lg text-center hover:border-fuchsia-500/50 transition-all">
+                          <input type="file" accept=".xlsx" onChange={handleExcelUpload} className="text-xs w-full text-slate-400 file:bg-fuchsia-500/10 file:border-0 file:text-fuchsia-400 file:px-4 file:py-1 file:rounded file:mr-4 file:font-bold file:uppercase file:text-[10px] cursor-pointer" />
+                        </div>
+                        {form.serials.length > 0 && <p className="text-[10px] font-bold text-lime-400 animate-pulse">{form.serials.length} SERIALS DETECTED FROM FILE.</p>}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-6 border-t border-slate-800">
+              {editProductId && (
+                <button 
+                  type="button" 
+                  onClick={resetForm} 
+                  className="px-6 py-2 bg-slate-800 border border-slate-700 rounded-lg hover:bg-slate-700 text-xs font-bold uppercase tracking-widest text-slate-300 transition-all"
+                >
+                  Cancel
+                </button>
+              )}
+              <button
+                type="submit"
+                disabled={formLoading || imageCompressing || !form.name || !form.price || !form.category_id}
+                className={`px-8 py-2 rounded-lg font-bold text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(6,182,212,0.2)] flex items-center justify-center gap-2 transition-all active:scale-95 ${
+                  editProductId 
+                  ? 'bg-fuchsia-600 hover:bg-fuchsia-500 text-white shadow-fuchsia-500/20' 
+                  : 'bg-cyan-600 hover:bg-cyan-500 text-white'
+                } disabled:opacity-50 disabled:shadow-none`}
+              >
+                {formLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                {editProductId ? "Update Product" : "Save to Inventory"}
+              </button>
+            </div>
+
+            {error && (
+              <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-400 text-xs font-bold flex items-center gap-2 animate-shake">
+                <AlertCircle className="h-4 w-4"/> {error}
+              </div>
+            )}
+          </form>
+        </div>
+
+        {/* Inventory Table */}
+        <div className="bg-[#16161a] border border-slate-800 rounded-xl shadow-2xl overflow-hidden">
+          <div className="bg-slate-900/50 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+            <h2 className="text-lg font-bold flex items-center gap-2 text-slate-200">
+              <Package className="h-5 w-5 text-cyan-400" /> 
+              Inventory Database
+            </h2>
+            <div className="text-[10px] font-mono text-slate-500 uppercase">System Status: Online</div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-900/80 border-b border-slate-800">
+                <tr>
+                  <th className="px-6 py-4 font-bold uppercase text-[10px] tracking-widest text-slate-500">Product Detail</th>
+                  <th className="px-6 py-4 font-bold uppercase text-[10px] tracking-widest text-slate-500">Price</th>
+                  <th className="px-6 py-4 font-bold uppercase text-[10px] tracking-widest text-slate-500">Stock Status</th>
+                  <th className="px-6 py-4 font-bold uppercase text-[10px] tracking-widest text-slate-500">Category</th>
+                  <th className="px-6 py-4 font-bold uppercase text-[10px] tracking-widest text-slate-500 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/50">
+                {paginatedProducts.map((product) => (
+                  <tr key={product.id} className="hover:bg-cyan-500/[0.02] transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-slate-200 group-hover:text-cyan-400 transition-colors">{product.name}</div>
+                      <div className="text-[10px] text-slate-600 font-mono mt-1 tracking-tighter">REF# {product.id}</div>
+                    </td>
+                    <td className="px-6 py-4 font-mono font-bold text-cyan-400">
+                      <IndianRupee className="h-3 w-3 inline mb-0.5" /> 
+                      {Number(product.price).toLocaleString('en-IN')}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                        product.quantity > 5 
+                        ? 'bg-lime-500/10 text-lime-400 border border-lime-500/20' 
+                        : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                      }`}>
+                        {product.quantity} UNITS
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-xs text-slate-400 bg-slate-800/50 px-2 py-1 rounded border border-slate-700/50">
+                        {categories.find(c => c.id === product.category_id)?.name || "UNCATEGORIZED"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex justify-end gap-2">
+                        <button 
+                          onClick={() => openSerialModal(product)} 
+                          className="p-2 bg-slate-800/50 border border-slate-700 rounded-lg hover:border-cyan-500/50 hover:text-cyan-400 transition-all"
+                          title="Manage Serials"
+                        >
+                          <Settings2 className="h-4 w-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleEdit(product)} 
+                          className="p-2 bg-slate-800/50 border border-slate-700 rounded-lg hover:border-fuchsia-500/50 hover:text-fuchsia-400 transition-all"
+                          title="Edit"
+                        >
+                          <Edit3 className="h-4 w-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleRemove(product.id)} 
+                          className="p-2 bg-slate-800/50 border border-slate-700 rounded-lg hover:bg-rose-500/10 hover:border-rose-500/50 hover:text-rose-500 transition-all"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {totalProductPages > 1 && (
+            <div className="px-6 py-4 bg-slate-900/50 border-t border-slate-800 flex items-center justify-between">
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                Page {currentProductPage} of {totalProductPages}
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setCurrentProductPage(p => Math.max(1, p - 1))} 
+                  disabled={currentProductPage === 1}
+                  className="p-2 bg-slate-800 border border-slate-700 rounded-lg hover:border-cyan-500/50 disabled:opacity-20 transition-all"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button 
+                  onClick={() => setCurrentProductPage(p => Math.min(totalProductPages, p + 1))} 
+                  disabled={currentProductPage === totalProductPages}
+                  className="p-2 bg-slate-800 border border-slate-700 rounded-lg hover:border-cyan-500/50 disabled:opacity-20 transition-all"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Neon Serial Modal */}
+      {showSerialModal && selectedProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-[#16161a] border border-cyan-500/30 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="bg-[#0f172a] border-b border-cyan-500/20 p-5 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-cyan-400 tracking-tight">Manage Serial IDs</h3>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">PRODUCT: {selectedProduct.name}</p>
+              </div>
+              <button onClick={closeSerialModal} className="p-2 hover:bg-rose-500/10 text-slate-500 hover:text-rose-400 rounded-full transition-all">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1 space-y-6 custom-scrollbar text-[12px]">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-slate-900/50 border border-slate-800 p-4 rounded-xl">
+                  <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">TOTAL ENTRIES</div>
+                  <div className="text-2xl font-mono font-bold text-slate-200">{serialStats.total_serials || 0}</div>
+                </div>
+                <div className="bg-lime-500/5 border border-lime-500/20 p-4 rounded-xl shadow-[inset_0_0_10px_rgba(132,204,22,0.05)]">
+                  <div className="text-[10px] text-lime-500/60 font-bold uppercase tracking-wider mb-1">AVAILABLE</div>
+                  <div className="text-2xl font-mono font-bold text-lime-400">{serialStats.available_serials || 0}</div>
+                </div>
+                <div className="bg-fuchsia-500/5 border border-fuchsia-500/20 p-4 rounded-xl shadow-[inset_0_0_10px_rgba(217,70,239,0.05)]">
+                  <div className="text-[10px] text-fuchsia-500/60 font-bold uppercase tracking-wider mb-1">REGISTERED</div>
+                  <div className="text-2xl font-mono font-bold text-fuchsia-400">{serialStats.used_serials || 0}</div>
+                </div>
+              </div>
+
+              <div className="border border-slate-800 rounded-xl bg-slate-900/30 p-5 shadow-inner">
+                <h4 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2 uppercase tracking-widest text-[12px]">
+                  <PlusCircle className="h-4 w-4 text-cyan-400"/> Batch Import Serials
+                </h4>
+                <div className="flex gap-4 mb-4 border-b border-slate-800 pb-2">
+                  <button 
+                    onClick={() => setSerialAddMethod("manual")} 
+                    className={`pb-2 px-6 text-[11px] font-bold uppercase tracking-widest transition-all ${serialAddMethod === 'manual' ? 'border-b-2 border-cyan-400 text-cyan-400' : 'text-slate-500 hover:text-slate-300'}`}
+                  >
+                    Manual
+                  </button>
+                  <button 
+                    onClick={() => setSerialAddMethod("excel")} 
+                    className={`pb-2 px-6 text-[11px] font-bold uppercase tracking-widest transition-all ${serialAddMethod === 'excel' ? 'border-b-2 border-fuchsia-400 text-fuchsia-400' : 'text-slate-500 hover:text-slate-300'}`}
+                  >
+                    Excel
+                  </button>
+                </div>
+
+                {serialAddMethod === "manual" ? (
+                  <div className="space-y-4">
+                    <textarea 
+                      placeholder="ENTER SERIALS (ONE PER LINE)..." 
+                      className="w-full p-4 bg-[#0a0a0c] border border-slate-800 rounded-xl focus:border-cyan-500/50 outline-none text-xs font-mono h-24 text-cyan-100 placeholder:text-slate-700 transition-all shadow-inner" 
+                      value={newSerials} 
+                      onChange={(e) => setNewSerials(e.target.value)} 
+                    />
+                    <button 
+                      onClick={handleAddNewSerials} 
+                      className="w-full bg-cyan-600 hover:bg-cyan-500 py-2 rounded-lg text-xs font-bold uppercase tracking-widest shadow-lg shadow-cyan-500/20 transition-all active:scale-[0.98]"
+                    >
+                      Process Batch
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-8 border-2 border-dashed border-slate-800 rounded-xl flex flex-col items-center justify-center gap-4 bg-[#0a0a0c]/50 hover:border-fuchsia-500/30 transition-all">
+                    <FileSpreadsheet className="h-12 w-12 text-slate-700" />
+                    <input type="file" accept=".xlsx,.xls" onChange={handleExcelUploadForSerials} className="text-[10px] text-slate-500 file:bg-fuchsia-500/10 file:border-0 file:text-fuchsia-400 file:px-4 file:py-1 file:rounded file:mr-4 file:font-bold file:uppercase cursor-pointer" />
+                    {bulkSerialPreview.length > 0 && (
+                      <button 
+                        onClick={confirmBulkAdd} 
+                        className="bg-fuchsia-600 hover:bg-fuchsia-500 text-white px-8 py-2 rounded-lg font-bold text-xs uppercase tracking-widest shadow-lg shadow-fuchsia-500/20 transition-all"
+                      >
+                        Import {bulkSerialPreview.length} IDs
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-[#0f172a] border border-slate-800 rounded-xl overflow-hidden text-[12px]">
+                <div className="p-3 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-2 h-4 w-4 text-slate-600" />
+                    <input 
+                      type="text" 
+                      placeholder="FILTER BY SERIAL ID..." 
+                      className="pl-9 pr-4 py-1.5 bg-[#0a0a0c] border border-slate-800 rounded-lg text-[10px] font-bold tracking-widest outline-none focus:border-cyan-500/30 text-slate-300 w-64" 
+                      value={serialSearch} 
+                      onChange={e => setSerialSearch(e.target.value)} 
+                    />
+                  </div>
+                  <button onClick={() => loadProductSerials(selectedProduct.id)} className="p-1.5 hover:rotate-180 transition-all duration-700 text-slate-500 hover:text-cyan-400">
+                    <RefreshCw className="h-4 w-4"/>
+                  </button>
+                </div>
+                <div className="divide-y divide-slate-800/50 max-h-60 overflow-y-auto custom-scrollbar">
+                  {paginatedSerials.map(serial => (
+                    <div key={serial.id} className="p-3 flex items-center justify-between hover:bg-cyan-500/[0.03] transition-colors">
+                      <div className="font-mono text-xs font-bold text-slate-300 tracking-tighter">{serial.serial || serial.serial_number}</div>
+                      <div className="flex items-center gap-3">
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest ${
+                          serial.status === 'registered' 
+                          ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' 
+                          : 'bg-lime-500/10 text-lime-400 border border-lime-500/20'
+                        }`}>
+                          {serial.status === 'registered' ? 'ASSIGNED' : 'READY'}
+                        </span>
+                        {serial.status !== 'registered' && (
+                          <button onClick={() => handleDeleteSerial(serial.id, serial.serial || serial.serial_number)} className="text-slate-600 hover:text-rose-500 p-1 rounded transition-colors">
+                            <Trash className="h-3.5 w-3.5"/>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {paginatedSerials.length === 0 && (
+                    <div className="p-8 text-center text-slate-600 text-xs uppercase tracking-widest font-bold italic">No matching records</div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-4 bg-[#0a0a0c] border-t border-slate-800 flex justify-end">
+              <button 
+                onClick={closeSerialModal} 
+                className="px-8 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-lg text-xs font-bold uppercase tracking-widest transition-all"
+              >
+                Close Portal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes fadeIn { 
+          from { opacity: 0; transform: translateY(10px); } 
+          to { opacity: 1; transform: translateY(0); } 
+        }
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-4px); }
+          75% { transform: translateX(4px); }
+        }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        .animate-shake { animation: shake 0.2s ease-in-out 2; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #334155; }
+      `}</style>
     </div>
   );
 }
