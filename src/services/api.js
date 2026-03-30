@@ -8,16 +8,20 @@ const api = axios.create({
   withCredentials: true,
 });
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token") || localStorage.getItem("ms_token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token") || localStorage.getItem("ms_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-}, (error) => {
-  return Promise.reject(error);
-});
+);
 
+/* --- CATEGORIES & PRODUCTS --- */
 export async function fetchCategories() {
   const res = await api.get(`/categories`);
   return res.data;
@@ -53,22 +57,30 @@ export async function deleteProduct(id) {
   return res.data;
 }
 
+/* --- SERIAL MANAGEMENT API --- */
+
 export async function fetchProductSerials(productId, page = 1, limit = 100, sortBy = "created_at", sortOrder = "DESC") {
   const res = await api.get(`/serials/${productId}?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
   return res.data;
 }
 
-export async function addProductSerials(productId, count, prefix = "CUSTOM", batchNumber = "", notes = "") {
-  const cleanPrefix = String(prefix || "CUSTOM").substring(0, 6).toUpperCase().padEnd(6, "X");
-  const finalBatchNumber = batchNumber ? batchNumber : "BATCH" + Date.now().toString();
-  const payload = { productId, count, prefix: cleanPrefix, batchNumber: finalBatchNumber, notes: notes ? notes : null };
+// 1. Advanced Generator (Hits the new backend)
+export async function addProductSerials(productId, count, prefix = "ANRI", format = "advanced") {
+  const payload = { productId, count, prefix, format };
   const res = await api.post(`/serials/generate`, payload);
   return res.data;
 }
 
+// 2. Manual/Excel Array Importer
+export async function bulkAddProductSerials(productId, serials) {
+  const res = await api.post(`/serials/${productId}/add`, { serials });
+  return res.data;
+}
+
+// 3. Native Excel Exporter
 export async function exportSerialsExcel(filters = {}) {
   const params = new URLSearchParams(filters);
-  const res = await api.get(`/serials/export/excel?${params}`, { responseType: "blob" });
+  const res = await api.get(`/serials/export/excel?${params.toString()}`, { responseType: "blob" });
   return res.data;
 }
 
@@ -87,7 +99,8 @@ export async function checkSerialAvailability(serial) {
   return res.data;
 }
 
-// Warranty Serial Management
+/* --- WARRANTY & ADMIN --- */
+
 export async function fetchAllSerialsAdmin() {
   const res = await api.get(`/warranty/serials`);
   return res.data;
@@ -281,34 +294,29 @@ export async function submitContact(data) {
   return res.data;
 }
 
-// Inventory - add stock adjustment
 export async function adjustStock(productId, adjustment) {
   const res = await api.post(`/products/${productId}/stock`, { adjustment });
   return res.data;
 }
 
-
-// Admin Dashboard - summary stats
 export async function fetchAdminDashboard() {
   const res = await api.get(`/admin/dashboard`);
   return res.data;
 }
 
-// Admin - export orders as CSV (returns blob URL)
 export async function exportOrdersCSV() {
-  const res = await api.get(`/admin/orders/export/csv`, { responseType: 'blob' });
+  const res = await api.get(`/admin/orders/export/csv`, { responseType: "blob" });
   return res.data;
 }
 
-// Admin - bulk update order status
 export async function bulkUpdateOrderStatus(orderIds, status) {
   const res = await api.post(`/admin/orders/bulk-status`, { orderIds, status });
   return res.data;
 }
 
-// Admin - customer segments (VIP + new customers)
 export async function fetchCustomerSegments() {
   const res = await api.get(`/admin/customers/segments`);
   return res.data;
 }
+
 export default api;
