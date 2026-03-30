@@ -1,5 +1,3 @@
-//E warranty
-
 import React, { useState, useEffect } from "react";
 import { 
   fetchWarrantyAdmin, 
@@ -8,7 +6,7 @@ import {
   fetchProductsAdmin, 
   fetchProductSerials, 
   addProductSerials, 
-    deleteProductSerial,
+  deleteProductSerial,
   exportSerialsExcel
 } from "../../services/api";
 import { 
@@ -33,7 +31,6 @@ export default function EWarrantyManagement() {
   const [productSerials, setProductSerials] = useState([]);
   const [serialsLoading, setSerialsLoading] = useState(false);
   const [copiedSerial, setCopiedSerial] = useState("");
-    const [deletingSerial, setDeletingSerial] = useState(null);
   
   // Advanced Generator State
   const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
@@ -114,6 +111,21 @@ export default function EWarrantyManagement() {
         loadWarrantyData();
       } catch (err) {
         alert("Failed to delete record.");
+      }
+    }
+  };
+
+  // --- NEW: Serial Delete Function ---
+  const handleDeleteProductSerial = async (serialId, serialNumber) => {
+    if (window.confirm(`PERMANENTLY DELETE serial: ${serialNumber}? This action cannot be undone.`)) {
+      setSerialsLoading(true);
+      try {
+        await deleteProductSerial(selectedProduct.id, serialId);
+        await loadProductSerials(selectedProduct.id, serialPagination.page, sortConfig.field, sortConfig.order);
+      } catch (err) {
+        alert(err.response?.data?.message || "Failed to delete serial. It might be actively registered.");
+      } finally {
+        setSerialsLoading(false);
       }
     }
   };
@@ -259,6 +271,7 @@ export default function EWarrantyManagement() {
 
         {activeTab === "warranties" ? (
           <>
+            {/* Warranty stats & search inputs ... */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
                 { label: 'Authenticated', val: stats.active, icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-500/5', border: 'border-emerald-500/10' },
@@ -306,26 +319,26 @@ export default function EWarrantyManagement() {
                   </thead>
                   <tbody className="divide-y divide-white/5">
                    {filteredWarranties.map((w) => (
-    <tr key={w.id} className="group hover:bg-white/[0.02] transition-colors">
-      <td className="px-6 py-5">
-        <div className="font-bold text-white">{w.user_name}</div>
-        <div className="text-xs text-gray-500 font-mono mt-0.5">{w.user_email}</div>
-      </td>
-      <td className="px-6 py-5">
-        <code className="text-purple-400 font-bold bg-purple-500/5 px-2 py-1 rounded-lg">#{w.registered_serial}</code>
-      </td>
-      <td className="px-6 py-5 text-right">
-        <div className="flex items-center justify-end gap-2">
-          <button onClick={() => { setSelectedWarranty(w); setIsEditModalOpen(true); }} className="p-2 bg-white/5 hover:bg-purple-500/20 text-purple-400 rounded-xl transition-all">
-            <Edit3 className="w-4 h-4" />
-          </button>
-          <button onClick={() => handleDelete(w.id)} className="p-2 bg-white/5 hover:bg-red-500/20 text-red-400 rounded-xl transition-all">
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      </td>
-    </tr>
-  ))}
+                    <tr key={w.id} className="group hover:bg-white/[0.02] transition-colors">
+                      <td className="px-6 py-5">
+                        <div className="font-bold text-white">{w.user_name}</div>
+                        <div className="text-xs text-gray-500 font-mono mt-0.5">{w.user_email}</div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <code className="text-purple-400 font-bold bg-purple-500/5 px-2 py-1 rounded-lg">#{w.registered_serial}</code>
+                      </td>
+                      <td className="px-6 py-5 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button onClick={() => { setSelectedWarranty(w); setIsEditModalOpen(true); }} className="p-2 bg-white/5 hover:bg-purple-500/20 text-purple-400 rounded-xl transition-all">
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDelete(w.id)} className="p-2 bg-white/5 hover:bg-red-500/20 text-red-400 rounded-xl transition-all">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                   </tbody>
                 </table>
               </div>
@@ -398,6 +411,10 @@ export default function EWarrantyManagement() {
                               <th onClick={() => handleSort("created_at")} className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:text-white group">
                                 Generated <ArrowUpDown className="inline w-3 h-3 ml-1 opacity-50 group-hover:opacity-100" />
                               </th>
+                              {/* NEW ACTIONS HEADER */}
+                              <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">
+                                Actions
+                              </th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-white/5">
@@ -430,6 +447,18 @@ export default function EWarrantyManagement() {
                                 </td>
                                 <td className="px-6 py-4 text-xs font-mono text-gray-500">
                                   {new Date(s.created_at).toLocaleDateString()}
+                                </td>
+                                
+                                {/* NEW DELETE BUTTON IN ACTIONS COLUMN */}
+                                <td className="px-6 py-4 text-right">
+                                  {s.status !== 'registered' && (
+                                    <button 
+                                      onClick={() => handleDeleteProductSerial(s.id, s.serial_number || s.serial)} 
+                                      className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500 hover:text-white border border-rose-500/50 text-rose-500 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ml-auto"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5"/> Delete
+                                    </button>
+                                  )}
                                 </td>
                               </tr>
                             ))}
