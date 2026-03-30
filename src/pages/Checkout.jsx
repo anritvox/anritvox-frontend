@@ -21,36 +21,44 @@ export default function Checkout() {
     full_name: '', phone: '', line1: '', line2: '', city: '', state: '', pincode: '', is_default: false
   });
 
-  const activeToken = token || localStorage.getItem('user_token');
+  // Ensure api.js interceptor can access the token if the context updates it
+  useEffect(() => {
+    if (token && !localStorage.getItem('token')) {
+      localStorage.setItem('token', token);
+    }
+  }, [token]);
 
   useEffect(() => {
     if (!user) { navigate('/login', { state: { from: '/checkout' } }); return; }
     if (cart.length === 0) { navigate('/cart'); return; }
     loadAddresses();
-  }, [user]);
+  }, [user, cart, navigate]);
 
   const loadAddresses = async () => {
     try {
-      const data = await fetchAddressesAPI(activeToken);
+      // API functions take 0 params because api.js handles the Auth header
+      const data = await fetchAddressesAPI();
       setAddresses(data);
       const def = data.find(a => a.is_default) || data[0];
       if (def) setSelectedAddress(def.id);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to load addresses:", err);
     }
   };
 
   const saveAddress = async (e) => {
     e.preventDefault();
     try {
-      const list = await saveAddressAPI(activeToken, addrForm);
+      // Pass only the object payload, allowing api.js to structure it correctly
+      const list = await saveAddressAPI(addrForm);
       setAddresses(list);
       const newest = list[list.length - 1];
       setSelectedAddress(newest?.id);
       setShowForm(false);
       setAddrForm({ full_name:'', phone:'', line1:'', line2:'', city:'', state:'', pincode:'', is_default: false });
     } catch (err) { 
-      setError(err.message || 'Failed to save address'); 
+      // Safely extract backend error messages if wrapped in an Axios response
+      setError(err.response?.data?.message || err.message || 'Failed to save address'); 
     }
   };
 
@@ -60,7 +68,6 @@ export default function Checkout() {
     setError('');
     
     try {
-      // Sending exact payload matched to our secured backend from Step 3
       const payload = {
         addressId: selectedAddress,
         deliveryType,
@@ -68,13 +75,13 @@ export default function Checkout() {
         notes: orderNotes
       };
       
-      const resData = await placeOrderAPI(activeToken, payload);
+      // Pass only the payload object
+      const resData = await placeOrderAPI(payload);
       
       clearCart();
       navigate('/order-success', { state: { orderId: resData.orderId } });
     } catch (err) {
-      // This will catch the new secure backend messages, like "Insufficient stock for [Product Name]"
-      setError(err.message);
+      setError(err.response?.data?.message || err.message || 'Failed to place order');
     } finally { 
       setLoading(false); 
     }
