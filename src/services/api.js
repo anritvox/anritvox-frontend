@@ -84,13 +84,13 @@ export async function exportSerialsExcel(filters = {}) {
   return res.data;
 }
 
-export async function updateProductSerial(serialId, status, notes) {
-  const res = await api.put(`/serials/${serialId}`, { status, notes });
+export async function updateProductSerial(productId, serialId, serial) {
+  const res = await api.put(`/serials/${productId}/${serialId}`, { serial });
   return res.data;
 }
 
-export async function deleteProductSerial(serialId) {
-  const res = await api.delete(`/serials/${serialId}`);
+export async function deleteProductSerial(productId, serialId) {
+  const res = await api.delete(`/serials/${productId}/${serialId}`);
   return res.data;
 }
 
