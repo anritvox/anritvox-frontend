@@ -271,12 +271,13 @@ export default function ProductManagement({ token }) {
     finally { setSerialLoading(false); }
   };
 
-  // --- 4. EXPLICIT DELETE FUNCTION ---
+// --- 4. EXPLICIT DELETE FUNCTION ---
   const handleDeleteSerial = async (serialId, serialNumber) => {
     if (window.confirm(`PERMANENTLY DELETE serial: ${serialNumber}?`)) {
       try {
         setSerialLoading(true);
-        await deleteProductSerial(serialId, token); // Ensure api.js parameter structure matches
+        // We now pass the selectedProduct.id to match the API and Backend
+        await deleteProductSerial(selectedProduct.id, serialId); 
         await loadProductSerials(selectedProduct.id);
         await loadData();
       } catch (err) {
