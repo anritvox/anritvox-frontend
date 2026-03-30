@@ -130,14 +130,18 @@ export default function EWarrantyManagement() {
     }
   };
 
-  const generateAdvancedSerials = async () => {
+ const generateAdvancedSerials = async () => {
     if (!selectedProduct) return;
     setIsUpdating(true);
     try {
       await addProductSerials(selectedProduct.id, genConfig.count, genConfig.prefix, genConfig.batchNumber, genConfig.notes);
+      
       await loadProductSerials(selectedProduct.id, 1, sortConfig.field, sortConfig.order);
+      
+      await downloadExcel();
+
       setIsGeneratorOpen(false);
-      setGenConfig({ prefix: "ANRI", count: 100, batchNumber: "", notes: "" }); // Reset
+      setGenConfig({ prefix: "ANRI", count: 100, batchNumber: "", notes: "" });
     } catch (err) {
       alert(err.message || "Failed to generate serials");
     } finally {
