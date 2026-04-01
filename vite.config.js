@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
@@ -9,17 +9,16 @@ export default defineConfig({
   },
 
   build: {
-    outDir: 'dist',
-    sourcemap: false,
-    // Optional: Chunk splitting for better performance
+
+    chunkSizeWarningLimit: 2500, 
     rollupOptions: {
+      
       output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
-        }
+     
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
       }
-    }
-  }
+    },
+  },
 });
