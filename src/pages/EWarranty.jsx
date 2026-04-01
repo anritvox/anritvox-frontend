@@ -20,7 +20,7 @@ export default function EWarranty() {
     email: '',
     phone: '',
     purchaseDate: '',
-    shopName: '' // Changed from invoiceNumber
+    shopName: ''
   });
 
   const FALLBACK_IMAGE = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='16' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E`;
@@ -58,9 +58,11 @@ export default function EWarranty() {
       
       const response = await api.post('/warranty/register', payload);
       
-      // Calculate Expiry Date (+1 Month Bonus)
+      // Calculate Expiry Date (Base Warranty + 1 Month Bonus)
+      // Checks for the specific serial base_warranty_months, falls back to product warranty_period
       const pDate = new Date(formData.purchaseDate);
-      const standardMonths = Number(productData.warranty_period) || 0;
+      const standardMonths = Number(productData.base_warranty_months || productData.warranty_period || 0);
+      
       pDate.setMonth(pDate.getMonth() + standardMonths + 1); // standard + 1 month bonus
       
       setCalculatedExpiry(pDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
@@ -73,6 +75,9 @@ export default function EWarranty() {
       setLoading(false);
     }
   };
+
+  // Helper to safely get the correct warranty duration for display
+  const displayWarrantyMonths = productData ? (productData.base_warranty_months || productData.warranty_period || 0) : 0;
 
   return (
     <div className="min-h-screen bg-[#f8fafc] py-12 px-4 font-sans print:bg-white print:py-0 print:px-0">
@@ -181,7 +186,7 @@ export default function EWarranty() {
                 <div className="mt-6 space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-400">Standard Warranty</span>
-                    <span className="font-bold text-slate-800">{productData.warranty_period} Months</span>
+                    <span className="font-bold text-slate-800">{displayWarrantyMonths} Months</span>
                   </div>
                 </div>
               </div>
@@ -235,7 +240,6 @@ export default function EWarranty() {
                       />
                     </div>
                     <div>
-                      {/* Swapped Invoice Number for Shop Name */}
                       <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Shop Name</label>
                       <input 
                         type="text" required
@@ -310,7 +314,7 @@ export default function EWarranty() {
                     </div>
                     <div className="col-span-2 md:col-span-1 border-b border-dotted border-slate-300 pb-2">
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Warranty Period</p>
-                      <p className="text-slate-800 font-bold text-lg text-yellow-600">{productData.warranty_period} Months <span className="text-green-600 text-sm ml-2">(+1 Mo. Bonus)</span></p>
+                      <p className="text-slate-800 font-bold text-lg text-yellow-600">{displayWarrantyMonths} Months <span className="text-green-600 text-sm ml-2">(+1 Mo. Bonus)</span></p>
                     </div>
                     <div className="col-span-2 md:col-span-1 border-b border-dotted border-slate-300 pb-2">
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Valid Until</p>
