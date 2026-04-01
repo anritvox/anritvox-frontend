@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   build: {
-    // Safely increase the warning limit so Vercel doesn't complain
+    // Safely increase the warning limit so Vercel doesn't complai
     chunkSizeWarningLimit: 2500, 
     rollupOptions: {
       // Removing manualChunks allows Rollup to use its native AST parser
