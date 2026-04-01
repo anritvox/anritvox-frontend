@@ -3,18 +3,14 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  
-  define: {
-    'process.env': {} 
-  },
-
   build: {
-
+    // Safely increase the warning limit so Vercel doesn't complain
     chunkSizeWarningLimit: 2500, 
     rollupOptions: {
-      
+      // Removing manualChunks allows Rollup to use its native AST parser
+      // to guarantee perfect execution order and eliminate TDZ (White Screen) crashes.
       output: {
-     
+        // Optional: Keep file names clean for cache busting
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]'
