@@ -539,7 +539,7 @@ export default function EWarrantyManagement() {
       {/* Edit Warranty Modal */}
       {isEditModalOpen && selectedWarranty && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0a0c10] border border-white/10 w-full max-md rounded-[40px] overflow-hidden shadow-2xl animate-fade-in">
+          <div className="bg-[#0a0c10] border border-white/10 w-full max-w-md rounded-[40px] overflow-hidden shadow-2xl animate-fade-in">
             <div className="p-8 space-y-8">
               <div className="flex items-center justify-between">
                 <h3 className="text-2xl font-black text-white">Status Update</h3>
