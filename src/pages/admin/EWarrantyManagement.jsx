@@ -34,7 +34,13 @@ export default function EWarrantyManagement() {
   
   // Advanced Generator State
   const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
-  const [genConfig, setGenConfig] = useState({ prefix: "ANRI", count: 100, batchNumber: "", notes: "" });
+  const [genConfig, setGenConfig] = useState({ 
+    prefix: "ANRI", 
+    count: 100, 
+    batchNumber: "", 
+    notes: "",
+    base_warranty_months: "" 
+  });
 
   // Printing & Sorting State
   const [selectedPrintSerials, setSelectedPrintSerials] = useState(new Set());
@@ -130,18 +136,25 @@ export default function EWarrantyManagement() {
     }
   };
 
- const generateAdvancedSerials = async () => {
+  const generateAdvancedSerials = async () => {
     if (!selectedProduct) return;
     setIsUpdating(true);
     try {
-      await addProductSerials(selectedProduct.id, genConfig.count, genConfig.prefix, genConfig.batchNumber, genConfig.notes);
+      await addProductSerials(
+        selectedProduct.id, 
+        genConfig.count, 
+        genConfig.prefix, 
+        genConfig.batchNumber, 
+        genConfig.notes,
+        genConfig.base_warranty_months
+      );
       
       await loadProductSerials(selectedProduct.id, 1, sortConfig.field, sortConfig.order);
       
       await downloadExcel();
 
       setIsGeneratorOpen(false);
-      setGenConfig({ prefix: "ANRI", count: 100, batchNumber: "", notes: "" });
+      setGenConfig({ prefix: "ANRI", count: 100, batchNumber: "", notes: "", base_warranty_months: "" });
     } catch (err) {
       alert(err.message || "Failed to generate serials");
     } finally {
@@ -226,7 +239,7 @@ export default function EWarrantyManagement() {
     setTimeout(() => setCopiedSerial(""), 2000);
   };
 
- const filteredWarranties = warranties.filter(w => {
+  const filteredWarranties = warranties.filter(w => {
     const matchesSearch = w.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           w.registered_serial?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           w.user_email?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -275,7 +288,6 @@ export default function EWarrantyManagement() {
 
         {activeTab === "warranties" ? (
           <>
-            {/* Warranty stats & search inputs ... */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
                 { label: 'Authenticated', val: stats.active, icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-500/5', border: 'border-emerald-500/10' },
@@ -415,7 +427,6 @@ export default function EWarrantyManagement() {
                               <th onClick={() => handleSort("created_at")} className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:text-white group">
                                 Generated <ArrowUpDown className="inline w-3 h-3 ml-1 opacity-50 group-hover:opacity-100" />
                               </th>
-                              {/* NEW ACTIONS HEADER */}
                               <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">
                                 Actions
                               </th>
@@ -452,8 +463,6 @@ export default function EWarrantyManagement() {
                                 <td className="px-6 py-4 text-xs font-mono text-gray-500">
                                   {new Date(s.created_at).toLocaleDateString()}
                                 </td>
-                                
-                                {/* NEW DELETE BUTTON IN ACTIONS COLUMN */}
                                 <td className="px-6 py-4 text-right">
                                   {s.status !== 'registered' && (
                                     <button 
@@ -518,9 +527,15 @@ export default function EWarrantyManagement() {
                     <input type="number" min="1" max="100000" value={genConfig.count} onChange={(e) => setGenConfig({...genConfig, count: parseInt(e.target.value)})} className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-purple-500/50 outline-none transition-all text-white font-mono" />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Batch Identifier</label>
-                  <input type="text" value={genConfig.batchNumber} onChange={(e) => setGenConfig({...genConfig, batchNumber: e.target.value.toUpperCase()})} className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-purple-500/50 outline-none transition-all text-white font-mono" placeholder="Optional. E.g., Q3-PRO-RUN" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Batch Identifier</label>
+                    <input type="text" value={genConfig.batchNumber} onChange={(e) => setGenConfig({...genConfig, batchNumber: e.target.value.toUpperCase()})} className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-purple-500/50 outline-none transition-all text-white font-mono" placeholder="E.g., Q3-PRO" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Base Warranty (Months)</label>
+                    <input type="number" min="1" value={genConfig.base_warranty_months} onChange={(e) => setGenConfig({...genConfig, base_warranty_months: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-purple-500/50 outline-none transition-all text-white font-mono" placeholder="Optional (e.g., 12)" />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Internal Notes</label>
