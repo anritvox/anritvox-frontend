@@ -10,7 +10,7 @@ export default defineConfig({
       // Removing manualChunks allows Rollup to use its native AST parser
       // to guarantee perfect execution order and eliminate TDZ (White Screen) crashes.
       output: {
-        // Optional: Keep file names clean for cache busting
+        // Keep file names clean for cache busting
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]'
