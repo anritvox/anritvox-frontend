@@ -22,7 +22,7 @@ export default function InventoryManagement() {
   const fetchInventory = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/products?limit=500');
+      const res = await api.get('/products/admin/all'); 
       const data = res.data;
       setProducts(data.products || data || []);
     } catch (e) { console.error(e); }
