@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   ShieldCheck, Search, CheckCircle, AlertCircle, Cpu, ArrowRight, Printer, ExternalLink, Gift, Youtube, BoxSelect
 } from 'lucide-react';
-import api, { BASE_URL } from '../services/api';
+import api, { BASE_URL } from "../../services/api";
 
 export default function EWarranty() {
   const [serial, setSerial] = useState('');
