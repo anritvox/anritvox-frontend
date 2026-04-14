@@ -21,6 +21,19 @@ api.interceptors.request.use(
   }
 );
 
+// GLOBAL 401 HANDLER: Prevents .filter() crashes by forcing logout on expired sessions
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("ms_token");
+      window.location.href = "/admin/login";
+    }
+    return Promise.reject(error);
+  }
+);
+
 /* --- CATEGORIES & PRODUCTS --- */
 export async function fetchCategories() {
   const res = await api.get(`/categories`);
@@ -56,7 +69,6 @@ export async function fetchProductSerials(productId, page = 1, limit = 100, sort
   const res = await api.get(`/serials/${productId}?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
   return res.data;
 }
-// Advanced Generator - now accepts base_warranty_months
 export async function addProductSerials(productId, count, prefix, batchNumber, notes, base_warranty_months) {
   const payload = { productId, count, prefix, format: "advanced", batchNumber, notes };
   if (base_warranty_months !== null && base_warranty_months !== undefined && base_warranty_months !== "") {
@@ -65,7 +77,6 @@ export async function addProductSerials(productId, count, prefix, batchNumber, n
   const res = await api.post(`/serials/generate`, payload);
   return res.data;
 }
-// Manual/Excel Array Importer
 export async function bulkAddProductSerials(productId, serials, base_warranty_months = null) {
   const payload = { serials };
   if (base_warranty_months !== null && base_warranty_months !== undefined && base_warranty_months !== "") {
@@ -74,7 +85,6 @@ export async function bulkAddProductSerials(productId, serials, base_warranty_mo
   const res = await api.post(`/serials/${productId}/add`, payload);
   return res.data;
 }
-// Native Excel Exporter
 export async function exportSerialsExcel(filters = {}) {
   const params = new URLSearchParams(filters);
   const res = await api.get(`/serials/export/excel?${params.toString()}`, { responseType: "blob" });
