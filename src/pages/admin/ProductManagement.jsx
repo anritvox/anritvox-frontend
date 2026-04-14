@@ -79,13 +79,17 @@ export default function ProductManagement({ token }) {
   const totalSerialPages = Math.ceil(filteredSerials.length / serialsPerPage);
   const paginatedSerials = filteredSerials.slice((currentSerialPage - 1) * serialsPerPage, currentSerialPage * serialsPerPage);
 
-  const loadData = async () => {
+ const loadData = async () => {
     setLoading(true);
     try {
       const [prodData, catData, subData] = await Promise.all([
         fetchProductsAdmin(token), fetchCategories(token), fetchSubcategories(token),
       ]);
-      setProducts(prodData); setCategories(catData); setSubcategories(subData);
+    
+      setProducts(Array.isArray(prodData) ? prodData : (prodData?.data || []));
+      setCategories(Array.isArray(catData) ? catData : (catData?.data || []));
+      setSubcategories(Array.isArray(subData) ? subData : (subData?.data || []));
+      
     } catch (e) {
       setError("Failed to load data.");
     } finally {
