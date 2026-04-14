@@ -1,13 +1,10 @@
 import axios from "axios";
-
 export const BASE_URL = import.meta.env.VITE_BASE_URL || "https://service.anritvox.com";
 const API_BASE_URL = `${BASE_URL}/api`;
-
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
 });
-
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token") || localStorage.getItem("ms_token");
@@ -20,7 +17,6 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
-
 // GLOBAL 401 HANDLER: Prevents .filter() crashes by forcing logout on expired sessions
 api.interceptors.response.use(
   (response) => response,
@@ -28,12 +24,13 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       localStorage.removeItem("token");
       localStorage.removeItem("ms_token");
-      window.location.href = "/admin/login";
+      // Redirect based on current path
+      const isAdminPath = window.location.pathname.startsWith('/admin');
+      window.location.href = isAdminPath ? "/admin/login" : "/login";
     }
     return Promise.reject(error);
   }
 );
-
 /* --- CATEGORIES & PRODUCTS --- */
 export async function fetchCategories() {
   const res = await api.get(`/categories`);
@@ -63,7 +60,6 @@ export async function deleteProduct(id) {
   const res = await api.delete(`/products/${id}`);
   return res.data;
 }
-
 /* --- SERIAL MANAGEMENT API --- */
 export async function fetchProductSerials(productId, page = 1, limit = 100, sortBy = "created_at", sortOrder = "DESC") {
   const res = await api.get(`/serials/${productId}?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
@@ -102,7 +98,6 @@ export async function checkSerialAvailability(serial) {
   const res = await api.get(`/serials/check/${encodeURIComponent(serial)}`);
   return res.data;
 }
-
 /* --- WARRANTY & ADMIN --- */
 export async function fetchAllSerialsAdmin() {
   const res = await api.get(`/warranty/serials`);
@@ -280,7 +275,6 @@ export async function fetchCustomerSegments() {
   return res.data;
 }
 export default api;
-
 /* --- SEARCH & DISCOVERY --- */
 export async function searchProductSuggestions(query) {
   const res = await api.get(`/products/search/suggestions?q=${encodeURIComponent(query)}`);
@@ -306,15 +300,24 @@ export async function fetchPersonalizedRecommendations() {
   const res = await api.get(`/products/recommendations`);
   return res.data;
 }
-
 /* --- PRODUCT Q&A --- */
 export async function fetchProductQA(productId) {
-  const res = await api.get(`/products/${productId}/qa`);
-  return res.data;
+  try {
+    const res = await api.get(`/products/${productId}/qa`);
+    return res.data;
+  } catch (err) {
+    console.warn('QA feature not available:', err);
+    return { questions: [] };
+  }
 }
 export async function submitProductQuestion(productId, data) {
-  const res = await api.post(`/products/${productId}/qa`, data);
-  return res.data;
+  try {
+    const res = await api.post(`/products/${productId}/qa`, data);
+    return res.data;
+  } catch (err) {
+    console.warn('QA feature not available:', err);
+    throw new Error('Q&A feature is not available');
+  }
 }
 export async function answerProductQuestion(productId, questionId, answer) {
   const res = await api.post(`/products/${productId}/qa/${questionId}/answer`, { answer });
@@ -333,30 +336,29 @@ export async function deleteQA(id) {
   const res = await api.delete(`/admin/qa/${id}`);
   return res.data;
 }
-
 /* --- REVIEWS EXTENDED --- */
 export async function fetchProductReviews(productId) {
-  const res = await api.get(`/products/${productId}/reviews`);
+  const res = await api.get(`/reviews/product/${productId}`);
   return res.data;
 }
 export async function submitProductReview(productId, formData) {
-  const res = await api.post(`/products/${productId}/reviews`, formData);
+  const payload = { ...formData, product_id: productId };
+  const res = await api.post(`/reviews`, payload);
   return res.data;
 }
 export async function fetchAdminReviews(params = {}) {
   const q = new URLSearchParams(params);
-  const res = await api.get(`/admin/reviews?${q}`);
+  const res = await api.get(`/reviews?${q}`);
   return res.data;
 }
 export async function approveReview(id) {
-  const res = await api.put(`/admin/reviews/${id}/approve`);
+  const res = await api.put(`/reviews/${id}/approve`);
   return res.data;
 }
 export async function deleteReview(id) {
-  const res = await api.delete(`/admin/reviews/${id}`);
+  const res = await api.delete(`/reviews/${id}`);
   return res.data;
 }
-
 /* --- WISHLIST API --- */
 export async function fetchWishlistAPI() {
   const res = await api.get(`/wishlist`);
@@ -370,7 +372,6 @@ export async function removeFromWishlistAPI(productId) {
   const res = await api.delete(`/wishlist/${productId}`);
   return res.data;
 }
-
 /* --- LOYALTY & REFERRAL --- */
 export async function fetchLoyaltyPoints() {
   const res = await api.get(`/loyalty/points`);
@@ -388,7 +389,6 @@ export async function submitReferral(referralCode) {
   const res = await api.post(`/referral/use`, { code: referralCode });
   return res.data;
 }
-
 /* --- CART SAVE & ABANDONED CART --- */
 export async function saveCartAPI(cartData) {
   const res = await api.post(`/cart/save`, { items: cartData });
@@ -402,7 +402,6 @@ export async function trackAbandonedCart(cartData) {
   const res = await api.post(`/cart/abandoned`, { items: cartData });
   return res.data;
 }
-
 /* --- ORDERS EXTENDED --- */
 export async function cancelOrderAPI(orderId, reason) {
   const res = await api.post(`/orders/${orderId}/cancel`, { reason });
@@ -428,7 +427,6 @@ export async function fetchOrderDetailsAPI(orderId) {
   const res = await api.get(`/orders/${orderId}`);
   return res.data;
 }
-
 /* --- SUPPORT TICKETS --- */
 export async function createSupportTicket(data) {
   const res = await api.post(`/support/tickets`, data);
@@ -438,7 +436,6 @@ export async function fetchMyTickets() {
   const res = await api.get(`/support/tickets/my`);
   return res.data;
 }
-
 /* --- SHIPPING --- */
 export async function calculateShipping(pincode, cartTotal) {
   const res = await api.post(`/shipping/calculate`, { pincode, cartTotal });
@@ -452,13 +449,11 @@ export async function getEstimatedDelivery(pincode) {
   const res = await api.get(`/shipping/delivery-estimate?pincode=${pincode}`);
   return res.data;
 }
-
 /* --- COUPONS STOREFRONT --- */
 export async function applyCouponAPI(code, cartTotal) {
   const res = await api.post(`/coupons/apply`, { code, cartTotal });
   return res.data;
 }
-
 /* --- ADMIN SHIPMENT MANAGEMENT --- */
 export async function fetchShipmentsAdmin(params = {}) {
   const q = new URLSearchParams(params);
@@ -481,13 +476,11 @@ export async function updateExchangeAdmin(id, data) {
   const res = await api.put(`/admin/exchanges/${id}`, data);
   return res.data;
 }
-
 /* --- PRODUCT ATTACHMENTS --- */
 export async function fetchProductAttachments(productId) {
   const res = await api.get(`/products/${productId}/attachments`);
   return res.data;
 }
-
 /* --- SEO --- */
 export async function updateProductSEO(productId, data) {
   const res = await api.put(`/products/${productId}/seo`, data);
