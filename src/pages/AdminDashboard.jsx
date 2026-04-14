@@ -70,6 +70,9 @@ const AdminDashboard = () => {
   const toast = useToast() || {};
   const showToast = toast.showToast;
 
+  // Extract token to pass down to subcomponents
+  const token = localStorage.getItem('token') || localStorage.getItem('ms_token');
+
   useEffect(() => {
     // Redirect if not admin
     if (user && user.role !== 'admin') {
@@ -125,22 +128,23 @@ const AdminDashboard = () => {
   ];
 
   const renderTabContent = () => {
+    // Pass token and a valid setSection navigation function to prevent fatal crashes
     switch (activeTab) {
-      case 'overview': return <DashboardOverview />;
-      case 'analytics': return <AnalyticsManagement />;
-      case 'products': return <ProductManagement />;
-      case 'inventory': return <InventoryManagement />;
-      case 'categories': return <CategoryManagement />;
-      case 'orders': return <OrderManagement />;
-      case 'returns': return <ReturnManagement />;
-      case 'coupons': return <CouponManagement />;
-      case 'ewarranty': return <EWarrantyManagement />;
-      case 'contacts': return <ContactManagement />;
-      case 'users': return <UserManagement />;
-      case 'reviews': return <ReviewManagement />;
-      case 'banners': return <BannerManagement />;
-      case 'settings': return <AdminSettings />;
-      default: return <DashboardOverview />;
+      case 'overview': return <DashboardOverview token={token} setSection={(section) => navigate(`/admin/dashboard/${section}`)} />;
+      case 'analytics': return <AnalyticsManagement token={token} />;
+      case 'products': return <ProductManagement token={token} />;
+      case 'inventory': return <InventoryManagement token={token} />;
+      case 'categories': return <CategoryManagement token={token} />;
+      case 'orders': return <OrderManagement token={token} />;
+      case 'returns': return <ReturnManagement token={token} />;
+      case 'coupons': return <CouponManagement token={token} />;
+      case 'ewarranty': return <EWarrantyManagement token={token} />;
+      case 'contacts': return <ContactManagement token={token} />;
+      case 'users': return <UserManagement token={token} />;
+      case 'reviews': return <ReviewManagement token={token} />;
+      case 'banners': return <BannerManagement token={token} />;
+      case 'settings': return <AdminSettings token={token} />;
+      default: return <DashboardOverview token={token} setSection={(section) => navigate(`/admin/dashboard/${section}`)} />;
     }
   };
 
