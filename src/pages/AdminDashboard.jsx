@@ -5,7 +5,7 @@ import { useToast } from '../context/ToastContext';
 import { 
   LogOut, LayoutDashboard, Package, Grid, Users, Settings, 
   ShoppingBag, Menu, X, Shield, RefreshCw, Tag, 
-  Archive, Image as ImageIcon, Star, Activity, Mail
+  Archive, Image as ImageIcon, Star, Activity, Mail, Terminal
 } from 'lucide-react';
 
 // Subcomponents
@@ -24,7 +24,7 @@ import AnalyticsManagement from './admin/AnalyticsManagement';
 import EWarrantyManagement from './admin/EWarrantyManagement';
 import ContactManagement from './admin/ContactManagement';
 
-// Local Error Boundary to prevent white screen of death in Admin panel
+// Hacker-Themed Error Boundary
 class AdminErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -34,21 +34,24 @@ class AdminErrorBoundary extends React.Component {
     return { hasError: true, error };
   }
   componentDidCatch(error, info) {
-    console.error("Admin Tab Error:", error, info);
+    console.error("SYS_ERR:", error, info);
   }
   render() {
     if (this.state.hasError) {
       return (
-        <div className="p-6 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-800">
-          <h3 className="text-lg font-bold mb-2">Failed to load this module</h3>
-          <p className="text-sm font-mono bg-red-100 dark:bg-red-950 p-3 rounded mb-4 overflow-x-auto">
-            {this.state.error?.message || "An unexpected rendering error occurred."}
-          </p>
+        <div className="p-6 bg-black border border-red-500/50 text-red-500 rounded-lg shadow-[0_0_20px_rgba(239,68,68,0.15)] font-mono mt-8">
+          <h3 className="text-xl font-black mb-2 tracking-widest flex items-center gap-2">
+            <span className="animate-pulse">_</span> SYSTEM FAULT DETECTED
+          </h3>
+          <div className="bg-[#0a0000] p-4 border border-red-900 rounded mb-4 overflow-x-auto text-xs text-red-400">
+            <p className="text-red-600 mb-2">// ERROR_TRACE</p>
+            {this.state.error?.message || "Segmentation fault (core dumped)"}
+          </div>
           <button 
             onClick={() => this.setState({hasError: false, error: null})} 
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className="px-6 py-2 bg-red-600/10 border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-black font-bold uppercase tracking-widest transition-all"
           >
-            Retry Module
+            Execute Retry Sequence
           </button>
         </div>
       );
@@ -62,7 +65,6 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
-  // Safely access contexts to prevent 'f is not a function' crashes
   const auth = useAuth() || {};
   const user = auth.user;
   const logout = auth.logout;
@@ -70,20 +72,15 @@ const AdminDashboard = () => {
   const toast = useToast() || {};
   const showToast = toast.showToast;
 
-  // Extract token to pass down to subcomponents
   const token = localStorage.getItem('token') || localStorage.getItem('ms_token');
 
   useEffect(() => {
-    // Redirect if not admin
     if (user && user.role !== 'admin') {
-      if (typeof showToast === 'function') {
-        showToast('Access denied. Admin privileges required.', 'error');
-      }
+      if (typeof showToast === 'function') showToast('Access denied. Admin privileges required.', 'error');
       navigate('/');
     }
   }, [user, navigate, showToast]);
 
-  // Automatically route invalid tabs to overview
   const validTabs = ['overview', 'analytics', 'products', 'inventory', 'categories', 'orders', 'returns', 'coupons', 'ewarranty', 'contacts', 'users', 'reviews', 'banners', 'settings'];
   
   useEffect(() => {
@@ -96,39 +93,32 @@ const AdminDashboard = () => {
 
   const handleLogout = async () => {
     try {
-      if (typeof logout === 'function') {
-        await logout();
-      }
+      if (typeof logout === 'function') await logout();
       navigate('/admin/login');
-      if (typeof showToast === 'function') {
-        showToast('Logged out successfully', 'success');
-      }
+      if (typeof showToast === 'function') showToast('Session Terminated.', 'success');
     } catch (error) {
-      if (typeof showToast === 'function') {
-        showToast('Failed to log out', 'error');
-      }
+      if (typeof showToast === 'function') showToast('Termination Failed.', 'error');
     }
   };
 
   const tabsList = [
-    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'analytics', label: 'Analytics', icon: Activity },
-    { id: 'products', label: 'Products', icon: Package },
-    { id: 'inventory', label: 'Inventory', icon: Archive },
-    { id: 'categories', label: 'Categories', icon: Grid },
-    { id: 'orders', label: 'Orders', icon: ShoppingBag },
-    { id: 'returns', label: 'Returns', icon: RefreshCw },
-    { id: 'coupons', label: 'Coupons', icon: Tag },
-    { id: 'ewarranty', label: 'E-Warranty', icon: Shield },
-    { id: 'contacts', label: 'Contacts', icon: Mail },
-    { id: 'users', label: 'Users', icon: Users },
-    { id: 'reviews', label: 'Reviews', icon: Star },
-    { id: 'banners', label: 'Banners', icon: ImageIcon },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'overview', label: 'SYS.OVERVIEW', icon: LayoutDashboard },
+    { id: 'analytics', label: 'DATA.STREAM', icon: Activity },
+    { id: 'products', label: 'CORE.PRODUCTS', icon: Package },
+    { id: 'inventory', label: 'STOCK.MATRIX', icon: Archive },
+    { id: 'categories', label: 'CLASSIFICATION', icon: Grid },
+    { id: 'orders', label: 'TRANSACTIONS', icon: ShoppingBag },
+    { id: 'returns', label: 'REVERSE.LOGIS', icon: RefreshCw },
+    { id: 'coupons', label: 'PROMO.CODES', icon: Tag },
+    { id: 'ewarranty', label: 'SECURE.WARRANTY', icon: Shield },
+    { id: 'contacts', label: 'COMMS.LINK', icon: Mail },
+    { id: 'users', label: 'USER.ACCOUNTS', icon: Users },
+    { id: 'reviews', label: 'PUBLIC.FEEDBACK', icon: Star },
+    { id: 'banners', label: 'UI.BANNERS', icon: ImageIcon },
+    { id: 'settings', label: 'SYS.CONFIG', icon: Settings },
   ];
 
   const renderTabContent = () => {
-    // Pass token and a valid setSection navigation function to prevent fatal crashes
     switch (activeTab) {
       case 'overview': return <DashboardOverview token={token} setSection={(section) => navigate(`/admin/dashboard/${section}`)} />;
       case 'analytics': return <AnalyticsManagement token={token} />;
@@ -151,14 +141,22 @@ const AdminDashboard = () => {
   if (!user || user.role !== 'admin') return null;
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#050505] text-green-500 font-mono flex flex-col md:flex-row selection:bg-green-500 selection:text-black">
+      
+      <style>{`
+        .hacker-scrollbar::-webkit-scrollbar { width: 4px; }
+        .hacker-scrollbar::-webkit-scrollbar-track { background: #050505; }
+        .hacker-scrollbar::-webkit-scrollbar-thumb { background: rgba(34, 197, 94, 0.2); }
+        .hacker-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(34, 197, 94, 0.6); }
+      `}</style>
+
       {/* Mobile Header */}
-      <div className="md:hidden bg-white dark:bg-gray-800 shadow-sm p-4 flex justify-between items-center z-20 relative">
-        <div className="flex items-center gap-2 text-cyan-600 dark:text-cyan-400 font-bold text-xl">
-          <Shield className="w-6 h-6" />
-          <span>Admin Panel</span>
+      <div className="md:hidden bg-[#0a0c10] border-b border-green-500/20 p-4 flex justify-between items-center z-20 relative shadow-[0_0_15px_rgba(34,197,94,0.1)]">
+        <div className="flex items-center gap-2 text-green-400 font-black tracking-widest text-xl">
+          <Terminal className="w-5 h-5" />
+          <span>ROOT_ACCESS</span>
         </div>
-        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-gray-600 dark:text-gray-300">
+        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-green-500 hover:text-green-300">
           {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
@@ -167,18 +165,24 @@ const AdminDashboard = () => {
       <aside className={`
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         md:translate-x-0 fixed md:static inset-y-0 left-0 z-50 w-64
-        bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out
+        bg-[#0a0c10] border-r border-green-500/20 shadow-[2px_0_20px_rgba(34,197,94,0.05)] transform transition-transform duration-300 ease-in-out
         flex flex-col h-screen
       `}>
-        <div className="p-6 border-b dark:border-gray-700 hidden md:flex items-center gap-2">
-          <Shield className="w-8 h-8 text-cyan-600 dark:text-cyan-400" />
-          <h1 className="text-xl font-bold text-gray-800 dark:text-white">Admin Panel</h1>
+        <div className="p-6 border-b border-green-500/20 hidden md:flex flex-col gap-1 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-green-500/5 blur-2xl rounded-full pointer-events-none"></div>
+          <div className="flex items-center gap-2 mb-1">
+            <Terminal className="w-5 h-5 text-green-400" />
+            <h1 className="text-xl font-black text-green-400 tracking-widest">NEXUS<span className="text-green-500/40">_OS</span></h1>
+          </div>
+          <p className="text-[10px] text-green-500/60 uppercase tracking-[0.2em]">Authorized Personnel Only</p>
         </div>
 
-        <div className="flex-1 overflow-y-auto py-4 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+        <div className="flex-1 overflow-y-auto py-4 hacker-scrollbar">
+          <div className="px-4 text-[10px] text-green-500/40 font-bold mb-2 uppercase tracking-widest">// Command Directory</div>
           <nav className="space-y-1 px-3">
             {tabsList.map((tabItem) => {
               const Icon = tabItem.icon;
+              const isActive = activeTab === tabItem.id;
               return (
                 <button
                   key={tabItem.id}
@@ -187,13 +191,13 @@ const AdminDashboard = () => {
                     setIsSidebarOpen(false);
                   }}
                   className={`
-                    w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors
-                    ${activeTab === tabItem.id 
-                      ? 'bg-cyan-50 text-cyan-600 dark:bg-cyan-900/50 dark:text-cyan-400 font-medium' 
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'}
+                    w-full flex items-center gap-3 px-4 py-3 text-left transition-all text-xs tracking-wider uppercase
+                    ${isActive 
+                      ? 'bg-green-500/10 text-green-400 border-l-2 border-green-400 shadow-[inset_2px_0_10px_rgba(34,197,94,0.1)]' 
+                      : 'text-green-500/50 hover:bg-green-500/5 hover:text-green-400 border-l-2 border-transparent'}
                   `}
                 >
-                  <Icon size={20} />
+                  <Icon size={16} className={isActive ? 'animate-pulse' : ''} />
                   {tabItem.label}
                 </button>
               );
@@ -201,17 +205,17 @@ const AdminDashboard = () => {
           </nav>
         </div>
 
-        <div className="p-4 border-t dark:border-gray-700 bg-white dark:bg-gray-800">
-          <div className="mb-4 px-4 text-sm text-gray-500 dark:text-gray-400 truncate">
-            Logged in as: <br/>
-            <span className="font-medium text-gray-800 dark:text-gray-200">{user?.email || 'Admin'}</span>
+        <div className="p-4 border-t border-green-500/20 bg-[#0a0c10]">
+          <div className="mb-4 px-2 text-[10px] text-green-500/50 uppercase tracking-widest truncate">
+            &gt; Active_Session: <br/>
+            <span className="text-green-400 font-bold text-xs">{user?.email || 'Admin'}</span>
           </div>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/20 dark:hover:bg-red-900/40 dark:text-red-400 py-2 rounded-lg transition-colors font-medium"
+            className="w-full flex items-center justify-center gap-2 bg-red-950/30 hover:bg-red-900 border border-red-900 hover:border-red-500 text-red-500 hover:text-black py-3 rounded-none transition-all text-xs font-black uppercase tracking-widest shadow-[0_0_10px_rgba(239,68,68,0.1)]"
           >
-            <LogOut size={18} />
-            Logout
+            <LogOut size={16} />
+            Kill Process
           </button>
         </div>
       </aside>
@@ -219,19 +223,26 @@ const AdminDashboard = () => {
       {/* Main Content Overlay for Mobile */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 md:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50 dark:bg-gray-900 relative z-10">
-        <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 p-4 md:p-6 flex-shrink-0">
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-white capitalize">
-            {activeTab.replace('-', ' ')}
-          </h2>
+      <main className="flex-1 flex flex-col h-screen overflow-hidden bg-[#050505] relative z-10">
+        <header className="bg-[#0a0c10] border-b border-green-500/20 p-4 md:p-6 flex-shrink-0 flex items-center justify-between">
+          <div className="text-sm md:text-lg font-bold text-green-400 flex items-center gap-2">
+            <span className="text-green-500/40">root@nexus:~#</span> ./exec {activeTab}.sh <span className="animate-pulse w-2 h-4 bg-green-500 inline-block ml-1"></span>
+          </div>
+          <div className="text-[10px] text-green-500/30 uppercase tracking-[0.3em] hidden md:block">
+            Sys.Status: <span className="text-green-500/80">ONLINE</span>
+          </div>
         </header>
-        <div className="flex-1 overflow-y-auto p-4 md:p-6">
+        
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 hacker-scrollbar relative">
+          {/* Subtle Grid Background overlay */}
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(34,197,94,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(34,197,94,0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none -z-10"></div>
+          
           <div className="max-w-7xl mx-auto h-full">
             <AdminErrorBoundary>
               {renderTabContent()}
