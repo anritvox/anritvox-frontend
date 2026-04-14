@@ -25,7 +25,6 @@ export default function Shop() {
   const [sortOption, setSortOption] = useState("Featured");
   
   const [showSortDropdown, setShowSortDropdown] = useState(false);
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [addedToCart, setAddedToCart] = useState({});
   const [quickViewProduct, setQuickViewProduct] = useState(null);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
@@ -42,10 +41,17 @@ export default function Shop() {
       try {
         setLoading(true);
         const data = await fetchProducts();
-        const validData = Array.isArray(data) ? data : [];
+        
+        // Fix: Safely extract the data array from the backend response
+        const validData = Array.isArray(data) ? data : (data?.data || []);
         setProducts(validData);
 
-        const cats = ["All", ...new Set(validData.map(p => typeof p.category === 'object' ? p.category.name : p.category).filter(Boolean))];
+        // Fix: Safely map backend category_name
+        const cats = ["All", ...new Set(validData.map(p => {
+          if (p.category_name) return p.category_name;
+          if (typeof p.category === 'object' && p.category) return p.category.name;
+          return p.category;
+        }).filter(Boolean))];
         setDynamicCategories(cats);
 
         const bnd = ["All", ...new Set(validData.map(p => p.brand).filter(Boolean))];
@@ -59,24 +65,35 @@ export default function Shop() {
     loadProducts();
   }, []);
 
+  const getProductImage = (product) => {
+    if (product.images && product.images.length > 0) {
+      const img = product.images[0];
+      return typeof img === 'string' ? img : (img.url || img.file_path);
+    }
+    if (product.image) return product.image;
+    return FALLBACK_IMG;
+  };
+
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
       const name = (product.name || "").toLowerCase();
       const matchesSearch = name.includes(searchTerm.toLowerCase());
       
-      const cat = (typeof product.category === 'object' ? product.category.name : product.category || "").toLowerCase();
-      const matchesCategory = selectedCategory === "All" || cat === selectedCategory.toLowerCase();
+      const catName = product.category_name || (typeof product.category === 'object' && product.category ? product.category.name : product.category) || "";
+      const matchesCategory = selectedCategory === "All" || catName.toLowerCase() === selectedCategory.toLowerCase();
       
       const matchesBrand = selectedBrand === "All" || product.brand === selectedBrand;
       
-      const price = Number(product.price) || 0;
+      const price = Number(product.discount_price || product.price) || 0;
       let matchesPrice = true;
       if (priceRange === "Under ₹1,000") matchesPrice = price < 1000;
       else if (priceRange === "₹1,000 - ₹5,000") matchesPrice = price >= 1000 && price <= 5000;
       else if (priceRange === "₹5,000 - ₹10,000") matchesPrice = price >= 5000 && price <= 10000;
       else if (priceRange === "Over ₹10,000") matchesPrice = price > 10000;
 
-      const matchesStock = stockStatus === "All" || (stockStatus === "In Stock" ? product.stock > 0 : product.stock === 0);
+      // Fix: Check product.quantity instead of product.stock
+      const qty = product.quantity !== undefined ? product.quantity : (product.stock || 0);
+      const matchesStock = stockStatus === "All" || (stockStatus === "In Stock" ? qty > 0 : qty === 0);
 
       return matchesSearch && matchesCategory && matchesBrand && matchesPrice && matchesStock;
     });
@@ -84,9 +101,11 @@ export default function Shop() {
 
   const sortedProducts = useMemo(() => {
     return [...filteredProducts].sort((a, b) => {
-      if (sortOption === "Price: Low to High") return (a.price || 0) - (b.price || 0);
-      if (sortOption === "Price: High to Low") return (b.price || 0) - (a.price || 0);
-      if (sortOption === "Newest") return new Date(b.createdAt) - new Date(a.createdAt);
+      const priceA = Number(a.discount_price || a.price || 0);
+      const priceB = Number(b.discount_price || b.price || 0);
+      if (sortOption === "Price: Low to High") return priceA - priceB;
+      if (sortOption === "Price: High to Low") return priceB - priceA;
+      if (sortOption === "Newest") return new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt);
       if (sortOption === "Rating") return (b.rating || 0) - (a.rating || 0);
       return 0;
     });
@@ -95,7 +114,7 @@ export default function Shop() {
   const handleAddToCart = async (e, product) => {
     e.preventDefault(); e.stopPropagation();
     await addToCart(product, 1);
-    const id = product._id || product.id;
+    const id = product.id || product._id;
     setAddedToCart(prev => ({ ...prev, [id]: true }));
     setTimeout(() => setAddedToCart(prev => ({ ...prev, [id]: false })), 2000);
   };
@@ -103,11 +122,12 @@ export default function Shop() {
   const openQuickView = (e, product) => {
     e.preventDefault(); e.stopPropagation();
     setQuickViewProduct(product);
-    // Add to recently viewed
-    const updated = [product, ...recentlyViewed.filter(p => (p._id || p.id) !== (product._id || product.id))].slice(0, 5);
+    const updated = [product, ...recentlyViewed.filter(p => (p.id || p._id) !== (product.id || product._id))].slice(0, 5);
     setRecentlyViewed(updated);
     localStorage.setItem('recently_viewed', JSON.stringify(updated));
   };
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center font-bold text-gray-500 tracking-widest uppercase">Initializing Catalog...</div>;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row gap-6 p-4 md:p-8">
@@ -164,8 +184,8 @@ export default function Shop() {
             <h3 className="text-sm font-black uppercase tracking-widest text-gray-900 mb-4 flex items-center gap-2"><FiEye size={14}/> Recent</h3>
             <div className="space-y-3">
               {recentlyViewed.map((p, i) => (
-                <Link key={i} to={`/product/${p._id || p.id}`} className="flex items-center gap-3 group">
-                  <img src={p.image || FALLBACK_IMG} className="w-10 h-10 object-cover rounded-lg bg-gray-50" />
+                <Link key={i} to={`/product/${p.slug || p.id || p._id}`} className="flex items-center gap-3 group">
+                  <img src={getProductImage(p)} className="w-10 h-10 object-cover rounded-lg bg-gray-50" alt={p.name} />
                   <span className="text-xs font-bold text-gray-500 group-hover:text-olive-600 truncate">{p.name}</span>
                 </Link>
               ))}
@@ -221,7 +241,9 @@ export default function Shop() {
         {/* Product Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {sortedProducts.map(product => {
-            const id = product._id || product.id;
+            const id = product.id || product._id;
+            const qty = product.quantity !== undefined ? product.quantity : (product.stock || 0);
+            
             return (
               <motion.div 
                 layout
@@ -235,7 +257,7 @@ export default function Shop() {
                 )}
                 
                 <div className="relative aspect-square rounded-2xl overflow-hidden bg-gray-50 mb-4">
-                  <img src={product.image || FALLBACK_IMG} alt={product.name} className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-700" />
+                  <img src={getProductImage(product)} alt={product.name} className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-700" />
                   
                   {/* Overlay Actions */}
                   <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -253,7 +275,7 @@ export default function Shop() {
 
                 <div className="flex-1">
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{product.brand || 'Original'}</p>
-                  <Link to={`/product/${id}`} className="text-sm font-bold text-gray-900 hover:text-olive-600 line-clamp-2 mb-2 leading-snug">{product.name}</Link>
+                  <Link to={`/product/${product.slug || id}`} className="text-sm font-bold text-gray-900 hover:text-olive-600 line-clamp-2 mb-2 leading-snug">{product.name}</Link>
                   
                   <div className="flex items-center gap-1 mb-3">
                     {[...Array(5)].map((_, i) => <FiStar key={i} size={12} className={i < Math.round(product.rating || 4) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'} />)}
@@ -261,15 +283,22 @@ export default function Shop() {
 
                   <div className="flex items-center justify-between mt-auto">
                     <div>
-                      <p className="text-lg font-black text-gray-900 tracking-tighter">₹{Number(product.discount_price || product.price || 999).toLocaleString()}</p>
-feat: Upgrade Shop page with brand/stock filters, rating sort, quick view, and recently viewed integration                    </div>
+                      {product.discount_price ? (
+                        <>
+                          <p className="text-[10px] font-bold text-gray-400 line-through tracking-tighter">₹{Number(product.price).toLocaleString()}</p>
+                          <p className="text-lg font-black text-gray-900 tracking-tighter">₹{Number(product.discount_price).toLocaleString()}</p>
+                        </>
+                      ) : (
+                        <p className="text-lg font-black text-gray-900 tracking-tighter">₹{Number(product.price || 0).toLocaleString()}</p>
+                      )}
+                    </div>
                     
                     <button 
                       onClick={(e) => handleAddToCart(e, product)}
-                      disabled={product.stock === 0}
+                      disabled={qty === 0}
                       className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${addedToCart[id] ? 'bg-green-600 text-white' : 'bg-gray-900 text-white hover:bg-olive-600 active:scale-95 shadow-lg shadow-gray-900/10'}`}
                     >
-                      {product.stock === 0 ? <span className="text-[8px] font-black uppercase">Sold</span> : (addedToCart[id] ? <FiCheck size={18}/> : <FiShoppingCart size={18}/>)}
+                      {qty === 0 ? <span className="text-[8px] font-black uppercase">Sold</span> : (addedToCart[id] ? <FiCheck size={18}/> : <FiShoppingCart size={18}/>)}
                     </button>
                   </div>
                 </div>
