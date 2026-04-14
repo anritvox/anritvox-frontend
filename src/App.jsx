@@ -8,6 +8,7 @@ import { CartProvider } from "./context/CartContext.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { ToastProvider } from "./context/ToastContext";
 import { WishlistProvider } from "./context/WishlistContext";
+import { CompareProvider } from "./context/CompareContext";
 import "./index.css";
 
 // Lazy load pages
@@ -177,7 +178,9 @@ function App() {
           <CartProvider>
             <WishlistProvider>
               <ToastProvider>
+                <CompareProvider>
                 <AppContent />
+                  </CompareProvider>
               </ToastProvider>
             </WishlistProvider>
           </CartProvider>
