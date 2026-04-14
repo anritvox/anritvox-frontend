@@ -26,7 +26,6 @@ import {
   Tag,
 } from "lucide-react";
 
-// Added onClick prop and attached it to the root div of the card
 const StatCard = ({ title, count, icon: Icon, trend, trendValue, subtitle, color = "text-[#232f3e]", onClick }) => (
   <div onClick={onClick} className="bg-white p-5 rounded-lg border border-[#d5d9d9] shadow-[0_2px_5px_0_rgba(213,217,217,.5)] hover:shadow-md transition-all group cursor-pointer">
     <div className="flex justify-between items-start mb-4">
@@ -67,11 +66,17 @@ export default function DashboardOverview({ token, isRealTimeSync, setSection })
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Robust data extraction helper to prevent undefined crashes from wrapped API responses
+  const extractData = (res) => {
+    if (!res) return [];
+    if (Array.isArray(res)) return res;
+    return res.data || res.categories || res.products || res.warranties || res.contacts || res.messages || [];
+  };
+
   const loadStats = useCallback(async (showLoader = true) => {
     if (showLoader) setLoading(true);
     else setRefreshing(true);
     try {
-      // Use dashboard endpoint for fast summary stats + individual endpoints for detailed data
       const [dashRes, wData, cData, pData, contactsData, usersData, ordersData] = await Promise.allSettled([
         fetchAdminDashboard(),
         fetchWarrantyAdmin(token),
@@ -82,20 +87,20 @@ export default function DashboardOverview({ token, isRealTimeSync, setSection })
         fetchAdminOrders(token),
       ]);
 
-      // Use dashboard API stats if available (more accurate - direct DB queries)
-      const dashStats = dashRes.status === 'fulfilled' ? dashRes.value : null;
+      const dashStats = dashRes.status === 'fulfilled' ? (dashRes.value?.data || dashRes.value) : null;
 
-      const warranties = wData.status === 'fulfilled' ? (Array.isArray(wData.value) ? wData.value : (wData.value?.warranties || [])) : [];
-      const categories = cData.status === 'fulfilled' ? (Array.isArray(cData.value) ? cData.value : (cData.value?.categories || [])) : [];
-      const products = pData.status === 'fulfilled' ? (Array.isArray(pData.value) ? pData.value : (pData.value?.products || [])) : [];
-      const contacts = contactsData.status === 'fulfilled' ? (Array.isArray(contactsData.value) ? contactsData.value : (contactsData.value?.contacts || contactsData.value?.messages || [])) : [];
-      const users = usersData.status === 'fulfilled' ? (Array.isArray(usersData.value) ? usersData.value : []) : [];
-      const orders = ordersData.status === 'fulfilled' ? (Array.isArray(ordersData.value) ? ordersData.value : []) : [];
+      const warranties = wData.status === 'fulfilled' ? extractData(wData.value) : [];
+      const categories = cData.status === 'fulfilled' ? extractData(cData.value) : [];
+      const products = pData.status === 'fulfilled' ? extractData(pData.value) : [];
+      const contacts = contactsData.status === 'fulfilled' ? extractData(contactsData.value) : [];
+      const users = usersData.status === 'fulfilled' ? extractData(usersData.value) : [];
+      const orders = ordersData.status === 'fulfilled' ? extractData(ordersData.value) : [];
+      
       const pendingOrders = orders.filter(o => o.status === 'pending').length;
 
       setStats({
         warranties: warranties.length,
-        categories: dashStats?.totalProducts !== undefined ? categories.length : categories.length,
+        categories: categories.length,
         products: dashStats?.totalProducts ?? products.length,
         contacts: contacts.length,
         users: dashStats?.totalUsers ?? users.length,
