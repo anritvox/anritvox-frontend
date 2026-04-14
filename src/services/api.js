@@ -37,7 +37,7 @@ export async function fetchCategories() {
   return res.data;
 }
 export async function fetchProducts() {
-  const res = await api.get(`/products`);
+  const res = await api.get(`/products/active`);
   return res.data;
 }
 export async function fetchProductById(id) {
