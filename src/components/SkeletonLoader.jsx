@@ -1,6 +1,6 @@
 import React from 'react';
 
-// Generic animated skeleton block
+// Generic animated skeleton bloc
 export function SkeletonBlock({ className = '' }) {
   return <div className={`bg-gray-800 animate-pulse rounded ${className}`} />;
 }
