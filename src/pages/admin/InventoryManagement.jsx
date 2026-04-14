@@ -22,11 +22,16 @@ export default function InventoryManagement() {
   const fetchInventory = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/products/admin/all'); 
+      const res = await api.get('/inventory'); 
       const data = res.data;
-      setProducts(data.products || data || []);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+      // Protected mapping to avoid .filter crashes
+      setProducts(Array.isArray(data) ? data : (data?.products || []));
+    } catch (e) { 
+      console.error(e); 
+      setProducts([]); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const showMsg = (text, type = 'success') => {
@@ -37,9 +42,8 @@ export default function InventoryManagement() {
   const updateStock = async (id) => {
     setSaving(true);
     try {
-      await api.put(`/products/${id}/stock`, {
-        stock: parseInt(editStock),
-        lowStockThreshold: parseInt(editLowThreshold) || 10
+      await api.put(`/inventory/${id}/stock`, {
+        stock: parseInt(editStock)
       });
       showMsg('Stock updated successfully!');
       setEditId(null);
@@ -53,7 +57,10 @@ export default function InventoryManagement() {
     if (!qty || qty === 0) return;
     setSaving(true);
     try {
-      await api.post(`/products/${id}/stock`, { adjustment: qty });
+      await api.put(`/inventory/${id}/stock`, { 
+        stock: Math.abs(qty),
+        operation: qty > 0 ? 'add' : 'subtract'
+      });
       showMsg(`Stock ${qty > 0 ? 'added' : 'removed'}: ${Math.abs(qty)} units`);
       setQuickAddId(null);
       setQuickAddQty('');
