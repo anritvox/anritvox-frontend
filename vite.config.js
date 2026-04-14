@@ -1,20 +1,27 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import { defineConfig } from \"vite\";
+import react from \"@vitejs/plugin-react\";
 
 export default defineConfig({
   plugins: [react()],
   build: {
-    // Safely increase the warning limit so Vercel doesn't complai
-    chunkSizeWarningLimit: 2500, 
+    chunkSizeWarningLimit: 3000,
+    minify: 'esbuild',
     rollupOptions: {
-      // Removing manualChunks allows Rollup to use its native AST parser
-      // to guarantee perfect execution order and eliminate TDZ (White Screen) crashes.
       output: {
-        // Keep file names clean for cache busting
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-utils': ['lucide-react', 'framer-motion', 'axios'],
+        },
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]'
       }
     },
+    reportCompressedSize: false,
+    cssCodeSplit: true,
+    assetsInlineLimit: 8192, 
   },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'lucide-react', 'framer-motion']
+  }
 });
