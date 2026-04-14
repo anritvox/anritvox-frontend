@@ -14,6 +14,34 @@ import SizeChart from '../components/SizeChart';
 
 const FALLBACK_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600'%3E%3Crect width='600' height='600' fill='%23f8fafc'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='24' fill='%2394a3b8' text-anchor='middle' dominant-baseline='middle'%3ENo Image Available%3C/text%3E%3C/svg%3E";
 
+// CRITICAL FIX: Robust YouTube URL Parser
+const getYouTubeEmbedUrl = (url) => {
+  try {
+    if (!url) return '';
+    const cleanUrl = url.trim();
+    
+    // If it's already an embed link, return it as-is
+    if (cleanUrl.includes('youtube.com/embed/')) return cleanUrl;
+    
+    let videoId = '';
+    
+    // Extract ID from various YouTube URL formats
+    if (cleanUrl.includes('youtu.be/')) {
+      videoId = cleanUrl.split('youtu.be/')[1].split('?')[0];
+    } else if (cleanUrl.includes('youtube.com/watch')) {
+      const urlParams = new URLSearchParams(new URL(cleanUrl).search);
+      videoId = urlParams.get('v');
+    } else if (cleanUrl.includes('youtube.com/shorts/')) {
+      videoId = cleanUrl.split('youtube.com/shorts/')[1].split('?')[0];
+    }
+
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : cleanUrl;
+  } catch (err) {
+    // Fallback if parsing fails
+    return url.replace('watch?v=', 'embed/');
+  }
+};
+
 const ProductSkeleton = () => (
   <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 animate-pulse bg-white">
     <div className="lg:col-span-5 space-y-4"><div className="w-full aspect-square bg-slate-100 rounded-[2rem]"></div></div>
@@ -93,7 +121,7 @@ export default function ProductDetail() {
         setProduct({ 
           ...data, 
           images: parsedImages.length > 0 ? parsedImages : [FALLBACK_IMAGE],
-          video_urls: data.video_urls ? data.video_urls.split(',') : [],
+          video_urls: data.video_urls ? data.video_urls.split(',').filter(url => url.trim() !== '') : [],
           product_links: data.product_links ? JSON.parse(data.product_links) : []
         });
         addToRecentlyViewed({ ...data, images: parsedImages.length > 0 ? parsedImages : [FALLBACK_IMAGE] });
@@ -136,7 +164,6 @@ export default function ProductDetail() {
   const sellingPrice = product.discount_price ? Number(product.discount_price) : originalPrice;
   const discountPercentage = product.discount_price && originalPrice > 0 ? Math.round(((originalPrice - sellingPrice) / originalPrice) * 100) : 0;
   
-  // Fixed the broken newline split here
   const descriptionLines = (product.description || '').split('\n').filter(line => line.trim().length > 0);
 
   return (
@@ -307,7 +334,7 @@ export default function ProductDetail() {
                   )}
                   {product.video_urls?.length > 0 ? product.video_urls.map((vid, i) => (
                     <div key={i} className="w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-lg">
-                      <iframe src={vid.replace('watch?v=', 'embed/')} className="w-full h-full" allowFullScreen title={`Video ${i}`} />
+                      <iframe src={getYouTubeEmbedUrl(vid)} className="w-full h-full border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title={`Video ${i}`} />
                     </div>
                   )) : !product.model_3d_url && <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200"><p className="text-gray-400 italic font-bold">No additional media available.</p></div>}
                 </div>
