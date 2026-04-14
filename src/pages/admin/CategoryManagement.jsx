@@ -45,8 +45,9 @@ export default function CategoryManagement({ token }) {
         fetchCategories(token),
         fetchSubcategories(token),
       ]);
-      setCategories(cats);
-      setSubcategories(subs);
+      // Safely extract the data payload if wrapped inside an object
+      setCategories(Array.isArray(cats) ? cats : (cats?.data || []));
+      setSubcategories(Array.isArray(subs) ? subs : (subs?.data || []));
     } catch (err) {
       setError("Failed to load data: " + err.message);
     } finally {
@@ -235,7 +236,7 @@ export default function CategoryManagement({ token }) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5 text-sm">
-                    {categories.map((c) => (
+                    {(Array.isArray(categories) ? categories : []).map((c) => (
                       <tr key={c.id} className="hover:bg-white/[0.02] transition-colors group">
                         <td className="px-6 py-4 font-mono text-cyan-500/70 text-xs">#{c.id.toString().padStart(3, '0')}</td>
                         <td className="px-6 py-4 font-bold text-gray-300">{c.name}</td>
@@ -257,7 +258,7 @@ export default function CategoryManagement({ token }) {
                         </td>
                       </tr>
                     ))}
-                    {categories.length === 0 && (
+                    {(!Array.isArray(categories) || categories.length === 0) && (
                       <tr>
                         <td colSpan="3" className="px-6 py-12 text-center text-gray-600 italic">No primary departments detected.</td>
                       </tr>
@@ -292,10 +293,10 @@ export default function CategoryManagement({ token }) {
                       value={parentId}
                       onChange={(e) => setParentId(e.target.value)}
                       className="w-full bg-[#0a0c10] border border-white/10 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-purple-500/50 outline-none transition-all text-sm appearance-none"
-                      disabled={formLoading || categories.length === 0}
+                      disabled={formLoading || !Array.isArray(categories) || categories.length === 0}
                     >
                       <option value="">Select Parent</option>
-                      {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      {(Array.isArray(categories) ? categories : []).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                   </div>
                   <div className="space-y-1">
@@ -337,12 +338,12 @@ export default function CategoryManagement({ token }) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5 text-sm">
-                    {subcategories.map((sc) => (
+                    {(Array.isArray(subcategories) ? subcategories : []).map((sc) => (
                       <tr key={sc.id} className="hover:bg-white/[0.02] transition-colors group">
                         <td className="px-6 py-4 font-bold text-gray-300">{sc.name}</td>
                         <td className="px-6 py-4">
                           <span className="px-3 py-1 bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-mono rounded-full uppercase tracking-tighter">
-                            {categories.find(c => c.id === sc.category_id)?.name || "N/A"}
+                            {(Array.isArray(categories) ? categories : []).find(c => c.id === sc.category_id)?.name || "N/A"}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
@@ -363,7 +364,7 @@ export default function CategoryManagement({ token }) {
                         </td>
                       </tr>
                     ))}
-                    {subcategories.length === 0 && (
+                    {(!Array.isArray(subcategories) || subcategories.length === 0) && (
                       <tr>
                         <td colSpan="3" className="px-6 py-12 text-center text-gray-600 italic">No sub-clusters indexed.</td>
                       </tr>
@@ -376,14 +377,14 @@ export default function CategoryManagement({ token }) {
         </div>
       </div>
 
-              <style>{`
+      <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #374151; }
-              `}</style>
+      `}</style>
     </div>
   );
 }
