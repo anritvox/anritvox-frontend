@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import Rea
+  ct, { useState, useEffect } from 'react';
+import QASection from '../components/QASection';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   Star, ChevronRight, Check, ShoppingCart, 
@@ -372,6 +374,7 @@ export default function ProductDetail() {
 
       <div className=\"max-w-7xl mx-auto px-4 py-16 border-t border-gray-100\">
         <ReviewSection productId={id} />
+        <QASection productId={id} />
       </div>
     </div>
   );
