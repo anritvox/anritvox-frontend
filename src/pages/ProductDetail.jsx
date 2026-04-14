@@ -1,4 +1,4 @@
-import Reactt, { useState, useEffect } from 'react';
+import React,  { useState, useEffect } from 'react';
 import QASection from '../components/QASection';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
