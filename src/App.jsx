@@ -34,11 +34,6 @@ const Affiliate = lazy(() => import("./pages/Affiliate"));
 const About = lazy(() => import("./pages/About"));
 const Legal = lazy(() => import("./pages/Legal"));
 
-// Admin Specific Pages
-const ReturnManagement = lazy(() => import("./pages/admin/ReturnManagement"));
-const CouponManagement = lazy(() => import("./pages/admin/CouponManagement"));
-const InventoryManagement = lazy(() => import("./pages/admin/InventoryManagement"));
-
 const PageLoader = () => (
   <div className="min-h-screen bg-gray-950 flex items-center justify-center">
     <div className="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
@@ -48,10 +43,10 @@ const PageLoader = () => (
 const ErrorFallback = ({ error, resetError }) => (
   <div className="min-h-screen bg-gray-950 flex-col items-center justify-center p-8 text-center">
     <h2 className="text-2xl font-bold text-red-400 mb-4">Something went wrong</h2>
-    <pre className="bg-gray-900 border border-gray-700 p-4 rounded-lg text-gray-300 text-sm mb-6">{error?.message}</pre>
+    <pre className="bg-gray-900 border border-gray-700 p-4 rounded-lg text-gray-300 text-sm mb-6 whitespace-pre-wrap">{error?.message}</pre>
     <div className="flex gap-4 justify-center">
-      <button onClick={resetError} className="px-6 py-2 bg-cyan-600 text-white rounded-full">Try Again</button>
-      <a href="/" className="px-6 py-2 bg-gray-700 text-white rounded-full">Go to Homepage</a>
+      <button onClick={resetError} className="px-6 py-2 bg-cyan-600 text-white rounded-full hover:bg-cyan-700 transition-colors">Try Again</button>
+      <a href="/" className="px-6 py-2 bg-gray-800 text-white rounded-full hover:bg-gray-700 transition-colors">Go to Homepage</a>
     </div>
   </div>
 );
@@ -63,14 +58,13 @@ class ErrorBoundary extends Component {
   }
 
   static getDerivedStateFromError(error) { 
-    // Detect Vercel chunk loading errors caused by new deployments
     const isChunkLoadFailed = error.message && (
       error.message.includes('Failed to fetch dynamically imported module') ||
-      error.message.includes('Importing a module script failed')
+      error.message.includes('Importing a module script failed') ||
+      error.message.includes('dynamically imported module')
     );
 
     if (isChunkLoadFailed) {
-      // Set a session flag to prevent infinite reload loops in case the build is genuinely corrupted
       const chunkReloaded = sessionStorage.getItem('chunk_reloaded');
       if (!chunkReloaded) {
         sessionStorage.setItem('chunk_reloaded', 'true');
@@ -87,7 +81,6 @@ class ErrorBoundary extends Component {
   }
 
   componentDidMount() {
-    // Clear the recovery flag on successful mount
     sessionStorage.removeItem('chunk_reloaded');
   }
 
@@ -99,17 +92,15 @@ class ErrorBoundary extends Component {
   }
 }
 
-// Protected user route - redirects to /login if not authenticated
 function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuth() || { user: null, loading: false };
   if (loading) return <PageLoader />;
   if (!user) return <Navigate to="/login" replace />;
   return children;
 }
 
-// Admin route - redirects to /admin/login if not admin
 function AdminRoute({ children }) {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuth() || { user: null, loading: false };
   if (loading) return <PageLoader />;
   if (!user || user.role !== 'admin') return <Navigate to="/admin/login" replace />;
   return children;
@@ -151,15 +142,12 @@ function AppContent() {
           <Route path="/register" element={<Register />} />
 
           {/* Admin Auth Routes */}
-          <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
+          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="/admin/login" element={<AdminLogin />} />
 
-          {/* Admin Protected Routes */}
-          <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          {/* Admin Dashboard Routes - Unified structural routing */}
+          <Route path="/admin/dashboard" element={<Navigate to="/admin/dashboard/overview" replace />} />
           <Route path="/admin/dashboard/:tab" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-          <Route path="/admin/returns" element={<AdminRoute><ReturnManagement /></AdminRoute>} />
-          <Route path="/admin/coupons" element={<AdminRoute><CouponManagement /></AdminRoute>} />
-          <Route path="/admin/inventory" element={<AdminRoute><InventoryManagement /></AdminRoute>} />
 
           {/* Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -179,8 +167,8 @@ function App() {
             <WishlistProvider>
               <ToastProvider>
                 <CompareProvider>
-                <AppContent />
-                  </CompareProvider>
+                  <AppContent />
+                </CompareProvider>
               </ToastProvider>
             </WishlistProvider>
           </CartProvider>
