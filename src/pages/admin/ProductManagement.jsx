@@ -18,7 +18,8 @@ import {
 import {
   Package, Edit3, Trash2, Upload, FileSpreadsheet, Plus, Save, X, Loader2,
   Image as ImageIcon, Hash, AlertCircle, Grid3x3, Settings2, Search,
-  RefreshCw, PlusCircle, ChevronLeft, ChevronRight, Trash, DownloadCloud
+  RefreshCw, PlusCircle, ChevronLeft, ChevronRight, Trash, DownloadCloud,
+  Youtube, BoxSelect, ExternalLink
 } from "lucide-react";
 
 export default function ProductManagement({ token }) {
@@ -26,8 +27,17 @@ export default function ProductManagement({ token }) {
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [form, setForm] = useState({
-    name: "", description: "", price: "", quantity: "",
-    category_id: "", subcategory_id: "", images: [], serials: [],
+    name: "",
+    description: "",
+    price: "",
+    quantity: "",
+    category_id: "",
+    subcategory_id: "",
+    images: [],
+    serials: [],
+    video_urls: "",
+    product_links: "",
+    model_3d_url: ""
   });
   const [existingImages, setExistingImages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +58,7 @@ export default function ProductManagement({ token }) {
   const [serialLoading, setSerialLoading] = useState(false);
   
   // Generator & Import States
-  const [serialAddMethod, setSerialAddMethod] = useState("generate"); // Changed default to generate
+  const [serialAddMethod, setSerialAddMethod] = useState("generate");
   const [genCount, setGenCount] = useState(100);
   const [genPrefix, setGenPrefix] = useState("ANRI");
   const [genFormat, setGenFormat] = useState("advanced");
@@ -116,28 +126,12 @@ export default function ProductManagement({ token }) {
     }
   };
 
-  const handleSerialChange = (index, value) => {
-    const newSerials = [...form.serials];
-    newSerials[index] = value.trim().toUpperCase();
-    setForm(prev => ({ ...prev, serials: newSerials }));
-  };
-
-  const handleExcelUpload = async (e) => {
-    setFileError("");
-    const file = e.target.files?.[0];
-    if (!file || !file.name.endsWith(".xlsx")) return setFileError("Invalid file.");
-    try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data, { type: "array" });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-      const serials = rows.map(row => row[0]).filter(val => val != null && String(val).trim() !== "").map(s => String(s).trim().toUpperCase());
-      setForm(prev => ({ ...prev, quantity: serials.length, serials }));
-    } catch (err) { setFileError("Error reading Excel."); }
-  };
-
   const resetForm = () => {
-    setForm({ name: "", description: "", price: "", quantity: "", category_id: "", subcategory_id: "", images: [], serials: [] });
+    setForm({ 
+      name: "", description: "", price: "", quantity: "", category_id: "", 
+      subcategory_id: "", images: [], serials: [],
+      video_urls: "", product_links: "", model_3d_url: "" 
+    });
     setExistingImages([]); setEditProductId(null); setSerialMethod("manual"); setFileError(""); setError(null);
   };
 
@@ -163,12 +157,25 @@ export default function ProductManagement({ token }) {
       formData.append("price", form.price);
       formData.append("category_id", form.category_id);
       if (form.subcategory_id) formData.append("subcategory_id", form.subcategory_id);
+      
+      // New Media Fields
+      if (form.video_urls) formData.append("video_urls", form.video_urls.trim());
+      if (form.model_3d_url) formData.append("model_3d_url", form.model_3d_url.trim());
+      if (form.product_links) {
+          const linksArray = form.product_links.split(',')
+            .map(url => url.trim())
+            .filter(url => url !== "")
+            .map(url => ({ label: "Buy Online", url }));
+          formData.append("product_links", JSON.stringify(linksArray));
+      }
+
       if (!editProductId) {
         formData.append("quantity", form.quantity);
         formData.append("serials", JSON.stringify(form.serials));
       } else {
         formData.append("existing_images", JSON.stringify(existingImages.map(img => img.url)));
       }
+      
       compressedImages.forEach(image => formData.append("images", image));
 
       if (editProductId) await updateProduct(editProductId, formData, token);
@@ -181,9 +188,28 @@ export default function ProductManagement({ token }) {
 
   const handleEdit = (product) => {
     setEditProductId(product.id);
+    
+    // Parse links back to comma string for editing
+    let linkString = "";
+    if (product.product_links) {
+        try {
+            const links = typeof product.product_links === 'string' ? JSON.parse(product.product_links) : product.product_links;
+            linkString = links.map(l => l.url).join(', ');
+        } catch(e) { linkString = ""; }
+    }
+
     setForm({
-      name: product.name, description: product.description, price: product.price, quantity: String(product.quantity),
-      category_id: product.category_id || "", subcategory_id: product.subcategory_id || "", images: [], serials: [],
+      name: product.name, 
+      description: product.description, 
+      price: product.price, 
+      quantity: String(product.quantity),
+      category_id: product.category_id || "", 
+      subcategory_id: product.subcategory_id || "", 
+      images: [], 
+      serials: [],
+      video_urls: product.video_urls || "", 
+      model_3d_url: product.model_3d_url || "", 
+      product_links: linkString
     });
     setExistingImages(product.images ? product.images.map((img, idx) => ({ id: idx, url: img, path: img })) : []);
     setError(null); formRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -204,15 +230,11 @@ export default function ProductManagement({ token }) {
     setNewSerials(""); setSerialSearch(""); setBulkSerialError(""); setBulkSerialPreview([]);
   };
 
-  // --- 1. NEW GENERATOR WITH AUTO-EXPORT ---
   const handleCommenceGeneration = async () => {
     if (!genCount || genCount <= 0) return alert("Please enter a valid count to generate.");
     try {
       setSerialLoading(true);
-      // Generate the Serials
       await addProductSerials(selectedProduct.id, genCount, genPrefix, genFormat, token);
-      
-      // Auto-Export to Excel instantly
       const blob = await exportSerialsExcel({ productId: selectedProduct.id });
       const url = window.URL.createObjectURL(new Blob([blob]));
       const link = document.createElement('a');
@@ -221,7 +243,6 @@ export default function ProductManagement({ token }) {
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
-
       await loadProductSerials(selectedProduct.id);
       await loadData();
     } catch (err) {
@@ -231,7 +252,6 @@ export default function ProductManagement({ token }) {
     }
   };
 
-  // --- 2. FIXED MANUAL ADD (Uses Bulk API) ---
   const handleAddNewSerials = async () => {
     if (!newSerials.trim()) return;
     try {
@@ -245,7 +265,6 @@ export default function ProductManagement({ token }) {
     finally { setSerialLoading(false); }
   };
 
-  // --- 3. FIXED EXCEL IMPORT (Uses Bulk API) ---
   const handleExcelUploadForSerials = async (e) => {
     setBulkSerialError("");
     const file = e.target.files?.[0];
@@ -271,12 +290,10 @@ export default function ProductManagement({ token }) {
     finally { setSerialLoading(false); }
   };
 
-// --- 4. EXPLICIT DELETE FUNCTION ---
   const handleDeleteSerial = async (serialId, serialNumber) => {
     if (window.confirm(`PERMANENTLY DELETE serial: ${serialNumber}?`)) {
       try {
         setSerialLoading(true);
-        // We now pass the selectedProduct.id to match the API and Backend
         await deleteProductSerial(selectedProduct.id, serialId); 
         await loadProductSerials(selectedProduct.id);
         await loadData();
@@ -312,18 +329,15 @@ export default function ProductManagement({ token }) {
       </div>
 
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Form and Table code remains exactly the same structure as your original */}
         <div ref={formRef} className="bg-[#16161a] border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
-           {/* ... Form UI (omitted for brevity, assume exactly identical to your provided code) ... */}
-           <div className="bg-slate-900/50 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+          <div className="bg-slate-900/50 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
             <h2 className="text-lg font-bold flex items-center gap-2 text-slate-200">
               {editProductId ? <Edit3 className="h-5 w-5 text-fuchsia-400" /> : <Plus className="h-5 w-5 text-cyan-400" />}
               {editProductId ? "Edit Product Details" : "Add a New Product"}
             </h2>
           </div>
           <form onSubmit={handleSave} className="p-6 space-y-6">
-             {/* Same inputs as before */}
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Product Name</label>
@@ -353,13 +367,34 @@ export default function ProductManagement({ token }) {
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Description</label>
                   <textarea name="description" rows="3" required className="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg focus:border-cyan-500 outline-none text-slate-100" value={form.description} onChange={handleChange} disabled={formLoading} />
                 </div>
+
+                {/* --- NEW MEDIA FIELDS SECTION --- */}
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
+                  <div className="col-span-1">
+                    <label className="text-xs font-bold text-fuchsia-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <Youtube className="h-3 w-3" /> Video URLs
+                    </label>
+                    <input name="video_urls" type="text" placeholder="YouTube links (comma sep)" className="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg focus:border-cyan-500 outline-none text-slate-100 text-xs" value={form.video_urls} onChange={handleChange} disabled={formLoading} />
+                  </div>
+                  <div className="col-span-1">
+                    <label className="text-xs font-bold text-fuchsia-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <BoxSelect className="h-3 w-3" /> 3D Model URL
+                    </label>
+                    <input name="model_3d_url" type="text" placeholder="Sketchfab / GLB Link" className="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg focus:border-cyan-500 outline-none text-slate-100 text-xs" value={form.model_3d_url} onChange={handleChange} disabled={formLoading} />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-xs font-bold text-fuchsia-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <ExternalLink className="h-3 w-3" /> External Purchase Links
+                    </label>
+                    <input name="product_links" type="text" placeholder="Amazon, Flipkart, etc. (comma sep)" className="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg focus:border-cyan-500 outline-none text-slate-100 text-xs" value={form.product_links} onChange={handleChange} disabled={formLoading} />
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-4">
                 <div className="border border-slate-800 rounded-xl p-4 bg-slate-900/30">
                   <h3 className="text-xs font-bold text-slate-300 mb-3 flex items-center gap-2 uppercase tracking-wider"><ImageIcon className="h-4 w-4 text-cyan-400" /> Images</h3>
                   <div className="flex flex-wrap gap-4">
-                    {/* Image rendering Logic */}
                     {editProductId && existingImages.map((img, i) => (
                       <div key={i} className="relative border border-slate-700 p-1 rounded-lg">
                         <img src={img.url} className="w-16 h-16 object-cover rounded" alt="Existing" />
@@ -373,7 +408,6 @@ export default function ProductManagement({ token }) {
                   </div>
                 </div>
                 
-                {/* Initial Stock Input for New Products */}
                 {!editProductId && (
                   <div className="border border-slate-800 rounded-xl p-4 bg-slate-900/30">
                     <h3 className="text-xs font-bold text-fuchsia-400 mb-4 flex items-center gap-2 uppercase tracking-wider"><Hash className="h-4 w-4" /> Initial Inventory Tracking</h3>
@@ -395,7 +429,6 @@ export default function ProductManagement({ token }) {
           </form>
         </div>
 
-        {/* Inventory List Table */}
         <div className="bg-[#16161a] border border-slate-800 rounded-xl shadow-2xl overflow-hidden">
           <div className="bg-slate-900/50 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
             <h2 className="text-lg font-bold flex items-center gap-2 text-slate-200"><Package className="h-5 w-5 text-cyan-400" /> Inventory Database</h2>
@@ -434,7 +467,6 @@ export default function ProductManagement({ token }) {
         </div>
       </div>
 
-      {/* NEON SERIAL MODAL (Updated) */}
       {showSerialModal && selectedProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
           <div className="bg-[#16161a] border border-cyan-500/30 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
@@ -447,7 +479,6 @@ export default function ProductManagement({ token }) {
             </div>
             
             <div className="p-6 overflow-y-auto flex-1 space-y-6 custom-scrollbar text-[12px]">
-              {/* Stats Bar */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="bg-slate-900/50 border border-slate-800 p-4 rounded-xl">
                   <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">TOTAL ENTRIES</div>
@@ -463,9 +494,8 @@ export default function ProductManagement({ token }) {
                 </div>
               </div>
 
-              {/* Advanced Generator & Import Section */}
               <div className="border border-slate-800 rounded-xl bg-slate-900/30 p-5 shadow-inner">
-                <h4 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2 uppercase tracking-widest text-[12px]">
+                <h4 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2 uppercase tracking-widest">
                   <Settings2 className="h-4 w-4 text-cyan-400"/> Addition Methods
                 </h4>
                 <div className="flex gap-4 mb-4 border-b border-slate-800 pb-2">
@@ -494,11 +524,7 @@ export default function ProductManagement({ token }) {
                         </select>
                       </div>
                     </div>
-                    <button 
-                      onClick={handleCommenceGeneration} 
-                      disabled={serialLoading}
-                      className="w-full bg-cyan-600 hover:bg-cyan-500 py-3 rounded-lg text-xs font-bold uppercase tracking-widest shadow-lg shadow-cyan-500/20 transition-all flex justify-center items-center gap-2 mt-2"
-                    >
+                    <button onClick={handleCommenceGeneration} disabled={serialLoading} className="w-full bg-cyan-600 hover:bg-cyan-500 py-3 rounded-lg text-xs font-bold uppercase tracking-widest shadow-lg shadow-cyan-500/20 transition-all flex justify-center items-center gap-2 mt-2">
                       {serialLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <DownloadCloud className="h-4 w-4"/>}
                       Commence Generation & Auto-Export
                     </button>
@@ -521,7 +547,6 @@ export default function ProductManagement({ token }) {
                 )}
               </div>
 
-              {/* Visual Serial List & EXPLICIT DELETE BUTTON */}
               <div className="bg-[#0f172a] border border-slate-800 rounded-xl overflow-hidden text-[12px]">
                 <div className="p-3 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between">
                   <div className="relative">
@@ -538,13 +563,8 @@ export default function ProductManagement({ token }) {
                         <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest ${serial.status === 'registered' ? 'bg-fuchsia-500/10 text-fuchsia-500 border border-fuchsia-500/20' : 'bg-lime-500/10 text-lime-400 border border-lime-500/20'}`}>
                           {serial.status === 'registered' ? 'REGISTERED' : 'AVAILABLE'}
                         </span>
-                        
-                        {/* THE NEW PROMINENT DELETE BUTTON */}
                         {serial.status !== 'registered' && (
-                          <button 
-                            onClick={() => handleDeleteSerial(serial.id, serial.serial || serial.serial_number)} 
-                            className="flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 hover:bg-rose-500 hover:text-white border border-rose-500/50 text-rose-500 rounded text-[10px] font-bold uppercase tracking-wider transition-all"
-                          >
+                          <button onClick={() => handleDeleteSerial(serial.id, serial.serial || serial.serial_number)} className="flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 hover:bg-rose-500 hover:text-white border border-rose-500/50 text-rose-500 rounded text-[10px] font-bold uppercase tracking-wider transition-all">
                             <Trash className="h-3 w-3"/> Delete
                           </button>
                         )}
