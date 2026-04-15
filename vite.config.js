@@ -1,41 +1,42 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import viteCompression from 'vite-plugin-compression';
+import obfuscator from 'vite-plugin-javascript-obfuscator';
 
 export default defineConfig({
   plugins: [
     react(),
-    viteCompression({
-      algorithm: 'gzip',
-      ext: '.gz',
-    }),
-    viteCompression({
-      algorithm: 'brotliCompress',
-      ext: '.br',
-    })
-  ],
-  server: {
-    port: 3000,
-  },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'vendor-react';
-            }
-            if (id.includes('framer-motion')) {
-              return 'vendor-framer';
-            }
-            if (id.includes('lucide-react') || id.includes('react-icons')) {
-              return 'vendor-icons';
-            }
-            return 'vendor';
-          }
-        }
+    obfuscator({
+      
+      include: [
+        'src/pages/**/*.jsx',
+        'src/components/**/*.jsx',
+        'src/context/**/*.jsx',
+        'src/services/**/*.js',
+        'src/App.jsx',
+        'src/main.jsx'
+      ],
+    
+      exclude: [/node_modules/],
+      apply: 'build',
+      options: {
+        compact: true,
+      
+        controlFlowFlattening: true,
+        controlFlowFlatteningThreshold: 1,
+       
+        numbersToExpressions: true,
+        simplify: true,
+        stringArrayShuffle: true,
+        splitStrings: true,
+        splitStringsChunkLength: 3,
+       
+        identifierNamesGenerator: 'hexadecimal',
+      
+        disableConsoleOutput: true,
+       
+        deadCodeInjection: true,
+        deadCodeInjectionThreshold: 0.4
       }
-    },
-    chunkSizeWarningLimit: 1000,
-  }
+    })
+  ]
 });
