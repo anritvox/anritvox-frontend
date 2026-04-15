@@ -6,36 +6,31 @@ export default defineConfig({
   plugins: [
     react(),
     obfuscator({
-      
       include: [
-        'src/pages/**/*.jsx',
-        'src/components/**/*.jsx',
-        'src/context/**/*.jsx',
-        'src/services/**/*.js',
-        'src/App.jsx',
-        'src/main.jsx'
+        'src/**/*.jsx', 
+        'src/**/*.js'
       ],
-    
       exclude: [/node_modules/],
       apply: 'build',
       options: {
         compact: true,
-      
+        // Maintains logical scrambling without breaking React renders
         controlFlowFlattening: true,
-        controlFlowFlatteningThreshold: 1,
-       
-        numbersToExpressions: true,
-        simplify: true,
+        controlFlowFlatteningThreshold: 0.5,
+        
+        // CRITICAL FIX: Disabled to prevent the "primitive value" React crash
+        splitStrings: false, 
+        numbersToExpressions: false, 
+        
+        // Keeps names and text hidden safely
+        stringArray: true,
         stringArrayShuffle: true,
-        splitStrings: true,
-        splitStringsChunkLength: 3,
-       
         identifierNamesGenerator: 'hexadecimal',
-      
-        disableConsoleOutput: true,
-       
+        
+        // Injects fake logic to confuse reverse-engineering
         deadCodeInjection: true,
-        deadCodeInjectionThreshold: 0.4
+        deadCodeInjectionThreshold: 0.2,
+        disableConsoleOutput: true
       }
     })
   ]
