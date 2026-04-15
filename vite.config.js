@@ -14,7 +14,7 @@ export default defineConfig({
       apply: 'build',
       options: {
         compact: true,
-        // Maintains logical scrambling without breaking React renders
+        // Maintains logical scrambling without breaking React render
         controlFlowFlattening: true,
         controlFlowFlatteningThreshold: 0.5,
         
