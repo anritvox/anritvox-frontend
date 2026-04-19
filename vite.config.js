@@ -17,6 +17,13 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+  // Ensure Vite properly resolves the React package
+  resolve: {
+    alias: {
+      react: 'react',
+      'react-dom': 'react-dom'
+    }
+  },
   build: {
     rollupOptions: {
       output: {
