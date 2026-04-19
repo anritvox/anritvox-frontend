@@ -6,7 +6,7 @@ import {
   LogOut, LayoutDashboard, Package, Grid, Users, Settings, 
   ShoppingBag, Menu, X, Shield, RefreshCw, Tag, 
   Archive, Image as ImageIcon, Star, Activity, Mail, Terminal,
-  ChevronRight, Bell, Search, Globe, Box, CreditCard, LifeBuoy
+  Bell, Search
 } from 'lucide-react';
 
 // Subcomponents
@@ -87,6 +87,14 @@ export default function AdminDashboard() {
     navigate('/admin/login');
   };
 
+  // SECURITY FIX: Centralized routing handler to prevent "t is not a function" crashes
+  const handleRouting = (targetTab) => {
+    setActiveTab(targetTab);
+    navigate(`/admin/${targetTab}`);
+    if (isMobile) setIsSidebarOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const menuItems = [
     { id: 'overview', label: 'Dashboard', icon: LayoutDashboard, color: 'text-blue-400' },
     { id: 'analytics', label: 'Analytics', icon: Activity, color: 'text-purple-400' },
@@ -109,39 +117,45 @@ export default function AdminDashboard() {
   ];
 
   const renderTabContent = () => {
+    // Inject all possible navigation props so child buttons never crash
+    const commonProps = {
+      token,
+      setActiveTab: handleRouting,
+      onViewDetails: handleRouting,
+      onNavigate: handleRouting,
+      navigate
+    };
+
     switch (activeTab) {
-      case 'overview': return <DashboardOverview token={token} setActiveTab={setActiveTab} />;
-      case 'analytics': return <AnalyticsManagement token={token} />;
-      case 'products': return <ProductManagement token={token} />;
-      case 'inventory': return <InventoryManagement token={token} />;
-      case 'categories': return <CategoryManagement token={token} />;
-      case 'orders': return <OrderManagement token={token} />;
-      case 'returns': return <ReturnManagement token={token} />;
-      case 'coupons': return <CouponManagement token={token} />;
-      case 'users': return <UserManagement token={token} />;
-      case 'reviews': return <ReviewManagement token={token} />;
-      case 'banners': return <BannerManagement token={token} />;
-      case 'settings': return <AdminSettings token={token} />;
-      case 'ewarranty': return <EWarrantyManagement token={token} />;
-      case 'contacts': return <ContactManagement token={token} />;
-      default: return <DashboardOverview token={token} setActiveTab={setActiveTab} />;
+      case 'overview': return <DashboardOverview {...commonProps} />;
+      case 'analytics': return <AnalyticsManagement {...commonProps} />;
+      case 'products': return <ProductManagement {...commonProps} />;
+      case 'inventory': return <InventoryManagement {...commonProps} />;
+      case 'categories': return <CategoryManagement {...commonProps} />;
+      case 'orders': return <OrderManagement {...commonProps} />;
+      case 'returns': return <ReturnManagement {...commonProps} />;
+      case 'coupons': return <CouponManagement {...commonProps} />;
+      case 'users': return <UserManagement {...commonProps} />;
+      case 'reviews': return <ReviewManagement {...commonProps} />;
+      case 'banners': return <BannerManagement {...commonProps} />;
+      case 'settings': return <AdminSettings {...commonProps} />;
+      case 'ewarranty': return <EWarrantyManagement {...commonProps} />;
+      case 'contacts': return <ContactManagement {...commonProps} />;
+      default: return <DashboardOverview {...commonProps} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#07080d] text-gray-400 flex font-sans selection:bg-purple-500/30 selection:text-purple-200">
-      {/* Sidebar Overlay */}
+    <div className="min-h-screen bg-[#050505] text-gray-400 flex font-sans selection:bg-purple-500/30 selection:text-purple-200">
       {isMobile && isSidebarOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity" onClick={() => setIsSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <aside 
         className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-[#0a0c10] border-r border-white/5 transform transition-all duration-500 ease-out flex flex-col shadow-2xl ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:w-20'
         }`}
       >
-        {/* Sidebar Header */}
         <div className="h-20 flex items-center px-6 border-b border-white/5 shrink-0 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-transparent opacity-20"></div>
           <div className="flex items-center gap-3 relative z-10">
@@ -157,7 +171,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1 custom-scrollbar">
           {menuItems.map((item, idx) => (
             item.type === 'divider' ? (
@@ -169,11 +182,7 @@ export default function AdminDashboard() {
             ) : (
               <button
                 key={item.id}
-                onClick={() => {
-                  setActiveTab(item.id);
-                  navigate(`/admin/${item.id}`);
-                  if (isMobile) setIsSidebarOpen(false);
-                }}
+                onClick={() => handleRouting(item.id)}
                 className={`w-full group flex items-center gap-4 px-4 py-3 rounded-xl transition-all relative overflow-hidden ${
                   activeTab === item.id 
                     ? 'bg-purple-500/10 text-white border border-purple-500/20 shadow-[inset_0_0_20px_rgba(168,85,247,0.05)]' 
@@ -196,17 +205,16 @@ export default function AdminDashboard() {
           ))}
         </nav>
 
-        {/* Sidebar Footer */}
         <div className="p-4 border-t border-white/5 space-y-4">
           {isSidebarOpen && (
             <div className="bg-gradient-to-br from-purple-500/5 to-transparent p-4 rounded-2xl border border-white/5">
               <div className="flex items-center gap-3">
-                 <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center border border-white/10">
+                 <div className="w-8 h-8 rounded-full bg-black/40 flex items-center justify-center border border-white/10">
                     <Users className="w-4 h-4 text-purple-400" />
                  </div>
                  <div className="min-w-0">
                     <p className="text-xs font-bold text-white truncate">{user?.name || 'Systems Admin'}</p>
-                    <p className="text-[10px] text-gray-500 truncate">Lvl 4 Privilege</p>
+                    <p className="text-[10px] text-gray-500 truncate">Lvl 5 Privilege</p>
                  </div>
               </div>
             </div>
@@ -221,10 +229,8 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        {/* Top Navbar */}
-        <header className="h-20 bg-[#07080d]/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-8 z-30 shrink-0">
+      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden bg-[#050505]">
+        <header className="h-20 bg-[#0a0c10]/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-8 z-30 shrink-0">
           <div className="flex items-center gap-6">
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -250,7 +256,7 @@ export default function AdminDashboard() {
                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
                 Live Uplink
               </div>
-              <div className="text-[9px] text-gray-600 uppercase font-bold mt-0.5">Voxel-Core v2.4.1</div>
+              <div className="text-[9px] text-gray-600 uppercase font-bold mt-0.5">Core v2.4.1</div>
             </div>
             
             <div className="h-8 w-px bg-white/5 mx-2" />
@@ -270,8 +276,7 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        {/* Dynamic Tab Content */}
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
           <AdminErrorBoundary key={activeTab}>
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
               {renderTabContent()}
@@ -282,34 +287,20 @@ export default function AdminDashboard() {
             <div className="flex items-center gap-4">
                <span className="hover:text-gray-500 cursor-help transition-colors">Documentation</span>
                <span className="hover:text-gray-500 cursor-help transition-colors">Security Audit</span>
-               <span className="hover:text-gray-500 cursor-help transition-colors">Voxel API Status</span>
+               <span className="hover:text-gray-500 cursor-help transition-colors">API Status</span>
             </div>
-            <p>© 2024 ANRITVOX CORE - PROPERTY OF ANRITVOX SOLUTIONS</p>
+            <p>© 2026 ANRITVOX - PROPERTY OF ANRITVOX</p>
           </footer>
         </div>
       </main>
 
       <style dangerouslySetInnerHTML={{ __html: `
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.05);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(168, 85, 247, 0.2);
-        }
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.5s ease-out forwards;
-        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(168, 85, 247, 0.2); }
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
       `}} />
     </div>
   );
