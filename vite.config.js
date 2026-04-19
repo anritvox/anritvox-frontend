@@ -17,32 +17,8 @@ export default defineConfig({
   server: {
     port: 3000,
   },
-  // Ensure Vite properly resolves the React package
-  resolve: {
-    alias: {
-      react: 'react',
-      'react-dom': 'react-dom'
-    }
-  },
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'vendor-react';
-            }
-            if (id.includes('framer-motion')) {
-              return 'vendor-framer';
-            }
-            if (id.includes('lucide-react') || id.includes('react-icons')) {
-              return 'vendor-icons';
-            }
-            return 'vendor';
-          }
-        }
-      }
-    },
-    chunkSizeWarningLimit: 1000,
+    // Let Rollup automatically chunk dependencies safely to preserve interop logic
+    chunkSizeWarningLimit: 1500
   }
 });
