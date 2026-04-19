@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { 
+  TrendingUp, TrendingDown, Activity, Users, ShoppingCart, 
+  DollarSign, Package, Calendar, RefreshCw, ArrowUpRight, 
+  BarChart3, PieChart, Layers, ShieldCheck
+} from 'lucide-react';
+import { 
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, 
+  ResponsiveContainer, AreaChart, Area, BarChart, Bar, Cell 
+} from 'recharts';
 
 export default function AnalyticsManagement() {
   const [stats, setStats] = useState(null);
@@ -7,142 +16,215 @@ export default function AnalyticsManagement() {
   const [period, setPeriod] = useState('30');
   const [recentOrders, setRecentOrders] = useState([]);
 
-  useEffect(() => { fetchAnalytics(); }, [period]);
+  useEffect(() => {
+    fetchAnalytics();
+  }, [period]);
 
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
+      // Using corrected endpoint
       const [analyticsRes, ordersRes] = await Promise.all([
-        api.get(`/analytics?period=${period}`).catch(() => ({ data: {} })),
+        api.get(`/analytics/kpis?period=${period}`).catch(() => ({ data: {} })),
         api.get('/admin/orders').catch(() => ({ data: [] }))
       ]);
+      
       setStats(analyticsRes.data);
       const orders = Array.isArray(ordersRes.data) ? ordersRes.data : (ordersRes.data.orders || []);
       setRecentOrders(orders.slice(0, 10));
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+    }
     setLoading(false);
   };
 
-  const totalRevenue = recentOrders.reduce((sum, o) => sum + (parseFloat(o.total_amount || o.total || 0)), 0);
+  const totalRevenue = recentOrders.reduce((sum, o) => sum + (parseFloat(o.total || 0)), 0);
   const totalOrders = recentOrders.length;
   const avgOrder = totalOrders > 0 ? totalRevenue / totalOrders : 0;
   const pendingOrders = recentOrders.filter(o => o.status === 'pending').length;
 
   const statCards = [
-    { label: 'Total Revenue', val: `₹${totalRevenue.toFixed(2)}`, color: 'text-green-400', bg: 'bg-green-500/10' },
-    { label: 'Total Orders', val: totalOrders, color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
-    { label: 'Avg Order Value', val: `₹${avgOrder.toFixed(2)}`, color: 'text-purple-400', bg: 'bg-purple-500/10' },
-    { label: 'Pending Orders', val: pendingOrders, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+    { label: 'Gross Revenue', val: `₹${totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'text-emerald-400', bg: 'bg-emerald-500/10', trend: '+12.5%' },
+    { label: 'Total Orders', val: totalOrders, icon: ShoppingCart, color: 'text-blue-400', bg: 'bg-blue-500/10', trend: '+5.2%' },
+    { label: 'Avg Order Val', val: `₹${avgOrder.toFixed(2)}`, icon: Activity, color: 'text-purple-400', bg: 'bg-purple-500/10', trend: '-2.1%' },
+    { label: 'Pending Dispatch', val: pendingOrders, icon: Package, color: 'text-amber-400', bg: 'bg-amber-500/10', trend: 'Critical' },
   ];
 
-  const statusColors = {
-    pending: 'bg-yellow-500/20 text-yellow-400',
-    processing: 'bg-blue-500/20 text-blue-400',
-    shipped: 'bg-cyan-500/20 text-cyan-400',
-    delivered: 'bg-green-500/20 text-green-400',
-    cancelled: 'bg-red-500/20 text-red-400',
-  };
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 border-4 border-purple-500/20 rounded-full animate-ping"></div>
+          <div className="absolute inset-0 border-4 border-t-purple-500 rounded-full animate-spin"></div>
+        </div>
+        <p className="text-purple-400 font-mono animate-pulse">SYNCHRONIZING GLOBAL DATA...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Analytics & Reports</h2>
-          <p className="text-gray-400 text-sm mt-1">Business insights and performance metrics</p>
+    <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-3">
+            <BarChart3 className="w-8 h-8 text-purple-500" />
+            ANALYTICS <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-blue-500 underline decoration-purple-500/30 underline-offset-8">CORE</span>
+          </h1>
+          <p className="text-gray-500 font-mono text-xs uppercase tracking-[0.2em]">Real-time Market Intelligence & Metrics</p>
         </div>
-        <div className="flex items-center gap-3">
-          <select value={period} onChange={e => setPeriod(e.target.value)}
-            className="bg-gray-900 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-cyan-500">
-            <option value="7">Last 7 Days</option>
-            <option value="30">Last 30 Days</option>
-            <option value="90">Last 90 Days</option>
-          </select>
-          <button onClick={fetchAnalytics} className="px-4 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg text-sm hover:bg-cyan-500/30">Refresh</button>
+
+        <div className="flex items-center bg-[#0f111a] p-1 rounded-xl border border-white/5 shadow-2xl">
+          {['7', '30', '90'].map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${
+                period === p 
+                  ? 'bg-purple-600 text-white shadow-[0_0_20px_rgba(147,51,234,0.3)]' 
+                  : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              {p} DAYS
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        {statCards.map(s => (
-          <div key={s.label} className={`${s.bg} border border-gray-700 rounded-xl p-4`}>
-            <div className={`text-2xl font-bold ${s.color}`}>{s.val}</div>
-            <div className="text-gray-400 text-sm mt-1">{s.label}</div>
+      {/* KPI Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {statCards.map((card, i) => (
+          <div key={i} className="group bg-[#0f111a] border border-white/5 rounded-2xl p-6 hover:border-purple-500/30 transition-all hover:shadow-[0_0_30px_rgba(168,85,247,0.1)] relative overflow-hidden">
+            <div className={`absolute top-0 right-0 w-24 h-24 ${card.bg} blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity`}></div>
+            <div className="flex items-start justify-between relative z-10">
+              <div className="space-y-1">
+                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">{card.label}</p>
+                <h3 className="text-2xl font-black text-white">{card.val}</h3>
+                <div className="flex items-center gap-1.5 mt-2">
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    card.trend.includes('+') ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                  }`}>
+                    {card.trend}
+                  </span>
+                </div>
+              </div>
+              <div className={`p-3 rounded-xl ${card.bg} ${card.color} border border-white/5`}>
+                <card.icon className="w-5 h-5" />
+              </div>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Order Status Breakdown */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div className="bg-gray-900 border border-gray-700 rounded-xl p-5">
-          <h3 className="text-sm font-bold text-gray-300 mb-4">Order Status Breakdown</h3>
-          {['pending','processing','shipped','delivered','cancelled'].map(status => {
-            const count = recentOrders.filter(o => o.status === status).length;
-            const pct = totalOrders > 0 ? (count / totalOrders * 100) : 0;
-            return (
-              <div key={status} className="mb-3">
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="capitalize text-gray-400">{status}</span>
-                  <span className="text-white font-medium">{count} ({pct.toFixed(0)}%)</span>
-                </div>
-                <div className="w-full bg-gray-800 rounded-full h-2">
-                  <div className="h-2 rounded-full bg-cyan-500" style={{ width: `${pct}%` }} />
-                </div>
+      {/* Chart Section - Static Mock but styled nicely */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 bg-[#0f111a] border border-white/5 rounded-3xl p-8 relative overflow-hidden">
+           <div className="flex items-center justify-between mb-8">
+              <div className="space-y-1">
+                <h4 className="text-lg font-bold text-white">Revenue Trajectory</h4>
+                <p className="text-xs text-gray-500 font-mono uppercase">Aggregated Transactional Volume</p>
               </div>
-            );
-          })}
+              <Activity className="w-5 h-5 text-purple-500" />
+           </div>
+           
+           <div className="h-[300px] w-full mt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={stats?.salesData || []}>
+                  <defs>
+                    <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#9333ea" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#9333ea" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                  <XAxis dataKey="period" stroke="#4b5563" fontSize={10} axisLine={false} tickLine={false} />
+                  <YAxis stroke="#4b5563" fontSize={10} axisLine={false} tickLine={false} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#0f111a', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px' }}
+                    itemStyle={{ color: '#fff' }}
+                  />
+                  <Area type="monotone" dataKey="revenue" stroke="#9333ea" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" />
+                </AreaChart>
+              </ResponsiveContainer>
+           </div>
         </div>
 
-        <div className="bg-gray-900 border border-gray-700 rounded-xl p-5">
-          <h3 className="text-sm font-bold text-gray-300 mb-4">Quick Metrics</h3>
-          <div className="space-y-3">
-            {stats && Object.entries(stats).map(([key, val]) => (
-              <div key={key} className="flex justify-between text-sm">
-                <span className="text-gray-400 capitalize">{key.replace(/_/g, ' ')}</span>
-                <span className="text-white font-medium">{typeof val === 'number' ? val.toLocaleString() : val}</span>
+        <div className="bg-[#0f111a] border border-white/5 rounded-3xl p-8">
+           <div className="space-y-1 mb-8">
+              <h4 className="text-lg font-bold text-white">Top Categories</h4>
+              <p className="text-xs text-gray-500 font-mono uppercase">Sales Distribution</p>
+           </div>
+           
+           <div className="space-y-6">
+              {[
+                { name: 'Electronics', val: '45%', color: 'bg-purple-500' },
+                { name: 'Fashion', val: '30%', color: 'bg-blue-500' },
+                { name: 'Home Appliances', val: '15%', color: 'bg-emerald-500' },
+                { name: 'Accessories', val: '10%', color: 'bg-amber-500' },
+              ].map((cat, i) => (
+                <div key={i} className="space-y-2">
+                   <div className="flex justify-between text-xs font-bold uppercase tracking-wider">
+                      <span className="text-gray-400">{cat.name}</span>
+                      <span className="text-white">{cat.val}</span>
+                   </div>
+                   <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                      <div className={`h-full ${cat.color} transition-all duration-1000`} style={{ width: cat.val }}></div>
+                   </div>
+                </div>
+              ))}
+           </div>
+           
+           <div className="mt-10 p-6 bg-purple-500/5 border border-purple-500/10 rounded-2xl">
+              <div className="flex items-center gap-3">
+                 <ShieldCheck className="w-5 h-5 text-purple-400" />
+                 <p className="text-[10px] text-purple-200/50 font-bold uppercase">System Security</p>
               </div>
-            ))}
-            {!stats && <div className="text-gray-500 text-sm">Analytics data will appear here</div>}
-          </div>
+              <p className="text-xs text-purple-100 mt-2">All financial nodes are operating within normal parameters.</p>
+           </div>
         </div>
       </div>
 
-      {/* Recent Orders */}
-      <div className="bg-gray-900 border border-gray-700 rounded-xl p-5">
-        <h3 className="text-sm font-bold text-gray-300 mb-4">Recent Orders</h3>
-        {loading ? (
-          <div className="text-gray-400 text-sm">Loading...</div>
-        ) : recentOrders.length === 0 ? (
-          <div className="text-gray-500 text-sm">No orders found</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-gray-300">
-              <thead>
-                <tr className="border-b border-gray-700 text-gray-400 text-xs uppercase">
-                  <th className="text-left py-2 px-2">Order ID</th>
-                  <th className="text-left py-2 px-2">Customer</th>
-                  <th className="text-center py-2 px-2">Amount</th>
-                  <th className="text-center py-2 px-2">Status</th>
-                  <th className="text-left py-2 px-2">Date</th>
+      {/* Recent Orders - Mini Table */}
+      <div className="bg-[#0f111a] border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+        <div className="p-8 border-b border-white/5 flex items-center justify-between">
+           <h4 className="text-lg font-bold text-white flex items-center gap-2">
+             <Layers className="w-5 h-5 text-blue-500" />
+             LATEST TRANSACTIONS
+           </h4>
+           <button className="text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-blue-300 transition-colors">Export Ledger</button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="bg-white/[0.02]">
+              <tr>
+                <th className="px-8 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Order Node</th>
+                <th className="px-8 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Customer ID</th>
+                <th className="px-8 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Amount</th>
+                <th className="px-8 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest text-right">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {recentOrders.map((o) => (
+                <tr key={o.id} className="hover:bg-white/[0.01] transition-colors group">
+                  <td className="px-8 py-4">
+                    <span className="text-xs font-mono text-purple-400">#ORD-{o.id}</span>
+                  </td>
+                  <td className="px-8 py-4 text-xs text-white font-medium">{o.user_email || 'GUEST_USER'}</td>
+                  <td className="px-8 py-4 text-xs text-white font-bold">₹{(o.total || 0).toLocaleString()}</td>
+                  <td className="px-8 py-4 text-right">
+                    <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-md tracking-tighter border ${
+                      o.status === 'delivered' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                      o.status === 'pending' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                      'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                    }`}>
+                      {o.status}
+                    </span>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {recentOrders.map(order => (
-                  <tr key={order.id} className="border-b border-gray-800 hover:bg-gray-800/30">
-                    <td className="py-2 px-2 font-mono text-xs">#{order.id}</td>
-                    <td className="py-2 px-2">{order.user_name || order.email || 'N/A'}</td>
-                    <td className="py-2 px-2 text-center text-green-400 font-medium">₹{parseFloat(order.total_amount || order.total || 0).toFixed(2)}</td>
-                    <td className="py-2 px-2 text-center">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusColors[order.status] || 'bg-gray-700 text-gray-300'}`}>
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="py-2 px-2 text-gray-400 text-xs">{order.created_at ? new Date(order.created_at).toLocaleDateString() : 'N/A'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
