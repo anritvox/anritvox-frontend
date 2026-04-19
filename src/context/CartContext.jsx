@@ -5,6 +5,13 @@ import { fetchCart, addToCartAPI, removeFromCartAPI, clearCartAPI } from "../ser
 
 const CartContext = createContext();
 
+// Helper: get effective unit price from a cart item (handles both backend & guest formats)
+const getItemPrice = (item) =>
+  parseFloat(item.unit_price ?? item.discount_price ?? item.price ?? 0);
+
+// Helper: get product id from cart item regardless of field name
+const getItemId = (item) => item.product_id ?? item._id ?? item.id;
+
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [cartLoading, setCartLoading] = useState(false);
@@ -39,7 +46,6 @@ export const CartProvider = ({ children }) => {
 
   const addToCart = useCallback(async (product, quantity = 1) => {
     const pId = product._id || product.id || product.product_id;
-    
     if (isAuthenticated) {
       try {
         const data = await addToCartAPI(pId, quantity);
@@ -49,13 +55,11 @@ export const CartProvider = ({ children }) => {
       }
     } else {
       setCart(prev => {
-        const existing = prev.find(i => (i._id === pId || i.id === pId || i.product_id === pId));
+        const existing = prev.find(i => getItemId(i) === pId);
         let newCart;
         if (existing) {
           newCart = prev.map(i =>
-            (i._id === pId || i.id === pId || i.product_id === pId)
-              ? { ...i, quantity: (i.quantity || 1) + quantity }
-              : i
+            getItemId(i) === pId ? { ...i, quantity: (i.quantity || 1) + quantity } : i
           );
         } else {
           newCart = [...prev, { ...product, quantity }];
@@ -68,7 +72,6 @@ export const CartProvider = ({ children }) => {
 
   const updateQuantity = useCallback(async (productId, quantity) => {
     if (quantity < 1) return removeFromCart(productId);
-
     if (isAuthenticated) {
       try {
         const data = await addToCartAPI(productId, quantity);
@@ -79,9 +82,7 @@ export const CartProvider = ({ children }) => {
     } else {
       setCart(prev => {
         const newCart = prev.map(i =>
-          (i._id === productId || i.id === productId || i.product_id === productId) 
-            ? { ...i, quantity } 
-            : i
+          getItemId(i) === productId ? { ...i, quantity } : i
         );
         localStorage.setItem("guest_cart", JSON.stringify(newCart));
         return newCart;
@@ -99,9 +100,7 @@ export const CartProvider = ({ children }) => {
       }
     } else {
       setCart(prev => {
-        const newCart = prev.filter(i => 
-          i._id !== productId && i.id !== productId && i.product_id !== productId
-        );
+        const newCart = prev.filter(i => getItemId(i) !== productId);
         localStorage.setItem("guest_cart", JSON.stringify(newCart));
         return newCart;
       });
@@ -121,13 +120,27 @@ export const CartProvider = ({ children }) => {
   }, [isAuthenticated]);
 
   const cartCount = cart.reduce((total, item) => total + (item.quantity || 1), 0);
-  const cartTotal = cart.reduce((total, item) => total + (parseFloat(item.price || 0) * (item.quantity || 1)), 0);
+
+  // Use subtotal if available (server-computed), otherwise compute from unit_price/price
+  const cartTotal = cart.reduce((total, item) => {
+    if (item.subtotal != null) return total + parseFloat(item.subtotal);
+    return total + getItemPrice(item) * (item.quantity || 1);
+  }, 0);
 
   return (
-    <CartContext.Provider value={{
-      cart, cartCount, cartTotal, cartLoading,
-      addToCart, removeFromCart, updateQuantity, clearCart, loadCart
-    }}>
+    <CartContext.Provider
+      value={{
+        cart,
+        cartCount,
+        cartTotal,
+        cartLoading,
+        addToCart,
+        updateQuantity,
+        removeFromCart,
+        clearCart,
+        reloadCart: loadCart,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );
