@@ -151,7 +151,7 @@ export default function AdminDashboard() {
             {isSidebarOpen && (
               <div className="leading-tight">
                 <span className="text-white font-black tracking-tighter text-lg block">ANRITVOX</span>
-                <span className="text-[10px] text-purple-400 font-bold uppercase tracking-widest">Master Node</span>
+                <span className="text-[10px] text-purple-400 font-bold uppercase tracking-widest">By Akash Prasad</span>
               </div>
             )}
           </div>
