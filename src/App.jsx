@@ -142,11 +142,12 @@ function AppContent() {
           <Route path="/register" element={<Register />} />
 
           {/* Admin Auth Routes */}
-          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="/admin/login" element={<AdminLogin />} />
-
-          {/* Admin Dashboard Routes - Unified structural routing */}
+          <Route path="/admin" element={<Navigate to="/admin/dashboard/overview" replace />} />
           <Route path="/admin/dashboard" element={<Navigate to="/admin/dashboard/overview" replace />} />
+
+          {/* Admin Dashboard Routes - Aliased to prevent sidebar fall-through kicks */}
+          <Route path="/admin/:tab" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/admin/dashboard/:tab" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
 
           {/* Catch-all */}
