@@ -12,7 +12,6 @@ export default function EWarranty() {
   const [error, setError] = useState('');
   
   const [registrationId, setRegistrationId] = useState(null);
-  const [registrationDate, setRegistrationDate] = useState(null);
   const [calculatedExpiry, setCalculatedExpiry] = useState(null);
   const [isExistingRegistration, setIsExistingRegistration] = useState(false);
   
@@ -33,17 +32,23 @@ export default function EWarranty() {
     try {
       const response = await api.get(`/warranty/validate/${encodeURIComponent(serial)}`);
       const data = response.data;
-      setProductData(data);
+      
+      const mappedProductData = {
+        ...data,
+        base_warranty_months: data.base_warranty_months || data.warranty_period || 0,
+        images: Array.isArray(data.images) ? data.images : [] 
+      };
+      
+      setProductData(mappedProductData);
 
-      // UPGRADED LOGIC: If already registered, jump to certificate view
       if (data.status === 'registered') {
         setIsExistingRegistration(true);
-        setRegistrationId(data.registration_id);
+        setRegistrationId(data.registration_id || 'VERIFIED-LEGACY');
         
         if (data.warranty_end_date) {
             setCalculatedExpiry(new Date(data.warranty_end_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
         } else {
-            setCalculatedExpiry("Lifetime / Open");
+            setCalculatedExpiry("Lifetime / Standard");
         }
 
         setFormData({
@@ -52,10 +57,10 @@ export default function EWarranty() {
             shopName: data.shop_name || 'Authorized Dealer'
         });
         
-        setStep(3); // Jump straight to Certificate
+        setStep(3);
       } else {
         setIsExistingRegistration(false);
-        setStep(2); // Proceed to Registration Form
+        setStep(2);
       }
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Serial number not found in our database.');
@@ -79,11 +84,11 @@ export default function EWarranty() {
       
       const pDate = new Date(formData.purchaseDate);
       const standardMonths = Number(productData.base_warranty_months || productData.warranty_period || 0);
-      pDate.setMonth(pDate.getMonth() + standardMonths + 1); 
+      
+      pDate.setMonth(pDate.getMonth() + standardMonths + 1);
       
       setCalculatedExpiry(pDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
       setRegistrationId(response.data.registration_id || Math.floor(100000 + Math.random() * 900000));
-      setRegistrationDate(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
       setStep(3);
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
@@ -148,7 +153,7 @@ export default function EWarranty() {
                     type="text"
                     value={serial}
                     onChange={(e) => setSerial(e.target.value.toUpperCase())}
-                    placeholder="e.g. ANRITV-2405-7X2P9"
+                    placeholder="e.g. ANRITV-2405-A1B2C3"
                     className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-lg font-mono focus:border-blue-500 focus:bg-white outline-none transition-all"
                     required
                   />
@@ -333,7 +338,7 @@ export default function EWarranty() {
                     </div>
                     <div className="col-span-2 md:col-span-1 border-b border-dotted border-slate-300 pb-2">
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Warranty Period</p>
-                      <p className="text-slate-800 font-bold text-lg text-yellow-600">{displayWarrantyMonths} Months <span className="text-green-600 text-sm ml-2">(+1 Mo. Bonus)</span></p>
+                      <p className="text-slate-800 font-bold text-lg text-yellow-600">{displayWarrantyMonths} Months {isExistingRegistration ? '' : <span className="text-green-600 text-sm ml-2">(+1 Mo. Bonus)</span>}</p>
                     </div>
                     <div className="col-span-2 md:col-span-1 border-b border-dotted border-slate-300 pb-2">
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Valid Until</p>
