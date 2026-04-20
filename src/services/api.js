@@ -1,6 +1,12 @@
 import axios from "axios";
 
-export const BASE_URL = import.meta.env.VITE_BASE_URL || "https://service.anritvox.com";
+let envBaseUrl = import.meta.env.VITE_BASE_URL || "https://service.anritvox.com";
+
+if (envBaseUrl.startsWith("http://") && !envBaseUrl.includes("localhost")) {
+  envBaseUrl = envBaseUrl.replace("http://", "https://");
+}
+
+export const BASE_URL = envBaseUrl;
 const API_BASE_URL = `${BASE_URL}/api`;
 
 const api = axios.create({
@@ -8,6 +14,7 @@ const api = axios.create({
   withCredentials: true,
 });
 
+// REQUEST INTERCEPTOR: Auth Token Injection
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token") || localStorage.getItem("ms_token");
@@ -21,7 +28,10 @@ api.interceptors.request.use(
   }
 );
 
-// GLOBAL 401 HANDLER: Prevents .filter() crashes by forcing logout on expired sessions
+/**
+ * GLOBAL 401 HANDLER: 
+ * Prevents .filter() crashes by forcing logout on expired sessions
+ */
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -329,11 +339,10 @@ export async function fetchPersonalizedRecommendations() {
 export async function fetchProductQA(productId) {
   try {
     const res = await api.get(`/products/${productId}/qa`);
-    // CRITICAL FIX: Safe array unwrapping for components using .filter
     return Array.isArray(res.data) ? res.data : (res.data?.data || res.data?.questions || []);
   } catch (err) {
     console.warn('QA feature not available:', err);
-    return []; // CRITICAL FIX: Must return [] instead of { questions: [] }
+    return []; 
   }
 }
 export async function submitProductQuestion(productId, data) {
@@ -367,10 +376,9 @@ export async function deleteQA(id) {
 export async function fetchProductReviews(productId) {
   try {
     const res = await api.get(`/reviews/product/${productId}`);
-    // CRITICAL FIX: Safe array unwrapping for components using .filter
     return Array.isArray(res.data) ? res.data : (res.data?.data || []);
   } catch (err) {
-    return []; // Return flat array on fail
+    return []; 
   }
 }
 export async function submitProductReview(productId, formData) {
