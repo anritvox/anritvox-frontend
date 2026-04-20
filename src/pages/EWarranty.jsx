@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { 
-  ShieldCheck, Search, CheckCircle, AlertCircle, Cpu, ArrowRight, Printer, ExternalLink, Gift
+  ShieldCheck, Search, CheckCircle, AlertCircle, Cpu, ArrowRight, Printer, ExternalLink, Gift, Youtube, BoxSelect
 } from 'lucide-react';
-import api, { BASE_URL } from '../services/api';
+import api, { BASE_URL } from "../services/api";
 
 export default function EWarranty() {
   const [serial, setSerial] = useState('');
@@ -13,7 +13,6 @@ export default function EWarranty() {
   
   const [registrationId, setRegistrationId] = useState(null);
   const [calculatedExpiry, setCalculatedExpiry] = useState(null);
-  const [isExistingRegistration, setIsExistingRegistration] = useState(false);
   
   const [formData, setFormData] = useState({
     customerName: '',
@@ -33,20 +32,28 @@ export default function EWarranty() {
       const response = await api.get(`/warranty/validate/${encodeURIComponent(serial)}`);
       const data = response.data;
       
+      // FIXED: Universal Safety Fallback. If a legacy product has no warranty duration in the DB, default to 12 months.
+      const safeWarrantyMonths = Number(data.base_warranty_months || data.warranty_period || 12);
+      
       const mappedProductData = {
         ...data,
-        base_warranty_months: data.base_warranty_months || data.warranty_period || 0,
+        base_warranty_months: safeWarrantyMonths,
         images: Array.isArray(data.images) ? data.images : [] 
       };
       
       setProductData(mappedProductData);
 
       if (data.status === 'registered') {
-        setIsExistingRegistration(true);
         setRegistrationId(data.registration_id || 'VERIFIED-LEGACY');
         
+        // FIXED: Retroactive Date Calculation for older registrations
         if (data.warranty_end_date) {
             setCalculatedExpiry(new Date(data.warranty_end_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
+        } else if (data.purchase_date) {
+            // Reconstruct the missing end date dynamically using the saved purchase date
+            const pDate = new Date(data.purchase_date);
+            pDate.setMonth(pDate.getMonth() + safeWarrantyMonths + 1);
+            setCalculatedExpiry(pDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
         } else {
             setCalculatedExpiry("Lifetime / Standard");
         }
@@ -57,10 +64,9 @@ export default function EWarranty() {
             shopName: data.shop_name || 'Authorized Dealer'
         });
         
-        setStep(3);
+        setStep(3); // Jump straight to Certificate
       } else {
-        setIsExistingRegistration(false);
-        setStep(2);
+        setStep(2); // Proceed to Registration Form
       }
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Serial number not found in our database.');
@@ -74,37 +80,29 @@ export default function EWarranty() {
     setLoading(true);
     setError('');
     try {
+      // Calculate Expiry Date (Base Warranty + 1 Month Bonus)
+      const pDate = new Date(formData.purchaseDate);
+      const standardMonths = Number(productData.base_warranty_months);
+      pDate.setMonth(pDate.getMonth() + standardMonths + 1); 
+      
       const payload = {
         serialNumber: serial,
         productId: productData.product_id,
+        warrantyEndDate: pDate.toISOString().split('T')[0], // Ensure the backend gets the final date explicitly
         ...formData
       };
       
       const response = await api.post('/warranty/register', payload);
       
-      // FIXED DATE MATH: Accurately calculating future expiry from the user's specific purchase date
-      const pDate = new Date(formData.purchaseDate); 
-      
-      // Pulls the correct duration that you assigned in the generator
-      const standardMonths = Number(productData.base_warranty_months || productData.warranty_period || 0);
-      
-      // Calculation: Customer Purchase Date + Base Warranty + 1 Month E-Warranty Bonus
-      pDate.setMonth(pDate.getMonth() + standardMonths + 1); 
-      
       setCalculatedExpiry(pDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
       setRegistrationId(response.data.registration_id || Math.floor(100000 + Math.random() * 900000));
-      
-      // FIXED: Removed the undefined setRegistrationDate function call that was crashing the sequence
-      
-      setStep(3); // Now successfully moves to the certificate
+      setStep(3);
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
-
-  const displayWarrantyMonths = productData ? (productData.base_warranty_months || productData.warranty_period || 0) : 0;
 
   return (
     <div className="min-h-screen bg-[#f8fafc] py-12 px-4 font-sans print:bg-white print:py-0 print:px-0">
@@ -213,7 +211,7 @@ export default function EWarranty() {
                 <div className="mt-6 space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-400">Standard Warranty</span>
-                    <span className="font-bold text-slate-800">{displayWarrantyMonths} Months</span>
+                    <span className="font-bold text-slate-800">{productData.base_warranty_months} Months</span>
                   </div>
                 </div>
               </div>
@@ -299,10 +297,10 @@ export default function EWarranty() {
                 <CheckCircle className="text-green-600" size={28} />
                 <div>
                   <h3 className="font-bold text-lg">
-                    {isExistingRegistration ? 'Active Warranty Found!' : 'Registration Successful!'}
+                    {productData?.status === 'registered' ? 'Active Warranty Found!' : 'Registration Successful!'}
                   </h3>
                   <p className="text-sm opacity-80">
-                    {isExistingRegistration ? 'Your product is currently protected.' : '1 Month Bonus Extended Warranty Applied.'}
+                    {productData?.status === 'registered' ? 'Your product is currently protected.' : '1 Month Bonus Extended Warranty Applied.'}
                   </p>
                 </div>
               </div>
@@ -333,7 +331,7 @@ export default function EWarranty() {
 
                   <div className="text-center py-6 relative z-10">
                     <p className="text-slate-500 italic text-lg mb-2">This is to certify that the premium product</p>
-                    <h2 className="text-3xl font-bold text-slate-800 uppercase tracking-wide">{productData.product_name}</h2>
+                    <h2 className="text-3xl font-bold text-slate-800 uppercase tracking-wide">{productData?.product_name}</h2>
                     <p className="text-slate-500 italic text-lg mt-8 mb-2">is officially registered and protected under warranty for</p>
                     <h3 className="text-2xl font-bold text-slate-800 uppercase border-b border-slate-300 inline-block pb-1 px-8">{formData.customerName}</h3>
                   </div>
@@ -345,7 +343,7 @@ export default function EWarranty() {
                     </div>
                     <div className="col-span-2 md:col-span-1 border-b border-dotted border-slate-300 pb-2">
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Warranty Period</p>
-                      <p className="text-slate-800 font-bold text-lg text-yellow-600">{displayWarrantyMonths} Months {isExistingRegistration ? '' : <span className="text-green-600 text-sm ml-2">(+1 Mo. Bonus)</span>}</p>
+                      <p className="text-slate-800 font-bold text-lg text-yellow-600">{productData?.base_warranty_months || 12} Months {productData?.status === 'registered' ? '' : <span className="text-green-600 text-sm ml-2">(+1 Mo. Bonus)</span>}</p>
                     </div>
                     <div className="col-span-2 md:col-span-1 border-b border-dotted border-slate-300 pb-2">
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Valid Until</p>
@@ -378,7 +376,7 @@ export default function EWarranty() {
             </div>
             
             <div className="no-print text-center pt-8">
-               <button onClick={() => { setStep(1); setSerial(''); setIsExistingRegistration(false); }} className="text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center justify-center gap-2 mx-auto">
+               <button onClick={() => { setStep(1); setSerial(''); setProductData(null); }} className="text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center justify-center gap-2 mx-auto">
                  Check Another Serial <Search size={16} />
                </button>
             </div>
