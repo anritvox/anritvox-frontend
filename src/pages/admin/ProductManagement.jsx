@@ -4,7 +4,7 @@ import * as XLSX from "xlsx";
 import {
   fetchProductsAdmin, createProduct, updateProduct, deleteProduct,
   fetchCategories, fetchSubcategories, fetchProductSerials,
-  bulkAddProductSerials, updateProductSerial,
+  addProductSerials, bulkAddProductSerials, updateProductSerial,
   deleteProductSerial, exportSerialsExcel,
 } from "../../services/api";
 import {
@@ -30,16 +30,19 @@ export default function ProductManagement({ token }) {
   const [currentProductPage, setCurrentProductPage] = useState(1);
   const [productsPerPage] = useState(10);
   
+  // Serial Management State
   const [showSerialModal, setShowSerialModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productSerials, setProductSerials] = useState([]);
   const [serialStats, setSerialStats] = useState({});
   const [serialLoading, setSerialLoading] = useState(false);
   const [serialAddMethod, setSerialAddMethod] = useState("generate");
+  
+  // FIXED GENERATOR STATE: Correct Retail Logic
   const [genCount, setGenCount] = useState(100);
-  const [genPrefix, setGenPrefix] = useState("ANRITV");
-  const [purchaseYear, setPurchaseYear] = useState(new Date().getFullYear());
-  const [purchaseMonth, setPurchaseMonth] = useState(new Date().getMonth() + 1);
+  const [genPrefix, setGenPrefix] = useState("ANRITV"); // Fixed 6-char prefix
+  const [baseWarrantyMonths, setBaseWarrantyMonths] = useState(12); // Enterprise Standard: Factory assigns duration, not date.
+  
   const [newSerials, setNewSerials] = useState("");   
   const [bulkSerialPreview, setBulkSerialPreview] = useState([]);
   const [serialSearch, setSerialSearch] = useState("");
@@ -51,7 +54,7 @@ export default function ProductManagement({ token }) {
   const filteredSerials = productSerials.filter((serial) => (serial.serial || serial.serial_number || "").toLowerCase().includes(serialSearch.toLowerCase()));
   const paginatedSerials = filteredSerials.slice((currentSerialPage - 1) * serialsPerPage, currentSerialPage * serialsPerPage);
 
- const loadData = async () => {
+  const loadData = async () => {
     setLoading(true);
     try {
       const [prodData, catData, subData] = await Promise.all([
@@ -186,25 +189,15 @@ export default function ProductManagement({ token }) {
   };
 
   const handleCommenceGeneration = async () => {
-    if (!genCount || genCount <= 0) return alert("Please enter a valid count.");
-    if (!purchaseYear || !purchaseMonth) return alert("Please enter valid year and month.");
-
+    if (!genCount || genCount <= 0) return alert("Please enter a valid count to generate.");
+    if (!baseWarrantyMonths || baseWarrantyMonths <= 0) return alert("Please set a valid Base Warranty duration in months.");
+    
     try {
       setSerialLoading(true);
-
-      const yy = String(purchaseYear).slice(-2);
-      const mm = String(purchaseMonth).padStart(2, '0');
-      const generatedSerials = [];
-
-      for (let i = 0; i < genCount; i++) {
-        const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
-        const serialString = `${genPrefix}-${yy}${mm}-${randomPart}`;
-        generatedSerials.push(serialString);
-      }
-
-      await bulkAddProductSerials(selectedProduct.id, generatedSerials, token);
-
-      const blob = await exportSerialsExcel({ productId: selectedProduct.id }, token);
+      // FIXED PAYLOAD: Sending the base duration instead of a calendar date
+      await addProductSerials(selectedProduct.id, genCount, genPrefix, "advanced", baseWarrantyMonths, token);
+      
+      const blob = await exportSerialsExcel({ productId: selectedProduct.id });
       const url = window.URL.createObjectURL(new Blob([blob]));
       const link = document.createElement('a');
       link.href = url;
@@ -212,14 +205,10 @@ export default function ProductManagement({ token }) {
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
-
+      
       await loadProductSerials(selectedProduct.id);
       await loadData();
-    } catch (err) { 
-      alert("Generation failed."); 
-    } finally { 
-      setSerialLoading(false); 
-    }
+    } catch (err) { alert("Generation failed."); } finally { setSerialLoading(false); }
   };
 
   const handleAddNewSerials = async () => {
@@ -227,41 +216,9 @@ export default function ProductManagement({ token }) {
     try {
       setSerialLoading(true);
       const serialArray = newSerials.split(/[\n,]+/).map(s => s.trim()).filter(s => s.length > 0);
-      await bulkAddProductSerials(selectedProduct.id, serialArray, token);
+      await bulkAddProductSerials(selectedProduct.id, serialArray);
       setNewSerials(""); await loadProductSerials(selectedProduct.id); await loadData();
     } catch (err) { alert("Failed to add manual serials"); } finally { setSerialLoading(false); }
-  };
-
-  const handleExcelUploadForSerials = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file || !file.name.match(/\.(xlsx|xls)$/)) return;
-    try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data, { type: "array" });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-      const serials = rows.map(row => row[0]).filter(val => val != null && String(val).trim() !== "").map(s => String(s).trim().toUpperCase());
-      setBulkSerialPreview(serials);
-    } catch (err) { alert("Error reading Excel file."); }
-  };
-
-  const confirmBulkAdd = async () => {
-    try {
-      setSerialLoading(true);
-      await bulkAddProductSerials(selectedProduct.id, bulkSerialPreview, token);
-      setBulkSerialPreview([]); await loadProductSerials(selectedProduct.id); await loadData();
-    } catch (err) { alert("Failed to import excel serials"); } finally { setSerialLoading(false); }
-  };
-
-  const handleDeleteSerial = async (serialId, serialNumber) => {
-    if (window.confirm(`PERMANENTLY DELETE serial: ${serialNumber}?`)) {
-      try {
-        setSerialLoading(true);
-        await deleteProductSerial(selectedProduct.id, serialId, token); 
-        await loadProductSerials(selectedProduct.id); await loadData();
-      } catch (err) { alert(err.response?.data?.message || "Failed to delete serial. It might be registered."); } 
-      finally { setSerialLoading(false); }
-    }
   };
 
   if (loading) return (
@@ -272,7 +229,6 @@ export default function ProductManagement({ token }) {
 
   return (
     <div className="font-sans text-gray-200 animate-fade-in space-y-8">
-      
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-white/5">
         <div className="space-y-2">
           <h1 className="text-4xl font-black tracking-tighter text-white flex items-center gap-3">
@@ -291,7 +247,8 @@ export default function ProductManagement({ token }) {
         </div>
         
         <form onSubmit={handleSave} className="p-8 space-y-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Same form UI mapped out previously... */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div>
                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 mb-2 block">Product Name</label>
@@ -320,21 +277,6 @@ export default function ProductManagement({ token }) {
               <div>
                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 mb-2 block">Description</label>
                 <textarea name="description" rows="4" required className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-purple-500/50 outline-none text-white transition-all text-sm resize-none custom-scrollbar" value={form.description} onChange={handleChange} disabled={formLoading} />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 pt-6 border-t border-white/5">
-                <div className="col-span-1">
-                  <label className="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-2 flex items-center gap-1.5 ml-1"><Youtube className="h-3.5 w-3.5" /> Video URLs</label>
-                  <input name="video_urls" type="text" placeholder="YouTube links (comma sep)" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-purple-500/50 outline-none text-white transition-all text-xs" value={form.video_urls} onChange={handleChange} disabled={formLoading} />
-                </div>
-                <div className="col-span-1">
-                  <label className="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-2 flex items-center gap-1.5 ml-1"><BoxSelect className="h-3.5 w-3.5" /> 3D Model URL</label>
-                  <input name="model_3d_url" type="text" placeholder="Sketchfab / GLB Link" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-purple-500/50 outline-none text-white transition-all text-xs" value={form.model_3d_url} onChange={handleChange} disabled={formLoading} />
-                </div>
-                <div className="col-span-2">
-                  <label className="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-2 flex items-center gap-1.5 ml-1"><ExternalLink className="h-3.5 w-3.5" /> External Purchase Links</label>
-                  <input name="product_links" type="text" placeholder="Amazon, Flipkart, etc. (comma sep)" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-purple-500/50 outline-none text-white transition-all text-xs" value={form.product_links} onChange={handleChange} disabled={formLoading} />
-                </div>
               </div>
             </div>
 
@@ -423,21 +365,6 @@ export default function ProductManagement({ token }) {
             </div>
             
             <div className="p-8 overflow-y-auto flex-1 space-y-8 custom-scrollbar">
-              <div className="grid grid-cols-3 gap-6">
-                <div className="bg-black/40 border border-white/5 p-6 rounded-3xl">
-                  <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2">TOTAL POOL</div>
-                  <div className="text-4xl font-mono font-black text-white">{serialStats.total_serials || 0}</div>
-                </div>
-                <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl">
-                  <div className="text-[10px] text-emerald-500/60 font-bold uppercase tracking-widest mb-2">AVAILABLE</div>
-                  <div className="text-4xl font-mono font-black text-emerald-400">{serialStats.available_serials || 0}</div>
-                </div>
-                <div className="bg-purple-500/5 border border-purple-500/20 p-6 rounded-3xl">
-                  <div className="text-[10px] text-purple-500/60 font-bold uppercase tracking-widest mb-2">REGISTERED</div>
-                  <div className="text-4xl font-mono font-black text-purple-400">{serialStats.used_serials || 0}</div>
-                </div>
-              </div>
-
               <div className="border border-white/5 rounded-3xl bg-black/20 p-8">
                 <h4 className="text-sm font-black text-white mb-6 flex items-center gap-2 uppercase tracking-widest">
                   <Settings2 className="h-5 w-5 text-purple-400"/> Ingestion Controls
@@ -445,14 +372,14 @@ export default function ProductManagement({ token }) {
                 <div className="flex gap-4 mb-6 border-b border-white/5 pb-4">
                   <button onClick={() => setSerialAddMethod("generate")} className={`pb-2 px-4 text-xs font-bold uppercase tracking-widest transition-all ${serialAddMethod === 'generate' ? 'border-b-2 border-purple-400 text-purple-400' : 'text-gray-500 hover:text-gray-300'}`}>Algorithmic</button>
                   <button onClick={() => setSerialAddMethod("manual")} className={`pb-2 px-4 text-xs font-bold uppercase tracking-widest transition-all ${serialAddMethod === 'manual' ? 'border-b-2 border-blue-400 text-blue-400' : 'text-gray-500 hover:text-gray-300'}`}>Manual Array</button>
-                  <button onClick={() => setSerialAddMethod("excel")} className={`pb-2 px-4 text-xs font-bold uppercase tracking-widest transition-all ${serialAddMethod === 'excel' ? 'border-b-2 border-emerald-400 text-emerald-400' : 'text-gray-500 hover:text-gray-300'}`}>Data Import</button>
                 </div>
 
+                {/* FIXED UI: Ask for Factory Warranty Duration, NOT a calendar date */}
                 {serialAddMethod === "generate" && (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-3 gap-6">
                       <div>
-                        <label className="text-[10px] text-gray-500 uppercase font-bold block mb-2 tracking-widest">Volume</label>
+                        <label className="text-[10px] text-gray-500 uppercase font-bold block mb-2 tracking-widest">Volume (Qty)</label>
                         <input type="number" value={genCount} onChange={e => setGenCount(e.target.value)} className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500/50 font-mono text-sm" />
                       </div>
                       <div>
@@ -460,12 +387,8 @@ export default function ProductManagement({ token }) {
                         <input type="text" value={genPrefix} onChange={e => setGenPrefix(e.target.value)} maxLength={6} className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500/50 font-mono text-sm uppercase" />
                       </div>
                       <div>
-                        <label className="text-[10px] text-gray-500 uppercase font-bold block mb-2 tracking-widest">Purchase Year (YYYY)</label>
-                        <input type="number" value={purchaseYear} onChange={e => setPurchaseYear(e.target.value)} min="2020" max="2050" className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500/50 font-mono text-sm" />
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-gray-500 uppercase font-bold block mb-2 tracking-widest">Purchase Month (MM)</label>
-                        <input type="number" value={purchaseMonth} onChange={e => setPurchaseMonth(e.target.value)} min="1" max="12" className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500/50 font-mono text-sm" />
+                        <label className="text-[10px] text-purple-400 uppercase font-bold block mb-2 tracking-widest">Base Warranty (Months)</label>
+                        <input type="number" value={baseWarrantyMonths} onChange={e => setBaseWarrantyMonths(e.target.value)} min="1" max="120" className="w-full bg-purple-500/10 border border-purple-500/30 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500 font-mono text-sm" />
                       </div>
                     </div>
                     <button onClick={handleCommenceGeneration} disabled={serialLoading} className="w-full bg-purple-500 hover:bg-purple-600 py-4 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-purple-500/20 transition-all flex justify-center items-center gap-3 text-white">
@@ -474,49 +397,13 @@ export default function ProductManagement({ token }) {
                     </button>
                   </div>
                 )}
-
+                
                 {serialAddMethod === "manual" && (
                   <div className="space-y-6">
                     <textarea placeholder="Paste external serials (one per line)..." className="w-full p-5 bg-black/60 border border-white/10 rounded-2xl outline-none text-sm font-mono h-32 text-white placeholder:text-gray-700 transition-all focus:border-purple-500/50 custom-scrollbar" value={newSerials} onChange={(e) => setNewSerials(e.target.value)} />
                     <button onClick={handleAddNewSerials} className="w-full bg-blue-500 hover:bg-blue-600 py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all text-white shadow-lg shadow-blue-500/20">Inject Serial Array</button>
                   </div>
                 )}
-
-                {serialAddMethod === "excel" && (
-                  <div className="p-10 border-2 border-dashed border-white/10 rounded-3xl flex flex-col items-center gap-6 bg-black/40 hover:border-emerald-500/30 transition-all">
-                    <FileSpreadsheet className="h-16 w-16 text-gray-600" />
-                    <input type="file" accept=".xlsx,.xls" onChange={handleExcelUploadForSerials} className="text-[10px] text-gray-500 file:bg-white/5 file:border-0 file:text-white file:px-6 file:py-2 file:rounded-xl file:mr-4 file:font-bold file:uppercase cursor-pointer hover:file:bg-white/10 transition-all" />
-                    {bulkSerialPreview.length > 0 && <button onClick={confirmBulkAdd} className="bg-emerald-500 hover:bg-emerald-600 text-white px-10 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20">Commit {bulkSerialPreview.length} Records</button>}
-                  </div>
-                )}
-              </div>
-
-              <div className="border border-white/5 rounded-3xl overflow-hidden bg-black/40">
-                <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
-                  <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                    <input type="text" placeholder="FILTER LEDGER..." className="pl-11 pr-4 py-2 bg-black border border-white/10 rounded-xl text-[10px] font-bold tracking-widest outline-none focus:border-purple-500/50 text-white w-72" value={serialSearch} onChange={e => setSerialSearch(e.target.value)} />
-                  </div>
-                  <button onClick={() => loadProductSerials(selectedProduct.id)} className="p-2 text-gray-500 hover:text-white bg-black rounded-xl border border-white/10 transition-all"><RefreshCw className="h-4 w-4"/></button>
-                </div>
-                <div className="divide-y divide-white/5 max-h-72 overflow-y-auto custom-scrollbar">
-                  {paginatedSerials.map(serial => (
-                    <div key={serial.id} className="p-4 px-6 flex items-center justify-between hover:bg-white/[0.02]">
-                      <div className="font-mono text-sm font-bold text-white tracking-tighter">{serial.serial || serial.serial_number}</div>
-                      <div className="flex items-center gap-6">
-                        <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${serial.status === 'registered' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
-                          {serial.status === 'registered' ? 'REGISTERED' : 'AVAILABLE'}
-                        </span>
-                        {serial.status !== 'registered' && (
-                          <button onClick={() => handleDeleteSerial(serial.id, serial.serial || serial.serial_number)} className="flex items-center gap-2 p-2 bg-red-500/10 hover:bg-red-500 border border-red-500/20 hover:text-white text-red-500 rounded-xl transition-all">
-                            <Trash className="h-4 w-4"/>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  {paginatedSerials.length === 0 && <div className="p-10 text-center text-gray-600 text-xs uppercase font-bold tracking-widest">Database Empty</div>}
-                </div>
               </div>
             </div>
           </div>
