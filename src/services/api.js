@@ -1,4 +1,5 @@
 import axios from "axios";
+
 export const BASE_URL = import.meta.env.VITE_BASE_URL || "https://service.anritvox.com";
 const API_BASE_URL = `${BASE_URL}/api`;
 
@@ -69,18 +70,22 @@ export async function fetchProductSerials(productId, page = 1, limit = 100, sort
   const res = await api.get(`/serials/${productId}?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
   return res.data;
 }
+
 export const addProductSerials = async (productId, count, prefix, format, baseWarrantyMonths, token) => {
   const response = await api.post(
-    `/serials/product/${productId}/generate`,
-    { count, prefix, format, baseWarrantyMonths }, // Sends Base Warranty cleanly to backend
+    `/serials/generate`,
+    { 
+      productId, 
+      count, 
+      prefix, 
+      format, 
+      base_warranty_months: baseWarrantyMonths 
+    },
     { headers: { Authorization: `Bearer ${token}` } }
   );
   return response.data;
 };
-  }
-  const res = await api.post(`/serials/generate`, payload);
-  return res.data;
-}
+
 export async function bulkAddProductSerials(productId, serials, base_warranty_months = null) {
   const payload = { serials };
   if (base_warranty_months !== null && base_warranty_months !== undefined && base_warranty_months !== "") {
@@ -89,19 +94,23 @@ export async function bulkAddProductSerials(productId, serials, base_warranty_mo
   const res = await api.post(`/serials/${productId}/add`, payload);
   return res.data;
 }
+
 export async function exportSerialsExcel(filters = {}) {
   const params = new URLSearchParams(filters);
   const res = await api.get(`/serials/export/excel?${params.toString()}`, { responseType: "blob" });
   return res.data;
 }
+
 export async function updateProductSerial(productId, serialId, serial) {
   const res = await api.put(`/serials/${productId}/${serialId}`, { serial });
   return res.data;
 }
+
 export async function deleteProductSerial(productId, serialId) {
   const res = await api.delete(`/serials/${productId}/${serialId}`);
   return res.data;
 }
+
 export async function checkSerialAvailability(serial) {
   const res = await api.get(`/serials/check/${encodeURIComponent(serial)}`);
   return res.data;
