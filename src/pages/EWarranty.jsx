@@ -69,7 +69,7 @@ export default function EWarranty() {
     }
   };
 
-const handleRegister = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -93,8 +93,10 @@ const handleRegister = async (e) => {
       
       setCalculatedExpiry(pDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
       setRegistrationId(response.data.registration_id || Math.floor(100000 + Math.random() * 900000));
-      setRegistrationDate(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
-      setStep(3);
+      
+      // FIXED: Removed the undefined setRegistrationDate function call that was crashing the sequence
+      
+      setStep(3); // Now successfully moves to the certificate
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
