@@ -14,6 +14,7 @@ export default function EWarranty() {
   const [registrationId, setRegistrationId] = useState(null);
   const [registrationDate, setRegistrationDate] = useState(null);
   const [calculatedExpiry, setCalculatedExpiry] = useState(null);
+  const [isExistingRegistration, setIsExistingRegistration] = useState(false);
   
   const [formData, setFormData] = useState({
     customerName: '',
@@ -32,11 +33,29 @@ export default function EWarranty() {
     try {
       const response = await api.get(`/warranty/validate/${encodeURIComponent(serial)}`);
       const data = response.data;
+      setProductData(data);
+
+      // UPGRADED LOGIC: If already registered, jump to certificate view
       if (data.status === 'registered') {
-        setError('This product is already registered for warranty.');
+        setIsExistingRegistration(true);
+        setRegistrationId(data.registration_id);
+        
+        if (data.warranty_end_date) {
+            setCalculatedExpiry(new Date(data.warranty_end_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
+        } else {
+            setCalculatedExpiry("Lifetime / Open");
+        }
+
+        setFormData({
+            ...formData,
+            customerName: data.user_name || 'Valued Customer',
+            shopName: data.shop_name || 'Authorized Dealer'
+        });
+        
+        setStep(3); // Jump straight to Certificate
       } else {
-        setProductData(data);
-        setStep(2);
+        setIsExistingRegistration(false);
+        setStep(2); // Proceed to Registration Form
       }
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Serial number not found in our database.');
@@ -58,12 +77,9 @@ export default function EWarranty() {
       
       const response = await api.post('/warranty/register', payload);
       
-      // Calculate Expiry Date (Base Warranty + 1 Month Bonus)
-      // Checks for the specific serial base_warranty_months, falls back to product warranty_period
       const pDate = new Date(formData.purchaseDate);
       const standardMonths = Number(productData.base_warranty_months || productData.warranty_period || 0);
-      
-      pDate.setMonth(pDate.getMonth() + standardMonths + 1); // standard + 1 month bonus
+      pDate.setMonth(pDate.getMonth() + standardMonths + 1); 
       
       setCalculatedExpiry(pDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
       setRegistrationId(response.data.registration_id || Math.floor(100000 + Math.random() * 900000));
@@ -76,7 +92,6 @@ export default function EWarranty() {
     }
   };
 
-  // Helper to safely get the correct warranty duration for display
   const displayWarrantyMonths = productData ? (productData.base_warranty_months || productData.warranty_period || 0) : 0;
 
   return (
@@ -98,9 +113,9 @@ export default function EWarranty() {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 text-white rounded-2xl shadow-xl shadow-blue-200 mb-6">
               <ShieldCheck size={32} />
             </div>
-            <h1 className="text-4xl font-bold text-slate-900 mb-4 tracking-tight">E-Warranty Activation</h1>
+            <h1 className="text-4xl font-bold text-slate-900 mb-4 tracking-tight">E-Warranty Gateway</h1>
             <p className="text-slate-500 text-lg max-w-xl mx-auto">
-              Protect your premium Anritvox investment. Activate your official manufacturer warranty in seconds.
+              Activate your new warranty or retrieve the status of an existing registration using your Serial Number.
             </p>
           </div>
         )}
@@ -123,7 +138,7 @@ export default function EWarranty() {
         {step === 1 && (
           <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/60 p-8 md:p-12 border border-slate-100">
             <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-              <Search className="text-blue-600" /> Verify Your Product
+              <Search className="text-blue-600" /> Enter Product Serial
             </h2>
             <form onSubmit={handleCheckSerial} className="space-y-6">
               <div>
@@ -133,7 +148,7 @@ export default function EWarranty() {
                     type="text"
                     value={serial}
                     onChange={(e) => setSerial(e.target.value.toUpperCase())}
-                    placeholder="e.g. AV-2405-7X2P9"
+                    placeholder="e.g. ANRITV-2405-7X2P9"
                     className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-lg font-mono focus:border-blue-500 focus:bg-white outline-none transition-all"
                     required
                   />
@@ -155,7 +170,7 @@ export default function EWarranty() {
                 disabled={loading}
                 className="w-full bg-slate-900 hover:bg-black text-white font-bold py-5 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50"
               >
-                {loading ? 'Verifying...' : 'Validate Serial Number'}
+                {loading ? 'Scanning Database...' : 'Validate Serial Number'}
                 <ArrowRight size={20} />
               </button>
             </form>
@@ -169,7 +184,7 @@ export default function EWarranty() {
                 <div className="absolute top-0 right-0 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg shadow-md flex items-center gap-1">
                   <Gift size={12}/> +1 Month Bonus
                 </div>
-                <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-4 mt-2">Product Found</p>
+                <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-4 mt-2">Available for Registration</p>
                 <img 
                   src={
                     productData.images?.[0] 
@@ -271,8 +286,12 @@ export default function EWarranty() {
               <div className="flex items-center gap-3">
                 <CheckCircle className="text-green-600" size={28} />
                 <div>
-                  <h3 className="font-bold text-lg">Registration Successful!</h3>
-                  <p className="text-sm opacity-80">1 Month Bonus Extended Warranty Applied.</p>
+                  <h3 className="font-bold text-lg">
+                    {isExistingRegistration ? 'Active Warranty Found!' : 'Registration Successful!'}
+                  </h3>
+                  <p className="text-sm opacity-80">
+                    {isExistingRegistration ? 'Your product is currently protected.' : '1 Month Bonus Extended Warranty Applied.'}
+                  </p>
                 </div>
               </div>
               <button 
@@ -303,7 +322,7 @@ export default function EWarranty() {
                   <div className="text-center py-6 relative z-10">
                     <p className="text-slate-500 italic text-lg mb-2">This is to certify that the premium product</p>
                     <h2 className="text-3xl font-bold text-slate-800 uppercase tracking-wide">{productData.product_name}</h2>
-                    <p className="text-slate-500 italic text-lg mt-8 mb-2">has been successfully registered and is protected by the official warranty of</p>
+                    <p className="text-slate-500 italic text-lg mt-8 mb-2">is officially registered and protected under warranty for</p>
                     <h3 className="text-2xl font-bold text-slate-800 uppercase border-b border-slate-300 inline-block pb-1 px-8">{formData.customerName}</h3>
                   </div>
 
@@ -347,9 +366,9 @@ export default function EWarranty() {
             </div>
             
             <div className="no-print text-center pt-8">
-               <a href="/" className="text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center justify-center gap-2">
-                 Return to Homepage <ArrowRight size={16} />
-               </a>
+               <button onClick={() => { setStep(1); setSerial(''); setIsExistingRegistration(false); }} className="text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center justify-center gap-2 mx-auto">
+                 Check Another Serial <Search size={16} />
+               </button>
             </div>
           </div>
         )}
