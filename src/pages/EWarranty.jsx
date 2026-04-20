@@ -69,7 +69,7 @@ export default function EWarranty() {
     }
   };
 
-  const handleRegister = async (e) => {
+const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -82,13 +82,18 @@ export default function EWarranty() {
       
       const response = await api.post('/warranty/register', payload);
       
-      const pDate = new Date(formData.purchaseDate);
+      // FIXED DATE MATH: Accurately calculating future expiry from the user's specific purchase date
+      const pDate = new Date(formData.purchaseDate); 
+      
+      // Pulls the correct duration that you assigned in the generator
       const standardMonths = Number(productData.base_warranty_months || productData.warranty_period || 0);
       
-      pDate.setMonth(pDate.getMonth() + standardMonths + 1);
+      // Calculation: Customer Purchase Date + Base Warranty + 1 Month E-Warranty Bonus
+      pDate.setMonth(pDate.getMonth() + standardMonths + 1); 
       
       setCalculatedExpiry(pDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
       setRegistrationId(response.data.registration_id || Math.floor(100000 + Math.random() * 900000));
+      setRegistrationDate(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
       setStep(3);
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
