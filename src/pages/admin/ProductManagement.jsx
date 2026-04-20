@@ -60,7 +60,7 @@ export default function ProductManagement({ token }) {
   // Generator & Import States
   const [serialAddMethod, setSerialAddMethod] = useState("generate");
   const [genCount, setGenCount] = useState(100);
-  const [genPrefix, setGenPrefix] = useState("ANRITV"); // Fixed to 6 characters by default
+  const [genPrefix, setGenPrefix] = useState("AV23**"); // Fixed to 6 characters by default
   const [genFormat, setGenFormat] = useState("advanced"); // Legacy removed
   const [newSerials, setNewSerials] = useState("");   
   const [bulkSerialPreview, setBulkSerialPreview] = useState([]);
