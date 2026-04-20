@@ -69,10 +69,14 @@ export async function fetchProductSerials(productId, page = 1, limit = 100, sort
   const res = await api.get(`/serials/${productId}?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
   return res.data;
 }
-export async function addProductSerials(productId, count, prefix, batchNumber, notes, base_warranty_months) {
-  const payload = { productId, count, prefix, format: "advanced", batchNumber, notes };
-  if (base_warranty_months !== null && base_warranty_months !== undefined && base_warranty_months !== "") {
-    payload.base_warranty_months = Number(base_warranty_months);
+export const addProductSerials = async (productId, count, prefix, format, baseWarrantyMonths, token) => {
+  const response = await api.post(
+    `/serials/product/${productId}/generate`,
+    { count, prefix, format, baseWarrantyMonths }, // Sends Base Warranty cleanly to backend
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return response.data;
+};
   }
   const res = await api.post(`/serials/generate`, payload);
   return res.data;
