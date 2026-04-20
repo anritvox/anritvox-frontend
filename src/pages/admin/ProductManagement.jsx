@@ -10,7 +10,8 @@ import {
 import {
   Package, Edit3, Trash2, Upload, FileSpreadsheet, Plus, Save, X, Loader2,
   Image as ImageIcon, Hash, Settings2, Search,
-  RefreshCw, Trash, DownloadCloud, Youtube, BoxSelect, ExternalLink
+  RefreshCw, Trash, DownloadCloud, Youtube, BoxSelect, ExternalLink,
+  ChevronLeft, ChevronRight // Added Pagination Icons
 } from "lucide-react";
 
 export default function ProductManagement({ token }) {
@@ -27,6 +28,9 @@ export default function ProductManagement({ token }) {
   const [imageCompressing, setImageCompressing] = useState(false);
   const [error, setError] = useState(null);
   const [editProductId, setEditProductId] = useState(null);
+  
+  // FIXED: Product Search & Pagination State
+  const [productSearch, setProductSearch] = useState("");
   const [currentProductPage, setCurrentProductPage] = useState(1);
   const [productsPerPage] = useState(10);
   
@@ -34,25 +38,39 @@ export default function ProductManagement({ token }) {
   const [showSerialModal, setShowSerialModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productSerials, setProductSerials] = useState([]);
-  const [serialStats, setSerialStats] = useState({});
   const [serialLoading, setSerialLoading] = useState(false);
   const [serialAddMethod, setSerialAddMethod] = useState("generate");
   
-  // FIXED GENERATOR STATE: Correct Retail Logic
   const [genCount, setGenCount] = useState(100);
-  const [genPrefix, setGenPrefix] = useState("ANRITV"); // Fixed 6-char prefix
-  const [baseWarrantyMonths, setBaseWarrantyMonths] = useState(12); // Enterprise Standard: Factory assigns duration, not date.
+  const [genPrefix, setGenPrefix] = useState("ANRITV"); 
+  const [baseWarrantyMonths, setBaseWarrantyMonths] = useState(12); 
   
   const [newSerials, setNewSerials] = useState("");   
   const [bulkSerialPreview, setBulkSerialPreview] = useState([]);
+  
+  // FIXED: Serial Search & Pagination State
   const [serialSearch, setSerialSearch] = useState("");
   const [currentSerialPage, setCurrentSerialPage] = useState(1);
   const [serialsPerPage] = useState(20);
 
   const formRef = useRef(null);
-  const paginatedProducts = products.slice((currentProductPage - 1) * productsPerPage, currentProductPage * productsPerPage);
+
+  // DYNAMIC FILTERING & PAGINATION LOGIC (Products)
+  const filteredProducts = products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()));
+  const totalProductPages = Math.ceil(filteredProducts.length / productsPerPage);
+  const paginatedProducts = filteredProducts.slice((currentProductPage - 1) * productsPerPage, currentProductPage * productsPerPage);
+  
+  // DYNAMIC FILTERING & PAGINATION LOGIC (Serials)
   const filteredSerials = productSerials.filter((serial) => (serial.serial || serial.serial_number || "").toLowerCase().includes(serialSearch.toLowerCase()));
+  const totalSerialPages = Math.ceil(filteredSerials.length / serialsPerPage);
   const paginatedSerials = filteredSerials.slice((currentSerialPage - 1) * serialsPerPage, currentSerialPage * serialsPerPage);
+
+  // DYNAMIC STATS (Fixes the 0/0/0 bug)
+  const derivedSerialStats = {
+    total: productSerials.length,
+    used: productSerials.filter(s => s.status === 'registered').length,
+    available: productSerials.filter(s => s.status !== 'registered').length
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -77,7 +95,7 @@ export default function ProductManagement({ token }) {
     try {
       const data = await fetchProductSerials(productId, token);
       setProductSerials(data.serials || []);
-      setSerialStats(data.statistics || {});
+      setCurrentSerialPage(1); // Reset page on load
     } catch (e) {
       setError("Failed to load product serials.");
     } finally {
@@ -184,8 +202,8 @@ export default function ProductManagement({ token }) {
   };
 
   const closeSerialModal = () => {
-    setShowSerialModal(false); setSelectedProduct(null); setProductSerials([]); setSerialStats({});
-    setNewSerials(""); setSerialSearch(""); setBulkSerialPreview([]);
+    setShowSerialModal(false); setSelectedProduct(null); setProductSerials([]); 
+    setNewSerials(""); setSerialSearch(""); setBulkSerialPreview([]); setCurrentSerialPage(1);
   };
 
   const handleCommenceGeneration = async () => {
@@ -194,7 +212,6 @@ export default function ProductManagement({ token }) {
     
     try {
       setSerialLoading(true);
-      // FIXED PAYLOAD: Sending the base duration instead of a calendar date
       await addProductSerials(selectedProduct.id, genCount, genPrefix, "advanced", baseWarrantyMonths, token);
       
       const blob = await exportSerialsExcel({ productId: selectedProduct.id });
@@ -221,6 +238,17 @@ export default function ProductManagement({ token }) {
     } catch (err) { alert("Failed to add manual serials"); } finally { setSerialLoading(false); }
   };
 
+  const handleDeleteSerial = async (serialId, serialNumber) => {
+    if (window.confirm(`PERMANENTLY DELETE serial: ${serialNumber}?`)) {
+      try {
+        setSerialLoading(true);
+        await deleteProductSerial(selectedProduct.id, serialId); 
+        await loadProductSerials(selectedProduct.id); await loadData();
+      } catch (err) { alert(err.response?.data?.message || "Failed to delete serial. It might be registered."); } 
+      finally { setSerialLoading(false); }
+    }
+  };
+
   if (loading) return (
     <div className="min-h-screen bg-transparent flex items-center justify-center">
       <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
@@ -238,6 +266,7 @@ export default function ProductManagement({ token }) {
         </div>
       </div>
 
+      {/* --- FORM SECTION --- */}
       <div ref={formRef} className="bg-[#0a0c10] border border-white/5 rounded-[30px] overflow-hidden shadow-2xl">
         <div className="border-b border-white/5 px-8 py-6">
           <h2 className="text-xl font-black text-white flex items-center gap-3">
@@ -247,8 +276,7 @@ export default function ProductManagement({ token }) {
         </div>
         
         <form onSubmit={handleSave} className="p-8 space-y-8">
-            {/* Same form UI mapped out previously... */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div>
                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 mb-2 block">Product Name</label>
@@ -319,14 +347,29 @@ export default function ProductManagement({ token }) {
         </form>
       </div>
 
-      <div className="bg-[#0a0c10] border border-white/5 rounded-[30px] overflow-hidden">
+      {/* --- PRODUCTS TABLE WITH FIX PAGINATION & SEARCH --- */}
+      <div className="bg-[#0a0c10] border border-white/5 rounded-[30px] overflow-hidden shadow-2xl">
+        <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+          <h3 className="text-lg font-bold text-white uppercase tracking-widest">Asset Directory</h3>
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+            <input 
+              type="text" 
+              placeholder="SEARCH PRODUCTS (e.g. AHD)..." 
+              className="pl-11 pr-4 py-2.5 bg-black border border-white/10 rounded-xl text-xs font-bold tracking-widest outline-none focus:border-purple-500/50 text-white w-72 transition-all"
+              value={productSearch}
+              onChange={e => {setProductSearch(e.target.value); setCurrentProductPage(1);}}
+            />
+          </div>
+        </div>
+        
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-white/5">
-                <th className="px-8 py-6 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Asset Name</th>
-                <th className="px-8 py-6 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Stock Level</th>
-                <th className="px-8 py-6 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">Operations</th>
+              <tr className="border-b border-white/5 bg-black/20">
+                <th className="px-8 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Asset Name</th>
+                <th className="px-8 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Stock Level</th>
+                <th className="px-8 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">Operations</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -348,11 +391,28 @@ export default function ProductManagement({ token }) {
                   </td>
                 </tr>
               ))}
+              {paginatedProducts.length === 0 && (
+                <tr>
+                   <td colSpan="3" className="px-8 py-12 text-center text-gray-500 font-bold text-xs uppercase tracking-widest">No Products Found matching "{productSearch}"</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
+        
+        {/* FIXED: Product Pagination Footer */}
+        <div className="px-8 py-4 border-t border-white/5 flex items-center justify-between bg-black/20">
+          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+            Showing {filteredProducts.length === 0 ? 0 : ((currentProductPage - 1) * productsPerPage) + 1} to {Math.min(currentProductPage * productsPerPage, filteredProducts.length)} of {filteredProducts.length} Entries
+          </span>
+          <div className="flex gap-2">
+            <button disabled={currentProductPage === 1} onClick={() => setCurrentProductPage(p => p - 1)} className="p-2 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30 transition-all"><ChevronLeft className="h-4 w-4"/></button>
+            <button disabled={currentProductPage === totalProductPages || totalProductPages === 0} onClick={() => setCurrentProductPage(p => p + 1)} className="p-2 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30 transition-all"><ChevronRight className="h-4 w-4"/></button>
+          </div>
+        </div>
       </div>
 
+      {/* --- SERIAL REGISTRY MODAL WITH FIX PAGINATION & SEARCH --- */}
       {showSerialModal && selectedProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-fade-in">
           <div className="bg-[#0a0c10] border border-white/10 rounded-[40px] shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
@@ -365,7 +425,24 @@ export default function ProductManagement({ token }) {
             </div>
             
             <div className="p-8 overflow-y-auto flex-1 space-y-8 custom-scrollbar">
-              <div className="border border-white/5 rounded-3xl bg-black/20 p-8">
+              
+              {/* FIXED: Dynamic Stats calculation directly from arrays */}
+              <div className="grid grid-cols-3 gap-6">
+                <div className="bg-black/40 border border-white/5 p-6 rounded-3xl shadow-inner">
+                  <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2">TOTAL POOL</div>
+                  <div className="text-4xl font-mono font-black text-white">{derivedSerialStats.total}</div>
+                </div>
+                <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl shadow-[inset_0_0_20px_rgba(16,185,129,0.02)]">
+                  <div className="text-[10px] text-emerald-500/60 font-bold uppercase tracking-widest mb-2">AVAILABLE</div>
+                  <div className="text-4xl font-mono font-black text-emerald-400">{derivedSerialStats.available}</div>
+                </div>
+                <div className="bg-purple-500/5 border border-purple-500/20 p-6 rounded-3xl shadow-[inset_0_0_20px_rgba(168,85,247,0.02)]">
+                  <div className="text-[10px] text-purple-500/60 font-bold uppercase tracking-widest mb-2">REGISTERED</div>
+                  <div className="text-4xl font-mono font-black text-purple-400">{derivedSerialStats.used}</div>
+                </div>
+              </div>
+
+              <div className="border border-white/5 rounded-3xl bg-black/20 p-8 shadow-inner">
                 <h4 className="text-sm font-black text-white mb-6 flex items-center gap-2 uppercase tracking-widest">
                   <Settings2 className="h-5 w-5 text-purple-400"/> Ingestion Controls
                 </h4>
@@ -374,7 +451,6 @@ export default function ProductManagement({ token }) {
                   <button onClick={() => setSerialAddMethod("manual")} className={`pb-2 px-4 text-xs font-bold uppercase tracking-widest transition-all ${serialAddMethod === 'manual' ? 'border-b-2 border-blue-400 text-blue-400' : 'text-gray-500 hover:text-gray-300'}`}>Manual Array</button>
                 </div>
 
-                {/* FIXED UI: Ask for Factory Warranty Duration, NOT a calendar date */}
                 {serialAddMethod === "generate" && (
                   <div className="space-y-6">
                     <div className="grid grid-cols-3 gap-6">
@@ -404,6 +480,52 @@ export default function ProductManagement({ token }) {
                     <button onClick={handleAddNewSerials} className="w-full bg-blue-500 hover:bg-blue-600 py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all text-white shadow-lg shadow-blue-500/20">Inject Serial Array</button>
                   </div>
                 )}
+              </div>
+
+              <div className="border border-white/5 rounded-3xl overflow-hidden bg-black/40 shadow-2xl">
+                <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
+                  <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                    <input 
+                      type="text" 
+                      placeholder="SEARCH OLD SERIALS..." 
+                      className="pl-11 pr-4 py-2.5 bg-black border border-white/10 rounded-xl text-[10px] font-bold tracking-widest outline-none focus:border-purple-500/50 text-white w-72 transition-all" 
+                      value={serialSearch} 
+                      onChange={e => {setSerialSearch(e.target.value); setCurrentSerialPage(1);}} 
+                    />
+                  </div>
+                  <button onClick={() => loadProductSerials(selectedProduct.id)} className="p-2 text-gray-500 hover:text-white bg-black rounded-xl border border-white/10 transition-all shadow-sm"><RefreshCw className="h-4 w-4"/></button>
+                </div>
+                
+                <div className="divide-y divide-white/5 max-h-72 overflow-y-auto custom-scrollbar">
+                  {paginatedSerials.map(serial => (
+                    <div key={serial.id} className="p-4 px-6 flex items-center justify-between hover:bg-white/[0.02]">
+                      <div className="font-mono text-sm font-bold text-white tracking-tighter">{serial.serial || serial.serial_number}</div>
+                      <div className="flex items-center gap-6">
+                        <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${serial.status === 'registered' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
+                          {serial.status === 'registered' ? 'REGISTERED' : 'AVAILABLE'}
+                        </span>
+                        {serial.status !== 'registered' && (
+                          <button onClick={() => handleDeleteSerial(serial.id, serial.serial || serial.serial_number)} className="flex items-center gap-2 p-2 bg-red-500/10 hover:bg-red-500 border border-red-500/20 hover:text-white text-red-500 rounded-xl transition-all">
+                            <Trash className="h-4 w-4"/>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {paginatedSerials.length === 0 && <div className="p-10 text-center text-gray-600 text-xs uppercase font-bold tracking-widest">No matching serials found</div>}
+                </div>
+
+                {/* FIXED: Serial Pagination Footer */}
+                <div className="px-6 py-4 border-t border-white/5 flex items-center justify-between bg-black/40">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                    Showing {filteredSerials.length === 0 ? 0 : ((currentSerialPage - 1) * serialsPerPage) + 1} to {Math.min(currentSerialPage * serialsPerPage, filteredSerials.length)} of {filteredSerials.length}
+                  </span>
+                  <div className="flex gap-2">
+                    <button disabled={currentSerialPage === 1} onClick={() => setCurrentSerialPage(p => p - 1)} className="p-1.5 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30 transition-all"><ChevronLeft className="h-4 w-4"/></button>
+                    <button disabled={currentSerialPage === totalSerialPages || totalSerialPages === 0} onClick={() => setCurrentSerialPage(p => p + 1)} className="p-1.5 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30 transition-all"><ChevronRight className="h-4 w-4"/></button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
