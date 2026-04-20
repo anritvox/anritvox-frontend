@@ -60,8 +60,8 @@ export default function ProductManagement({ token }) {
   // Generator & Import States
   const [serialAddMethod, setSerialAddMethod] = useState("generate");
   const [genCount, setGenCount] = useState(100);
-  const [genPrefix, setGenPrefix] = useState("ANRI");
-  const [genFormat, setGenFormat] = useState("advanced");
+  const [genPrefix, setGenPrefix] = useState("ANRITV"); // Fixed to 6 characters by default
+  const [genFormat, setGenFormat] = useState("advanced"); // Legacy removed
   const [newSerials, setNewSerials] = useState("");   
   const [bulkSerialPreview, setBulkSerialPreview] = useState([]);
   const [bulkSerialError, setBulkSerialError] = useState("");
@@ -162,7 +162,6 @@ export default function ProductManagement({ token }) {
       formData.append("category_id", form.category_id);
       if (form.subcategory_id) formData.append("subcategory_id", form.subcategory_id);
       
-      // New Media Fields
       if (form.video_urls) formData.append("video_urls", form.video_urls.trim());
       if (form.model_3d_url) formData.append("model_3d_url", form.model_3d_url.trim());
       if (form.product_links) {
@@ -192,8 +191,6 @@ export default function ProductManagement({ token }) {
 
   const handleEdit = (product) => {
     setEditProductId(product.id);
-    
-    // Parse links back to comma string for editing
     let linkString = "";
     if (product.product_links) {
         try {
@@ -372,7 +369,6 @@ export default function ProductManagement({ token }) {
                   <textarea name="description" rows="3" required className="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg focus:border-cyan-500 outline-none text-slate-100" value={form.description} onChange={handleChange} disabled={formLoading} />
                 </div>
 
-                {/* --- NEW MEDIA FIELDS SECTION --- */}
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
                   <div className="col-span-1">
                     <label className="text-xs font-bold text-fuchsia-400 uppercase tracking-wider mb-2 flex items-center gap-1">
@@ -509,28 +505,20 @@ export default function ProductManagement({ token }) {
                 </div>
 
                 {serialAddMethod === "generate" && (
-                  <div className="space-y-4 p-4 border border-cyan-500/20 bg-cyan-500/5 rounded-xl">
-                    <p className="text-cyan-400 text-[10px] uppercase font-bold tracking-widest mb-2">Configure & Generate Instantly</p>
-                    <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-2 gap-6">
                       <div>
-                        <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Quantity</label>
-                        <input type="number" value={genCount} onChange={e => setGenCount(e.target.value)} className="w-full bg-[#0a0a0c] border border-slate-700 rounded px-3 py-2 text-white outline-none focus:border-cyan-500" />
+                        <label className="text-[10px] text-gray-500 uppercase font-bold block mb-2 tracking-widest">Volume</label>
+                        <input type="number" value={genCount} onChange={e => setGenCount(e.target.value)} className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500/50 font-mono text-sm" />
                       </div>
                       <div>
-                        <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Model Prefix</label>
-                        <input type="text" value={genPrefix} onChange={e => setGenPrefix(e.target.value)} maxLength={6} className="w-full bg-[#0a0a0c] border border-slate-700 rounded px-3 py-2 text-white outline-none focus:border-cyan-500 uppercase" />
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Algorithm Format</label>
-                        <select value={genFormat} onChange={e => setGenFormat(e.target.value)} className="w-full bg-[#0a0a0c] border border-slate-700 rounded px-3 py-2 text-white outline-none focus:border-cyan-500 text-xs">
-                          <option value="advanced">Advanced (Prefix-YYMM-XXXXXX-C)</option>
-                          <option value="legacy">Legacy (10 digits)</option>
-                        </select>
+                        <label className="text-[10px] text-gray-500 uppercase font-bold block mb-2 tracking-widest">Prefix Identifier</label>
+                        <input type="text" value={genPrefix} onChange={e => setGenPrefix(e.target.value)} maxLength={6} className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500/50 font-mono text-sm uppercase" />
                       </div>
                     </div>
-                    <button onClick={handleCommenceGeneration} disabled={serialLoading} className="w-full bg-cyan-600 hover:bg-cyan-500 py-3 rounded-lg text-xs font-bold uppercase tracking-widest shadow-lg shadow-cyan-500/20 transition-all flex justify-center items-center gap-2 mt-2">
-                      {serialLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <DownloadCloud className="h-4 w-4"/>}
-                      Commence Generation & Auto-Export
+                    <button onClick={handleCommenceGeneration} disabled={serialLoading} className="w-full bg-purple-500 hover:bg-purple-600 py-4 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-purple-500/20 transition-all flex justify-center items-center gap-3 text-white">
+                      {serialLoading ? <Loader2 className="h-5 w-5 animate-spin"/> : <DownloadCloud className="h-5 w-5"/>}
+                      Initialize Batch Generation
                     </button>
                   </div>
                 )}
