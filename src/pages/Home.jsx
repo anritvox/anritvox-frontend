@@ -19,15 +19,13 @@ export default function Home() {
     const loadHomepageData = async () => {
       setLoading(true);
       
-      // FIXED: Non-blocking parallel requests. If one fails, the others still render.
       const [bannersRes, productsRes] = await Promise.allSettled([
-        api.get('/banners').catch(() => ({ data: [] })), // Graceful fallback
+        api.get('/banners').catch(() => ({ data: [] })), 
         api.get('/products/active').catch(() => api.get('/products')).catch(() => ({ data: [] }))
       ]);
 
       if (!isMounted) return;
 
-      // Safe Extraction
       let fetchedBanners = [];
       if (bannersRes.status === 'fulfilled') {
         const rawBanners = bannersRes.value?.data?.data || bannersRes.value?.data || [];
@@ -40,7 +38,6 @@ export default function Home() {
         fetchedProducts = Array.isArray(rawProducts) ? rawProducts : [];
       }
 
-      // Map Banner Types (Assuming admin panel uses 'position' or just general active banners)
       const heroBanners = fetchedBanners.filter(b => !b.position || b.position === 'hero' || b.position === 'top');
       const promoBanners = fetchedBanners.filter(b => b.position === 'mid' || b.position === 'promo');
 
@@ -58,7 +55,6 @@ export default function Home() {
     return () => { isMounted = false; };
   }, []);
 
-  // Auto-advance Hero Slider
   useEffect(() => {
     if (data.heroBanners.length <= 1) return;
     const timer = setInterval(() => {
@@ -67,8 +63,9 @@ export default function Home() {
     return () => clearInterval(timer);
   }, [data.heroBanners.length]);
 
+  // FIXED: Bulletproof image resolver. Prevents crashes from nulls, objects, or non-strings.
   const resolveImageUrl = (path) => {
-    if (!path) return '/logo.webp';
+    if (!path || typeof path !== 'string') return '/logo.webp';
     if (path.startsWith('http')) return path;
     const cleanPath = path.replace(/^[\/\\]/, '').replace(/^uploads[\/\\]/, '');
     return `${BASE_URL}/uploads/${cleanPath}`;
@@ -85,7 +82,6 @@ export default function Home() {
     );
   }
 
-  // Fallback Hero if no banners are uploaded from Admin yet
   const displayHeroBanners = data.heroBanners.length > 0 ? data.heroBanners : [{
     id: 'default-1',
     image_url: '/logo.webp',
@@ -97,14 +93,13 @@ export default function Home() {
   return (
     <div className="bg-[#050505] text-white font-sans selection:bg-purple-500/30 selection:text-purple-200">
       
-      {/* --- DYNAMIC HERO SLIDER --- */}
       <section className="relative h-[80vh] md:h-[90vh] w-full overflow-hidden bg-black flex items-center justify-center border-b border-white/5">
         {displayHeroBanners.map((banner, index) => (
           <div 
             key={banner.id}
             className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
           >
-            <div className="absolute inset-0 bg-black/60 z-10" /> {/* Dark Overlay */}
+            <div className="absolute inset-0 bg-black/60 z-10" /> 
             <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent z-10" />
             <img 
               src={resolveImageUrl(banner.image_url)} 
@@ -132,7 +127,6 @@ export default function Home() {
           </div>
         ))}
 
-        {/* Slider Controls */}
         {displayHeroBanners.length > 1 && (
           <>
             <button onClick={() => setCurrentSlide((p) => (p === 0 ? displayHeroBanners.length - 1 : p - 1))} className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/40 border border-white/10 text-white hover:bg-purple-500/20 hover:text-purple-400 hover:border-purple-500/50 backdrop-blur-md transition-all">
@@ -142,7 +136,6 @@ export default function Home() {
               <ChevronRight className="w-6 h-6" />
             </button>
             
-            {/* Dots */}
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex gap-3">
               {displayHeroBanners.map((_, idx) => (
                 <button 
@@ -156,7 +149,6 @@ export default function Home() {
         )}
       </section>
 
-      {/* --- FEATURE HIGHLIGHTS --- */}
       <section className="py-12 bg-[#0a0c10] border-b border-white/5 relative z-20 -mt-8 rounded-t-[40px] shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="flex items-center gap-6 p-6 rounded-3xl bg-black/40 border border-white/5 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all group">
@@ -189,7 +181,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- NEW ARRIVALS GRID --- */}
       <section className="py-24 max-w-7xl mx-auto px-6">
         <div className="flex items-end justify-between mb-12">
           <div>
@@ -204,15 +195,18 @@ export default function Home() {
         {data.newArrivals.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {data.newArrivals.map((product) => {
-              const imageUrl = product.images?.[0] || product.image_url;
+              // Ensure we pass a clean string to the resolver, or fallback safely
+              const rawImage = product.images?.[0] || product.image_url || '';
+              const finalImageUrl = typeof rawImage === 'string' ? rawImage : '';
+              
               return (
                 <Link key={product.id} to={`/product/${product.id}`} className="group bg-[#0a0c10] border border-white/5 rounded-3xl overflow-hidden hover:border-purple-500/30 hover:shadow-[0_0_30px_rgba(168,85,247,0.1)] transition-all block relative">
                   <div className="absolute top-4 right-4 z-10 px-2.5 py-1 bg-black/60 backdrop-blur-md border border-white/10 rounded-lg text-[9px] font-black text-white uppercase tracking-widest">
                     NEW
                   </div>
-                  <div className="aspect-square bg-black relative overflow-hidden">
+                  <div className="aspect-square bg-black relative overflow-hidden flex items-center justify-center">
                     <img 
-                      src={resolveImageUrl(imageUrl)} 
+                      src={resolveImageUrl(finalImageUrl)} 
                       alt={product.name} 
                       className="w-full h-full object-cover opacity-80 group-hover:scale-110 group-hover:opacity-100 transition-all duration-700"
                     />
@@ -241,14 +235,13 @@ export default function Home() {
         )}
       </section>
 
-      {/* --- SECONDARY PROMO BANNERS --- */}
       {data.promoBanners.length > 0 && (
         <section className="py-12 bg-black border-y border-white/5">
           <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-6">
             {data.promoBanners.slice(0, 2).map(banner => (
               <Link key={banner.id} to={banner.link || '/shop'} className="relative h-64 rounded-3xl overflow-hidden group block border border-white/5 hover:border-white/20 transition-all">
                 <div className="absolute inset-0 bg-black/60 z-10 group-hover:bg-black/40 transition-colors" />
-                <img src={resolveImageUrl(banner.image_url)} alt={banner.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                <img src={resolveImageUrl(typeof banner.image_url === 'string' ? banner.image_url : '')} alt={banner.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 <div className="absolute inset-0 z-20 p-8 flex flex-col justify-center">
                   <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">{banner.title}</h3>
                   <p className="text-sm text-gray-300 font-medium mb-6 max-w-md">{banner.subtitle}</p>
@@ -260,7 +253,6 @@ export default function Home() {
         </section>
       )}
 
-      {/* --- E-WARRANTY CTA --- */}
       <section className="py-24 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-black z-0" />
         <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
