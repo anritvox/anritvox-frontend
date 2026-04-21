@@ -1,251 +1,282 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { ChevronRight, Star, ShoppingCart, Zap, ShieldCheck, Headphones, ImageIcon } from 'lucide-react';
-import api from '../services/api';
-import { useCart } from '../context/CartContext';
-import { useToast } from '../context/ToastContext';
-import SkeletonLoader from '../components/SkeletonLoader';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { ArrowRight, ShieldCheck, Zap, Server, ChevronRight, ChevronLeft, Loader2, Cpu } from "lucide-react";
+import api, { BASE_URL } from "../services/api";
 
-const Home = () => {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [banners, setBanners] = useState([]);
+export default function Home() {
+  const [data, setData] = useState({
+    heroBanners: [],
+    promoBanners: [],
+    featuredProducts: [],
+    newArrivals: [],
+  });
   const [loading, setLoading] = useState(true);
-  
-  const { addToCart } = useCart();
-  const { showToast } = useToast();
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
-    const fetchHomeData = async () => {
-      try {
-        setLoading(true);
-        // Fetch concurrently for performance
-        const [productsRes, categoriesRes, bannersRes] = await Promise.all([
-          api.get('/products/active'),
-          api.get('/categories'),
-          api.get('/banners/active')
-        ]);
+    let isMounted = true;
 
-        setProducts(productsRes.data.data || []);
-        setCategories(categoriesRes.data.data || []);
-        setBanners(bannersRes.data.data || []);
-      } catch (error) {
-        console.error('Failed to fetch homepage data:', error);
-        showToast('Failed to load some content', 'error');
-      } finally {
-        setLoading(false);
+    const loadHomepageData = async () => {
+      setLoading(true);
+      
+      // FIXED: Non-blocking parallel requests. If one fails, the others still render.
+      const [bannersRes, productsRes] = await Promise.allSettled([
+        api.get('/banners').catch(() => ({ data: [] })), // Graceful fallback
+        api.get('/products/active').catch(() => api.get('/products')).catch(() => ({ data: [] }))
+      ]);
+
+      if (!isMounted) return;
+
+      // Safe Extraction
+      let fetchedBanners = [];
+      if (bannersRes.status === 'fulfilled') {
+        const rawBanners = bannersRes.value?.data?.data || bannersRes.value?.data || [];
+        fetchedBanners = Array.isArray(rawBanners) ? rawBanners : [];
       }
+
+      let fetchedProducts = [];
+      if (productsRes.status === 'fulfilled') {
+        const rawProducts = productsRes.value?.data?.data || productsRes.value?.data || [];
+        fetchedProducts = Array.isArray(rawProducts) ? rawProducts : [];
+      }
+
+      // Map Banner Types (Assuming admin panel uses 'position' or just general active banners)
+      const heroBanners = fetchedBanners.filter(b => !b.position || b.position === 'hero' || b.position === 'top');
+      const promoBanners = fetchedBanners.filter(b => b.position === 'mid' || b.position === 'promo');
+
+      setData({
+        heroBanners,
+        promoBanners,
+        featuredProducts: fetchedProducts.slice(0, 4),
+        newArrivals: fetchedProducts.slice(0, 8),
+      });
+
+      setLoading(false);
     };
 
-    fetchHomeData();
-  }, [showToast]);
+    loadHomepageData();
+    return () => { isMounted = false; };
+  }, []);
 
-  const getProductImage = (product) => {
-    // Phase 3 Fix: Prioritize images array, fallback to single image, then fallback placeholder
-    if (product.images && product.images.length > 0) return product.images[0].file_path || product.images[0];
-    if (product.image) return product.image;
-    return '/logo.webp'; // Fallback
-  };
+  // Auto-advance Hero Slider
+  useEffect(() => {
+    if (data.heroBanners.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % data.heroBanners.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [data.heroBanners.length]);
 
-  const calculateDiscount = (price, discountPrice) => {
-    if (!discountPrice || discountPrice >= price) return null;
-    return Math.round(((price - discountPrice) / price) * 100);
+  const resolveImageUrl = (path) => {
+    if (!path) return '/logo.webp';
+    if (path.startsWith('http')) return path;
+    const cleanPath = path.replace(/^[\/\\]/, '').replace(/^uploads[\/\\]/, '');
+    return `${BASE_URL}/uploads/${cleanPath}`;
   };
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8 space-y-12">
-        <SkeletonLoader type="banner" />
-        <SkeletonLoader type="grid" count={4} />
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-12 w-12 text-purple-500 animate-spin" />
+          <div className="text-[10px] font-mono text-purple-400 uppercase tracking-widest animate-pulse">Initializing Master Node...</div>
+        </div>
       </div>
     );
   }
 
+  // Fallback Hero if no banners are uploaded from Admin yet
+  const displayHeroBanners = data.heroBanners.length > 0 ? data.heroBanners : [{
+    id: 'default-1',
+    image_url: '/logo.webp',
+    title: 'ANRITVOX CORE INFRASTRUCTURE',
+    subtitle: 'Next-Generation Asset Management & Security Modules',
+    link: '/shop'
+  }];
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 animate-in fade-in duration-500">
+    <div className="bg-[#050505] text-white font-sans selection:bg-purple-500/30 selection:text-purple-200">
       
-      {/* Hero Banner Section */}
-      {banners.length > 0 && (
-        <section className="relative w-full h-[60vh] sm:h-[70vh] lg:h-[80vh] overflow-hidden bg-gray-900">
-          <div className="absolute inset-0">
+      {/* --- DYNAMIC HERO SLIDER --- */}
+      <section className="relative h-[80vh] md:h-[90vh] w-full overflow-hidden bg-black flex items-center justify-center border-b border-white/5">
+        {displayHeroBanners.map((banner, index) => (
+          <div 
+            key={banner.id}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+          >
+            <div className="absolute inset-0 bg-black/60 z-10" /> {/* Dark Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent z-10" />
             <img 
-              src={banners[0].image_url} 
-              alt={banners[0].title || "Hero Banner"}
-              width="1920"
-              height="1080"
-              className="w-full h-full object-cover opacity-60"
-              fetchpriority="high"
+              src={resolveImageUrl(banner.image_url)} 
+              alt={banner.title || 'Anritvox Banner'} 
+              className="w-full h-full object-cover opacity-60 scale-105 transform transition-transform duration-[10s] ease-out hover:scale-100"
             />
+            
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center px-4 max-w-5xl mx-auto">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-[10px] font-bold text-purple-400 uppercase tracking-[0.2em] mb-6 animate-fade-in">
+                <Cpu className="w-3 h-3" /> Verified Systems
+              </div>
+              <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-white mb-6 uppercase drop-shadow-2xl">
+                {banner.title || 'MASTER NODE SYSTEMS'}
+              </h1>
+              <p className="text-lg md:text-xl text-gray-400 font-medium max-w-2xl mb-10 tracking-tight">
+                {banner.subtitle || 'Deploy premium tech infrastructure and secure your digital assets with our E-Warranty registry.'}
+              </p>
+              <Link 
+                to={banner.link || '/shop'} 
+                className="group px-8 py-4 bg-white text-black font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-purple-500 hover:text-white transition-all shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(168,85,247,0.4)] flex items-center gap-3"
+              >
+                Explore Hardware <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
           </div>
-          <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-4 max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 tracking-tight">
-              {banners[0].title || 'Premium Audio Experience'}
-            </h1>
-            <p className="text-lg md:text-2xl text-gray-200 mb-8 max-w-2xl">
-              {banners[0].subtitle || 'Discover the next generation of sound clarity and deep bass.'}
-            </p>
-            <Link 
-              to={banners[0].link_url || '/shop'}
-              className="group inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full font-bold transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/30"
-            >
-              Shop Now
-              <ChevronRight className="group-hover:translate-x-1 transition-transform" />
-            </Link>
+        ))}
+
+        {/* Slider Controls */}
+        {displayHeroBanners.length > 1 && (
+          <>
+            <button onClick={() => setCurrentSlide((p) => (p === 0 ? displayHeroBanners.length - 1 : p - 1))} className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/40 border border-white/10 text-white hover:bg-purple-500/20 hover:text-purple-400 hover:border-purple-500/50 backdrop-blur-md transition-all">
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <button onClick={() => setCurrentSlide((p) => (p + 1) % displayHeroBanners.length)} className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/40 border border-white/10 text-white hover:bg-purple-500/20 hover:text-purple-400 hover:border-purple-500/50 backdrop-blur-md transition-all">
+              <ChevronRight className="w-6 h-6" />
+            </button>
+            
+            {/* Dots */}
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex gap-3">
+              {displayHeroBanners.map((_, idx) => (
+                <button 
+                  key={idx} 
+                  onClick={() => setCurrentSlide(idx)}
+                  className={`h-1.5 rounded-full transition-all ${idx === currentSlide ? 'w-8 bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.8)]' : 'w-2 bg-white/30 hover:bg-white/60'}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </section>
+
+      {/* --- FEATURE HIGHLIGHTS --- */}
+      <section className="py-12 bg-[#0a0c10] border-b border-white/5 relative z-20 -mt-8 rounded-t-[40px] shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="flex items-center gap-6 p-6 rounded-3xl bg-black/40 border border-white/5 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all group">
+            <div className="w-14 h-14 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+              <Server className="w-7 h-7" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">Premium Hardware</h3>
+              <p className="text-xs text-gray-500 font-medium">Curated high-end tech</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-6 p-6 rounded-3xl bg-black/40 border border-white/5 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all group">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+              <ShieldCheck className="w-7 h-7" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">Secure E-Warranty</h3>
+              <p className="text-xs text-gray-500 font-medium">Digital certificate registry</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-6 p-6 rounded-3xl bg-black/40 border border-white/5 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all group">
+            <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+              <Zap className="w-7 h-7" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">Express Fulfillment</h3>
+              <p className="text-xs text-gray-500 font-medium">Pan-India rapid delivery</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- NEW ARRIVALS GRID --- */}
+      <section className="py-24 max-w-7xl mx-auto px-6">
+        <div className="flex items-end justify-between mb-12">
+          <div>
+            <div className="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-2">Latest Deployments</div>
+            <h2 className="text-3xl md:text-4xl font-black text-white tracking-tighter uppercase">New Arrivals</h2>
+          </div>
+          <Link to="/shop" className="hidden md:flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-purple-400 uppercase tracking-widest transition-colors">
+            View All Catalog <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        {data.newArrivals.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {data.newArrivals.map((product) => {
+              const imageUrl = product.images?.[0] || product.image_url;
+              return (
+                <Link key={product.id} to={`/product/${product.id}`} className="group bg-[#0a0c10] border border-white/5 rounded-3xl overflow-hidden hover:border-purple-500/30 hover:shadow-[0_0_30px_rgba(168,85,247,0.1)] transition-all block relative">
+                  <div className="absolute top-4 right-4 z-10 px-2.5 py-1 bg-black/60 backdrop-blur-md border border-white/10 rounded-lg text-[9px] font-black text-white uppercase tracking-widest">
+                    NEW
+                  </div>
+                  <div className="aspect-square bg-black relative overflow-hidden">
+                    <img 
+                      src={resolveImageUrl(imageUrl)} 
+                      alt={product.name} 
+                      className="w-full h-full object-cover opacity-80 group-hover:scale-110 group-hover:opacity-100 transition-all duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0a0c10] via-transparent to-transparent opacity-80" />
+                  </div>
+                  <div className="p-6">
+                    <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-2">{product.brand || 'ANRITVOX CORE'}</div>
+                    <h3 className="font-bold text-white text-lg tracking-tight mb-2 group-hover:text-purple-400 transition-colors line-clamp-1">{product.name}</h3>
+                    <div className="flex items-center justify-between mt-4">
+                      <span className="font-black text-lg text-white">₹{parseFloat(product.price).toLocaleString('en-IN')}</span>
+                      <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                        <ArrowRight className="w-4 h-4" />
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="w-full py-20 bg-[#0a0c10] border border-white/5 rounded-3xl flex flex-col items-center justify-center text-center">
+            <Cpu className="w-12 h-12 text-gray-700 mb-4" />
+            <h3 className="text-xl font-black text-white uppercase tracking-widest mb-2">Catalog Offline</h3>
+            <p className="text-sm text-gray-500 font-medium max-w-md">The product database is currently undergoing synchronization. Please check back shortly.</p>
+          </div>
+        )}
+      </section>
+
+      {/* --- SECONDARY PROMO BANNERS --- */}
+      {data.promoBanners.length > 0 && (
+        <section className="py-12 bg-black border-y border-white/5">
+          <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {data.promoBanners.slice(0, 2).map(banner => (
+              <Link key={banner.id} to={banner.link || '/shop'} className="relative h-64 rounded-3xl overflow-hidden group block border border-white/5 hover:border-white/20 transition-all">
+                <div className="absolute inset-0 bg-black/60 z-10 group-hover:bg-black/40 transition-colors" />
+                <img src={resolveImageUrl(banner.image_url)} alt={banner.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                <div className="absolute inset-0 z-20 p-8 flex flex-col justify-center">
+                  <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">{banner.title}</h3>
+                  <p className="text-sm text-gray-300 font-medium mb-6 max-w-md">{banner.subtitle}</p>
+                  <span className="text-xs font-bold text-purple-400 uppercase tracking-widest flex items-center gap-2">Explore <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform"/></span>
+                </div>
+              </Link>
+            ))}
           </div>
         </section>
       )}
 
-      {/* Features Bar */}
-      <section className="bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-        <div className="container mx-auto px-4 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center divide-y md:divide-y-0 md:divide-x dark:divide-gray-700">
-            <div className="flex flex-col items-center p-4">
-              <Zap className="w-8 h-8 text-blue-500 mb-3" />
-              <h3 className="font-bold text-gray-900 dark:text-white">Fast Delivery</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Free shipping on orders over $50</p>
-            </div>
-            <div className="flex flex-col items-center p-4">
-              <ShieldCheck className="w-8 h-8 text-blue-500 mb-3" />
-              <h3 className="font-bold text-gray-900 dark:text-white">1 Year Warranty</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Guaranteed quality & protection</p>
-            </div>
-            <div className="flex flex-col items-center p-4">
-              <Headphones className="w-8 h-8 text-blue-500 mb-3" />
-              <h3 className="font-bold text-gray-900 dark:text-white">24/7 Support</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Always here to help you</p>
-            </div>
+      {/* --- E-WARRANTY CTA --- */}
+      <section className="py-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-black z-0" />
+        <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
+          <div className="w-20 h-20 mx-auto bg-purple-500/10 border border-purple-500/30 rounded-3xl flex items-center justify-center mb-8 shadow-[0_0_50px_rgba(168,85,247,0.2)]">
+            <ShieldCheck className="w-10 h-10 text-purple-400" />
           </div>
-        </div>
-      </section>
-
-      {/* Categories Section */}
-      <section className="py-16 container mx-auto px-4">
-        <div className="flex justify-between items-end mb-8">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Shop by Category</h2>
-            <p className="text-gray-500 dark:text-gray-400 mt-2">Explore our wide range of products</p>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {categories.map((category) => (
-            <Link 
-              key={category.id} 
-              to={`/shop?category=${category.slug}`}
-              className="group flex flex-col items-center gap-4 p-4 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:border-blue-200 dark:hover:border-blue-900"
-            >
-              <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-tr from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center p-2 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-inner">
-                {category.image_url ? (
-                  <img 
-                    src={category.image_url} 
-                    alt={category.name} 
-                    loading="lazy"
-                    width="96" height="96"
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                ) : (
-                  <ImageIcon className="w-10 h-10 text-gray-400 dark:text-gray-500" />
-                )}
-              </div>
-              <span className="font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-center">
-                {category.name}
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Featured Products */}
-      <section className="py-16 bg-white dark:bg-gray-800">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-end mb-8">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Trending Now</h2>
-              <p className="text-gray-500 dark:text-gray-400 mt-2">Top rated gear for you</p>
-            </div>
-            <Link to="/shop" className="hidden sm:flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium">
-              View All <ChevronRight size={20} />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products.slice(0, 8).map((product) => {
-              const discountPercent = calculateDiscount(product.price, product.discount_price);
-              
-              return (
-                <div 
-                  key={product.id}
-                  className="group flex flex-col bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
-                >
-                  <Link to={`/product/${product.slug || product.id}`} className="relative aspect-square overflow-hidden bg-white dark:bg-gray-800 p-6 flex items-center justify-center">
-                    {/* Discount Badge */}
-                    {discountPercent && (
-                      <div className="absolute top-4 left-4 z-10 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                        {discountPercent}% OFF
-                      </div>
-                    )}
-                    
-                    <img 
-                      src={getProductImage(product)} 
-                      alt={product.name}
-                      loading="lazy"
-                      width="300" height="300"
-                      className="object-contain w-full h-full mix-blend-multiply dark:mix-blend-normal transition-transform duration-500 group-hover:scale-110"
-                    />
-                  </Link>
-
-                  <div className="p-5 flex flex-col flex-1">
-                    <div className="flex items-center gap-1 text-amber-400 mb-2">
-                      <Star size={16} className="fill-current" />
-                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{product.rating || '4.5'}</span>
-                    </div>
-                    
-                    <Link to={`/product/${product.slug || product.id}`}>
-                      <h3 className="font-semibold text-lg text-gray-900 dark:text-white line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors">
-                        {product.name}
-                      </h3>
-                    </Link>
-
-                    <div className="mt-auto flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-800">
-                      <div className="flex flex-col">
-                        {product.discount_price ? (
-                          <>
-                            <span className="text-sm text-gray-400 line-through">${parseFloat(product.price).toFixed(2)}</span>
-                            <span className="text-lg font-bold text-red-500">${parseFloat(product.discount_price).toFixed(2)}</span>
-                          </>
-                        ) : (
-                          <span className="text-lg font-bold text-gray-900 dark:text-white">${parseFloat(product.price).toFixed(2)}</span>
-                        )}
-                      </div>
-                      
-                      <button 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          addToCart(product, 1);
-                          showToast('Added to cart!', 'success');
-                        }}
-                        className="bg-gray-100 dark:bg-gray-800 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-gray-900 dark:text-white p-3 rounded-full transition-colors duration-300"
-                        aria-label="Add to cart"
-                      >
-                        <ShoppingCart size={20} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          
-          <div className="mt-8 text-center sm:hidden">
-             <Link to="/shop" className="inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white px-6 py-3 rounded-full font-medium">
-              View All Products <ChevronRight size={18} />
-            </Link>
-          </div>
+          <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase mb-6 drop-shadow-lg">Protect Your Assets</h2>
+          <p className="text-lg text-gray-400 font-medium mb-10 max-w-2xl mx-auto">
+            Register your hardware securely in our blockchain-inspired ledger. Instantly download your Certificate of Authenticity and receive a 1-Month Bonus extension.
+          </p>
+          <Link to="/ewarranty" className="inline-flex items-center gap-3 px-10 py-5 bg-purple-500 text-white rounded-full font-black text-sm uppercase tracking-widest hover:bg-purple-600 hover:scale-105 transition-all shadow-[0_0_30px_rgba(168,85,247,0.4)]">
+            Access Security Gateway <ArrowRight className="w-5 h-5" />
+          </Link>
         </div>
       </section>
 
     </div>
   );
-};
-
-export default Home;
+}
