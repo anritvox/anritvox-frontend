@@ -99,7 +99,7 @@ export function AuthProvider({ children }) {
 
   const register = useCallback(async (userData) => {
     const res = await api.post("/auth/register", userData);
-    return res.data; // Returns { success: true, message: "OTP sent..." }
+    return res.data; // Returns { success: true, message: "OTP sent..."
   }, []);
 
   const verifyEmail = useCallback(async ({ email, otp }) => {
