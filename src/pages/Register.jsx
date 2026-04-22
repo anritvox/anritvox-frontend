@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { Turnstile } from '@marsidev/react-turnstile';
 
 export default function Register() {
-  const [step, setStep] = useState(1); // 1 = register form, 2 = OTP verification
+  const [step, setStep] = useState(1); 
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '', phone: '' });
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
@@ -19,21 +19,19 @@ export default function Register() {
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
   const handleTurnstileSuccess = useCallback((token) => {
-    setError(''); // Clear any previous errors upon success
+    setError(''); 
     setTurnstileToken(token);
   }, []);
 
-  // Updated to explicitly intercept 400020 (Invalid Site Key)
   const handleTurnstileError = useCallback((errorCode) => {
     console.warn(`Turnstile widget rejected. Error Code: ${errorCode}`);
-    
     const codeStr = String(errorCode);
     if (codeStr === '600010') {
       setError('Security error: Domain mismatch. Verify the domain whitelist in Cloudflare.');
     } else if (codeStr === '400020') {
       setError('System Error: Invalid Site Key. Admin must add VITE_TURNSTILE_SITE_KEY in Vercel.');
     } else {
-      setError(`Security check failed (Code: ${errorCode || 'Unknown'}). Please disable ad-blockers and try again.`);
+      setError(`Security check failed (Code: ${errorCode || 'Unknown'}). Please try again.`);
     }
     setTurnstileToken('');
   }, []);
@@ -53,6 +51,7 @@ export default function Register() {
     if (form.password !== form.confirm) {
       return setError('Passwords do not match');
     }
+    // Your backend explicitly requires 8 characters, checking here to save an API call
     if (form.password.length < 8) {
       return setError('Password must be at least 8 characters');
     }
@@ -72,7 +71,10 @@ export default function Register() {
       });
       setStep(2); 
     } catch (err) {
-      setError(err.message || 'Registration failed. Please try again.');
+      // CRITICAL FIX: Properly extract the exact error message sent from your Node.js backend
+      const backendError = err.response?.data?.message || err.message || 'Registration failed. Please try again.';
+      setError(backendError);
+      
       setTurnstileToken('');
       if (turnstileRef.current) {
         turnstileRef.current.reset();
@@ -95,7 +97,9 @@ export default function Register() {
       await verifyEmail({ email: form.email, otp });
       navigate('/');
     } catch (err) {
-      setError(err.message || 'OTP Verification failed');
+      // Unpack OTP verification errors from backend
+      const backendError = err.response?.data?.message || err.message || 'OTP Verification failed';
+      setError(backendError);
     } finally {
       setLoading(false);
     }
@@ -130,14 +134,14 @@ export default function Register() {
               {field('Confirm Password', 'confirm', 'password', 'Re-enter password')}
               
               <div className="pt-2 flex justify-center w-full min-h-[65px]">
+                {/* Removed invalid refreshExpired prop to eliminate React DOM warnings */}
                 <Turnstile
                   ref={turnstileRef}
-                  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAADBENLaxaG5Y9r6D'}
+                  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
                   onSuccess={handleTurnstileSuccess}
                   onError={handleTurnstileError}
                   onExpire={handleTurnstileExpire}
                   retry="auto"
-                  refreshExpired="auto"
                 />
               </div>
 
