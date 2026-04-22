@@ -1,5 +1,5 @@
 // src/pages/Register.jsx
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Turnstile } from '@marsidev/react-turnstile';
@@ -11,10 +11,28 @@ export default function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState('');
+  
+  // 1. Added reference to manage Turnstile lifecycle manually
+  const turnstileRef = useRef(null); 
+  
   const { register, verifyEmail } = useAuth();
   const navigate = useNavigate();
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
+
+  // 2. Memoized Turnstile callbacks to prevent widget reset on every keystroke
+  const handleTurnstileSuccess = useCallback((token) => {
+    setTurnstileToken(token);
+  }, []);
+
+  const handleTurnstileError = useCallback(() => {
+    console.warn('Turnstile failed to load');
+    setError('Failed to load security check. Please refresh the page.');
+  }, []);
+
+  const handleTurnstileExpire = useCallback(() => {
+    setTurnstileToken('');
+  }, []);
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -42,7 +60,12 @@ export default function Register() {
       });
       setStep(2); // Move to OTP verification step
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Registration failed. Please try again.');
+      // 3. CRITICAL FIX: Reset Turnstile on API failure because tokens are single-use
+      setTurnstileToken('');
+      if (turnstileRef.current) {
+        turnstileRef.current.reset();
+      }
     } finally {
       setLoading(false);
     }
@@ -61,7 +84,7 @@ export default function Register() {
       await verifyEmail({ email: form.email, otp });
       navigate('/'); // Redirect to home after successful registration
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'OTP Verification failed');
     } finally {
       setLoading(false);
     }
@@ -97,15 +120,17 @@ export default function Register() {
               
               <div className="pt-2">
                 <Turnstile
+                  ref={turnstileRef}
                   siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
-                  onSuccess={(token) => setTurnstileToken(token)}
-                                onError={() => console.warn('Turnstile failed to load')}
+                  onSuccess={handleTurnstileSuccess}
+                  onError={handleTurnstileError}
+                  onExpire={handleTurnstileExpire}
                 />
               </div>
 
               <button
                 type="submit"
-                              disabled={loading}
+                disabled={loading}
                 className="w-full bg-[#39d353] text-white py-2 rounded font-semibold hover:bg-[#2db844] disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 {loading ? 'Sending OTP...' : 'Continue'}
@@ -146,7 +171,7 @@ export default function Register() {
                 onClick={() => setStep(1)}
                 className="w-full text-gray-600 text-sm hover:underline"
               >
-                ← Back to registration
+                &larr; Back to registration
               </button>
             </form>
           </>
