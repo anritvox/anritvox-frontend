@@ -23,15 +23,17 @@ export default function Register() {
     setTurnstileToken(token);
   }, []);
 
-  // Extracted specific Cloudflare error code to pinpoint the failure reason
+  // Updated to explicitly intercept 400020 (Invalid Site Key)
   const handleTurnstileError = useCallback((errorCode) => {
     console.warn(`Turnstile widget rejected. Error Code: ${errorCode}`);
     
-    // 600010 = Domain mismatch. Usually means the Vercel URL isn't whitelisted in Cloudflare.
-    if (String(errorCode) === '600010') {
-      setError('Security configuration error: Domain mismatch. Admin must check Cloudflare settings.');
+    const codeStr = String(errorCode);
+    if (codeStr === '600010') {
+      setError('Security error: Domain mismatch. Verify the domain whitelist in Cloudflare.');
+    } else if (codeStr === '400020') {
+      setError('System Error: Invalid Site Key. Admin must add VITE_TURNSTILE_SITE_KEY in Vercel.');
     } else {
-      setError(`Security check failed (Code: ${errorCode || 'Network/Adblocker'}). Please disable ad-blockers and try again.`);
+      setError(`Security check failed (Code: ${errorCode || 'Unknown'}). Please disable ad-blockers and try again.`);
     }
     setTurnstileToken('');
   }, []);
