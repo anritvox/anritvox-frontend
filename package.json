@@ -24,6 +24,7 @@
     "socket.io-client": "^4.8.1",
     "xlsx": "^0.18.5",
     "qrcode": "^1.5.4"
+        "@marsidev/react-turnstile": "^1.0.2",
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
