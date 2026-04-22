@@ -27,6 +27,10 @@ export default function Register() {
       return setError('Password must be at least 8 characters');
     }
     
+    if (!turnstileToken) {
+      return setError('Please complete the bot verification');
+    }
+    
     setLoading(true);
     try {
       await register({ 
@@ -95,13 +99,13 @@ export default function Register() {
                 <Turnstile
                   siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
                   onSuccess={(token) => setTurnstileToken(token)}
-                  onError={() => setError('Bot verification failed')}
+                                onError={() => console.warn('Turnstile failed to load')}
                 />
               </div>
 
               <button
                 type="submit"
-                disabled={loading || !turnstileToken}
+                              disabled={loading}
                 className="w-full bg-[#39d353] text-white py-2 rounded font-semibold hover:bg-[#2db844] disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 {loading ? 'Sending OTP...' : 'Continue'}
