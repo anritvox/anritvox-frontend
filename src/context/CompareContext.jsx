@@ -8,7 +8,7 @@ export function CompareProvider({ children }) {
   const addToCompare = (product) => {
     setCompareItems(prev => {
       if (prev.find(p => p.id === product.id || p._id === product._id)) return prev;
-      if (prev.length >= 4) return prev; // max 4 items
+      if (prev.length >= 4) return prev; // max 4 
       return [...prev, product];
     });
   };
