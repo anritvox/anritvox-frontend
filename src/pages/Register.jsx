@@ -132,7 +132,7 @@ export default function Register() {
               <div className="pt-2 flex justify-center w-full min-h-[65px]">
                 <Turnstile
                   ref={turnstileRef}
-                  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
+                  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAADBENLaxaG5Y9r6D'}
                   onSuccess={handleTurnstileSuccess}
                   onError={handleTurnstileError}
                   onExpire={handleTurnstileExpire}
