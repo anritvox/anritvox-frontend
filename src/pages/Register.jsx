@@ -12,26 +12,36 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState('');
   
-  // 1. Added reference to manage Turnstile lifecycle manually
   const turnstileRef = useRef(null); 
-  
   const { register, verifyEmail } = useAuth();
   const navigate = useNavigate();
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
-  // 2. Memoized Turnstile callbacks to prevent widget reset on every keystroke
   const handleTurnstileSuccess = useCallback((token) => {
+    setError(''); // Clear any previous errors upon success
     setTurnstileToken(token);
   }, []);
 
-  const handleTurnstileError = useCallback(() => {
-    console.warn('Turnstile failed to load');
-    setError('Failed to load security check. Please refresh the page.');
+  // Extracted specific Cloudflare error code to pinpoint the failure reason
+  const handleTurnstileError = useCallback((errorCode) => {
+    console.warn(`Turnstile widget rejected. Error Code: ${errorCode}`);
+    
+    // 600010 = Domain mismatch. Usually means the Vercel URL isn't whitelisted in Cloudflare.
+    if (String(errorCode) === '600010') {
+      setError('Security configuration error: Domain mismatch. Admin must check Cloudflare settings.');
+    } else {
+      setError(`Security check failed (Code: ${errorCode || 'Network/Adblocker'}). Please disable ad-blockers and try again.`);
+    }
+    setTurnstileToken('');
   }, []);
 
   const handleTurnstileExpire = useCallback(() => {
+    setError('Security token expired. Please verify again.');
     setTurnstileToken('');
+    if (turnstileRef.current) {
+      turnstileRef.current.reset();
+    }
   }, []);
 
   const handleRegister = async (e) => {
@@ -46,7 +56,7 @@ export default function Register() {
     }
     
     if (!turnstileToken) {
-      return setError('Please complete the bot verification');
+      return setError('Please complete the security verification');
     }
     
     setLoading(true);
@@ -58,10 +68,9 @@ export default function Register() {
         phone: form.phone,
         turnstileToken 
       });
-      setStep(2); // Move to OTP verification step
+      setStep(2); 
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
-      // 3. CRITICAL FIX: Reset Turnstile on API failure because tokens are single-use
       setTurnstileToken('');
       if (turnstileRef.current) {
         turnstileRef.current.reset();
@@ -82,7 +91,7 @@ export default function Register() {
     setLoading(true);
     try {
       await verifyEmail({ email: form.email, otp });
-      navigate('/'); // Redirect to home after successful registration
+      navigate('/');
     } catch (err) {
       setError(err.message || 'OTP Verification failed');
     } finally {
@@ -118,20 +127,22 @@ export default function Register() {
               {field('Password', 'password', 'password', 'Min 8 characters')}
               {field('Confirm Password', 'confirm', 'password', 'Re-enter password')}
               
-              <div className="pt-2">
+              <div className="pt-2 flex justify-center w-full min-h-[65px]">
                 <Turnstile
                   ref={turnstileRef}
                   siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
                   onSuccess={handleTurnstileSuccess}
                   onError={handleTurnstileError}
                   onExpire={handleTurnstileExpire}
+                  retry="auto"
+                  refreshExpired="auto"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#39d353] text-white py-2 rounded font-semibold hover:bg-[#2db844] disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="w-full bg-[#39d353] text-white py-2 rounded font-semibold hover:bg-[#2db844] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? 'Sending OTP...' : 'Continue'}
               </button>
@@ -162,7 +173,7 @@ export default function Register() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#39d353] text-white py-2 rounded font-semibold hover:bg-[#2db844] disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="w-full bg-[#39d353] text-white py-2 rounded font-semibold hover:bg-[#2db844] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? 'Verifying...' : 'Verify & Create Account'}
               </button>
