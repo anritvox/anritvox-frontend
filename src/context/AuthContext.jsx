@@ -95,24 +95,28 @@ export function AuthProvider({ children }) {
     await syncCartOnAuth();
     return newUser;
   }, []);
+  
 
   const register = useCallback(async (userData) => {
     const res = await api.post("/auth/register", userData);
+    return res.data; // Returns { success: true, message: "OTP sent..." }
+  }, []);
+
+  const verifyEmail = useCallback(async ({ email, otp }) => {
+    const res = await api.post("/auth/verify-email", { email, otp });
     const data = res.data || res;
     const newToken = data.token;
     const newUser = data.user || data;
-
     localStorage.setItem("token", newToken);
     localStorage.setItem("user", JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
-
     await syncCartOnAuth();
     return newUser;
-  }, []);
+  }, [syncCartOnAuth]);
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, register, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, register, verifyEmail, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );
