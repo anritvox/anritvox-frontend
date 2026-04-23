@@ -220,7 +220,7 @@ export const fetchProducts = () => products.getAllActive();
 export const fetchCategories = () => categories.getAll();
 export const submitContact = (data) => contact.submit(data);
 
-// ADDED MISSING PROFILE & ORDER EXPORTS HERE
+// --- ADDED MISSING PROFILE, ORDER, & WISHLIST EXPORTS ---
 export const fetchMyOrders = async () => {
   const res = await orders.getMyOrders();
   return res.data;
@@ -243,6 +243,16 @@ export const saveAddressAPI = async (data) => {
 
 export const placeOrderAPI = async (data) => {
   const res = await orders.create(data);
+  return res.data;
+};
+
+export const fetchWishlistAPI = async () => {
+  const res = await wishlist.get();
+  return res.data;
+};
+
+export const removeFromWishlistAPI = async (productId) => {
+  const res = await wishlist.remove(productId);
   return res.data;
 };
 
