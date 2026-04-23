@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
-// 100% PROPER IMPORT
+// 100% PROPER
 import { wishlist as wishlistApi } from '../services/api';
 
 const WishlistContext = createContext(null);
