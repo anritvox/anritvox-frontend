@@ -89,10 +89,35 @@ export const banners = {
   delete: (id) => api.delete(`/banners/${id}`),
 };
 
-// --- CART NAMED EXPORTS (Fix for Rollup Build Error) ---
+// --- NAMED EXPORTS: CART, SETTINGS, SHOP, CONTACT (Legacy Context Preservation) ---
 export const fetchCart = () => api.get("/cart");
 export const addToCartAPI = (productId, quantity) => api.post("/cart", { productId, quantity });
 export const removeFromCartAPI = (productId) => api.delete(`/cart/${productId}`);
 export const clearCartAPI = () => api.delete("/cart");
+
+export const fetchPublicSettings = () => api.get("/settings/public");
+export const fetchProducts = () => api.get("/products");
+export const fetchCategories = () => api.get("/categories");
+export const submitContact = (data) => api.post("/contact", data);
+
+// --- NAMED EXPORTS: CHECKOUT ---
+export const fetchAddressesAPI = async () => {
+  const res = await api.get("/addresses");
+  return res.data;
+};
+
+export const saveAddressAPI = async (data) => {
+  const res = await api.post("/addresses", data);
+  return res.data.addresses || res.data; 
+};
+
+export const placeOrderAPI = async (data) => {
+  const res = await api.post("/orders", data);
+  return res.data;
+};
+
+// --- NAMED EXPORTS: PROFILE (Fix for Current Rollup Build Error) ---
+export const fetchMyOrders = () => api.get("/orders/my-orders");
+export const updateProfileAPI = (data) => api.put("/users/profile", data);
 
 export default api;
