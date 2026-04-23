@@ -37,7 +37,7 @@ export default function Navbar() {
     const query = e.target.value;
     setSearchQuery(query);
     if (query.length > 2) {
-      // Mock Predictive Search thumbnails
+      // Mock Predictive Search thumbnail
       setSuggestions([
         { id: 1, name: 'Pro LED Headlight H4', price: 2499, img: 'https://via.placeholder.com/50' },
         { id: 2, name: 'Ambient Light Strip RGB', price: 899, img: 'https://via.placeholder.com/50' },
