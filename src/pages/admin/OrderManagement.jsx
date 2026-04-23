@@ -1,256 +1,161 @@
-import React, { useState, useEffect } from "react";
-import { fetchAdminOrders } from "../../services/api";
-import api from "../../services/api"; // For direct put request
-import { Loader2, Search, Edit3, CheckCircle, Clock, Truck, XCircle, X, Package, Mail } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { ShoppingBag, Search, Filter, Eye, Truck, CheckCircle, XCircle, Clock, Package, MoreHorizontal, Activity } from 'lucide-react';
+import api from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 
-export default function OrderManagement({ token }) {
-  const [orders, setOrders] = useState([]);
+export default function OrderManagement() {
+  const [ordersList, setOrdersList] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  
-  // Modal State
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [updateConfig, setUpdateConfig] = useState({ status: "", trackingNumber: "", courier: "" });
-  const [isUpdating, setIsUpdating] = useState(false);
-
-  useEffect(() => {
-    loadOrders();
-  }, [token]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const { showToast } = useToast() || {};
 
   const loadOrders = async () => {
-    setLoading(true);
     try {
-      const data = await fetchAdminOrders();
-      setOrders(Array.isArray(data) ? data : data.orders || []);
-    } catch (err) {
-      console.error("Order load error:", err);
+      setLoading(true);
+      const res = await api.get('/orders');
+      setOrdersList(res.data?.data || res.data || []);
+    } catch (error) {
+      showToast?.('Order pipeline sync failed', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const openUpdateModal = (order) => {
-    setSelectedOrder(order);
-    setUpdateConfig({ 
-      status: order.status, 
-      trackingNumber: order.tracking_number || "", 
-      courier: order.courier || "" 
-    });
-    setIsModalOpen(true);
-  };
+  useEffect(() => {
+    loadOrders();
+  }, []);
 
-  const handleStatusUpdate = async () => {
-    if (!selectedOrder) return;
-    setIsUpdating(true);
+  const handleUpdateStatus = async (orderId, newStatus) => {
     try {
-      // Direct API call utilizing the upgraded backend
-      await api.put(`/admin/orders/${selectedOrder.id}/status`, updateConfig);
-      
-      setIsModalOpen(false);
-      await loadOrders(); // Refresh table
-    } catch (err) {
-      alert("Failed to update order status.");
-    } finally {
-      setIsUpdating(false);
+      await api.patch(`/orders/${orderId}/status`, { status: newStatus });
+      showToast?.(`Order ${orderId.slice(-6)} updated to ${newStatus.toUpperCase()}`, 'success');
+      loadOrders();
+    } catch (error) {
+      showToast?.('Status update failed', 'error');
     }
   };
 
-  const filteredOrders = orders.filter(o => {
-    const matchesSearch = o.id.toString().includes(searchTerm) || 
-                          (o.user_name || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          (o.user_email || "").toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || o.status === statusFilter;
+  const filteredOrders = ordersList.filter(o => {
+    const matchesSearch = o.order_number?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         o.customer_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || o.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusStyle = (status) => {
-    switch(status) {
-      case 'delivered': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-      case 'shipped': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
-      case 'processing': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-      case 'cancelled': return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-      default: return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
-    }
-  };
-
   if (loading) return (
-    <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-      <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
+    <div className="flex items-center justify-center h-64">
+      <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#050505] text-gray-200 p-4 md:p-8 font-sans">
-      <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">
-        
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-white/5">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-black tracking-tighter text-white flex items-center gap-3">
-              ORDER <span className="text-purple-500">DISPATCH</span>
-            </h1>
-            <p className="text-gray-500 text-sm font-medium tracking-tight">Logistics & Automated Notification Center</p>
-          </div>
+    <div className="p-10 space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-2">
+          <h2 className="text-4xl font-black uppercase tracking-tighter flex items-center gap-4">
+            <ShoppingBag className="text-emerald-500" /> Order Pipeline
+          </h2>
+          <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em]">Global Logistics & fulfillment Monitoring</p>
         </div>
-
-        {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="md:col-span-2 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600" />
+        <div className="flex flex-wrap gap-4">
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-hover:text-emerald-500 transition-colors" size={18} />
             <input 
-              type="text" 
-              placeholder="Query Order ID, Name, or Email..." 
-              value={searchTerm} 
-              onChange={(e) => setSearchTerm(e.target.value)} 
-              className="w-full bg-[#0a0c10] border border-white/10 rounded-2xl pl-12 pr-6 py-3.5 outline-none focus:ring-2 focus:ring-purple-500/50 transition-all text-sm placeholder:text-gray-700 font-mono" 
+              placeholder="Search by ID or Client..." 
+              className="bg-slate-900/50 border border-slate-800 px-12 py-4 rounded-2xl outline-none focus:border-emerald-500/50 transition-all w-full md:w-64 text-sm font-bold"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="relative">
-            <select 
-              value={statusFilter} 
-              onChange={(e) => setStatusFilter(e.target.value)} 
-              className="w-full bg-[#0a0c10] border border-white/10 rounded-2xl px-6 py-3.5 outline-none focus:ring-2 focus:ring-purple-500/50 appearance-none text-xs font-bold uppercase tracking-widest transition-all text-gray-300"
-            >
-              <option value="all">Global Scan</option>
-              <option value="pending">Pending</option>
-              <option value="processing">Processing</option>
-              <option value="shipped">Shipped</option>
-              <option value="delivered">Delivered</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-          </div>
+          <select 
+            className="bg-slate-900/50 border border-slate-800 px-6 py-4 rounded-2xl outline-none text-xs font-black uppercase tracking-widest text-slate-400 focus:border-emerald-500/50"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="processing">Processing</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
         </div>
+      </div>
 
-        {/* Orders Table */}
-        <div className="bg-[#0a0c10] border border-white/5 rounded-3xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-white/5">
-                  <th className="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Order Ref</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Customer</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-widest">State</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {filteredOrders.map((order) => (
-                  <tr key={order.id} className="group hover:bg-white/[0.02] transition-colors">
-                    <td className="px-6 py-5">
-                      <code className="text-purple-400 font-bold bg-purple-500/5 px-2 py-1 rounded-lg">#{order.id}</code>
-                      <div className="text-[10px] text-gray-600 font-mono mt-2">{new Date(order.created_at).toLocaleDateString()}</div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="font-bold text-white">{order.user_name || "Guest"}</div>
-                      <div className="text-xs text-gray-500 mt-0.5">{order.user_email}</div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <span className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest ${getStatusStyle(order.status)}`}>
-                        {order.status}
-                      </span>
-                      {order.tracking_number && (
-                        <div className="text-[10px] font-mono text-gray-500 mt-2 flex items-center gap-1">
-                          <Truck className="w-3 h-3 text-purple-400"/> {order.tracking_number}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-5 text-right">
-                      <button 
-                        onClick={() => openUpdateModal(order)} 
-                        className="p-2 bg-white/5 hover:bg-purple-500/20 text-purple-400 rounded-xl transition-all border border-transparent hover:border-purple-500/30"
-                      >
-                        <Edit3 className="w-4 h-4" />
+      <div className="bg-slate-900/30 border border-slate-900 rounded-[2.5rem] overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-800 bg-slate-900/50">
+                <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Transaction Info</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Client Entity</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Valuation</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Fulfillment</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Operations</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/50">
+              {filteredOrders.map((o) => (
+                <tr key={o.id} className="hover:bg-slate-800/20 transition-colors group">
+                  <td className="px-8 py-6">
+                    <div className="font-black text-white uppercase text-sm tracking-tight">{o.order_number}</div>
+                    <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1 flex items-center gap-2">
+                      <Clock size={10} /> {new Date(o.created_at).toLocaleString()}
+                    </div>
+                  </td>
+                  <td className="px-8 py-6">
+                    <div className="font-bold text-slate-300 text-sm">{o.customer_name}</div>
+                    <div className="text-[10px] text-slate-600 font-bold uppercase mt-0.5">{o.shipping_city}, {o.shipping_country}</div>
+                  </td>
+                  <td className="px-8 py-6 font-black text-emerald-400">₹{o.total_amount}</td>
+                  <td className="px-8 py-6">
+                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter ${
+                      o.status === 'delivered' ? 'bg-emerald-500/10 text-emerald-400' : 
+                      o.status === 'pending' ? 'bg-orange-500/10 text-orange-400' :
+                      o.status === 'shipped' ? 'bg-blue-500/10 text-blue-400' : 'bg-slate-800 text-slate-400'
+                    }`}>
+                      <Activity size={10} /> {o.status}
+                    </div>
+                  </td>
+                  <td className="px-8 py-6 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button className="p-3 hover:bg-slate-800 rounded-xl text-slate-500 hover:text-white transition-all active:scale-90">
+                        <Eye size={18} />
                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Update Modal */}
-        {isModalOpen && selectedOrder && (
-          <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-4">
-            <div className="bg-[#0a0c10] border border-white/10 w-full max-w-md rounded-[40px] overflow-hidden shadow-2xl animate-fade-in">
-              <div className="p-8 space-y-8">
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-2xl font-black text-white">Logistics Update</h3>
-                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">ORDER #{selectedOrder.id}</p>
-                  </div>
-                  <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-white/5 rounded-full text-gray-500 hover:text-white transition-all">
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
-
-                <div className="space-y-5">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Lifecycle Status</label>
-                    <select 
-                      value={updateConfig.status} 
-                      onChange={(e) => setUpdateConfig({...updateConfig, status: e.target.value})} 
-                      className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-purple-500/50 outline-none transition-all appearance-none text-white font-bold"
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="processing">Processing</option>
-                      <option value="shipped">Shipped (Requires Tracking)</option>
-                      <option value="delivered">Delivered</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </div>
-
-                  {/* Dynamic Tracking Fields - Only visible if Shipped */}
-                  {updateConfig.status === "shipped" && (
-                    <div className="p-5 border border-purple-500/20 bg-purple-500/5 rounded-2xl space-y-4 animate-fade-in">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Mail className="w-4 h-4 text-purple-400" />
-                        <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest">Customer Notification Triggered</span>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Courier Service</label>
-                        <input 
-                          type="text" 
-                          value={updateConfig.courier} 
-                          onChange={(e) => setUpdateConfig({...updateConfig, courier: e.target.value})} 
-                          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500/50 outline-none transition-all text-white" 
-                          placeholder="e.g. FedEx, BlueDart, Delhivery" 
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Tracking Number</label>
-                        <input 
-                          type="text" 
-                          value={updateConfig.trackingNumber} 
-                          onChange={(e) => setUpdateConfig({...updateConfig, trackingNumber: e.target.value})} 
-                          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500/50 outline-none transition-all text-white font-mono" 
-                          placeholder="AWB / Tracking Code" 
-                        />
+                      <button className="p-3 hover:bg-slate-800 rounded-xl text-slate-500 hover:text-white transition-all active:scale-90">
+                        <Truck size={18} />
+                      </button>
+                      <div className="relative group/menu">
+                        <button className="p-3 hover:bg-slate-800 rounded-xl text-slate-500 hover:text-white transition-all">
+                          <MoreHorizontal size={18} />
+                        </button>
+                        <div className="absolute right-0 top-full mt-2 w-48 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-2 hidden group-hover/menu:block z-30">
+                          {['processing', 'shipped', 'delivered', 'cancelled'].map(s => (
+                            <button 
+                              key={s}
+                              onClick={() => handleUpdateStatus(o.id, s)}
+                              className="w-full text-left px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-emerald-500 hover:text-slate-950 transition-colors"
+                            >
+                              Mark as {s}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  )}
-                </div>
-
-                <button 
-                  onClick={handleStatusUpdate} 
-                  disabled={isUpdating || (updateConfig.status === 'shipped' && (!updateConfig.trackingNumber || !updateConfig.courier))} 
-                  className="w-full py-4 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-500/30 disabled:text-gray-400 text-white font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-purple-500/20 flex justify-center items-center gap-2"
-                >
-                  {isUpdating ? <Loader2 className="w-5 h-5 animate-spin" /> : "Commit Update & Notify"}
-                </button>
-
-              </div>
-            </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {filteredOrders.length === 0 && (
+          <div className="p-20 text-center space-y-4">
+            <Package className="mx-auto text-slate-800" size={64} />
+            <div className="text-slate-600 font-black uppercase tracking-[0.3em]">No Transaction Records Synchronized</div>
           </div>
         )}
-
       </div>
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-      `}} />
     </div>
   );
 }
