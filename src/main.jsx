@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
 import "./index.css";
 import App from "./App.jsx";
-import { SettingsProvider } from "./context/SettingsContext";
+import { SettingsProvider } from "./context/SettingsContext.jsx";
 
 const reCaptchaKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || "fallback-key-to-prevent-crash";
 
