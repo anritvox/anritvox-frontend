@@ -33,7 +33,7 @@ export default function Profile() {
   const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
   const [loading, setLoading] = useState(false);
 
-  // Initial Auth Check & Setup
+  // Initial Auth Check
   useEffect(() => {
     if (!user) {
       navigate('/login');
@@ -141,6 +141,21 @@ export default function Profile() {
       showMsg('Failed to remove item', 'error');
     }
   };
+
+  // FULL 11-FEATURE ARRAY RESTORED
+  const allTabs = [
+    { id: 'overview', label: 'Account Overview', icon: '👤' },
+    { id: 'orders', label: 'Orders & Tracking', icon: '📦' },
+    { id: 'warranty', label: 'E-Warranty Vault', icon: '🛡️' },
+    { id: 'returns', label: 'Returns & Exchanges', icon: '🔄' },
+    { id: 'addresses', label: 'Address Book', icon: '📍' },
+    { id: 'wishlist', label: 'My Wishlist', icon: '❤️' },
+    { id: 'reviews', label: 'My Reviews', icon: '⭐' },
+    { id: 'coupons', label: 'Coupon Wallet', icon: '🎟️' },
+    { id: 'tickets', label: 'Support Tickets', icon: '🎧' },
+    { id: 'notifications', label: 'Notifications', icon: '🔔' },
+    { id: 'security', label: 'Security Settings', icon: '🔒' }
+  ];
 
   // --- Renderers ---
   const renderContent = () => {
@@ -292,6 +307,23 @@ export default function Profile() {
           </div>
         );
 
+      case 'returns':
+      case 'reviews':
+      case 'coupons':
+      case 'tickets':
+      case 'notifications':
+        return (
+          <div className="text-center py-20 text-gray-400">
+             <span className="text-4xl mb-4 block">
+                {allTabs.find(t => t.id === activeTab)?.icon}
+             </span>
+             <h2 className="text-xl font-bold text-gray-700 mb-2">
+                {allTabs.find(t => t.id === activeTab)?.label} Module
+             </h2>
+             <p>This feature is currently being provisioned and mapped to the backend.</p>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -323,14 +355,7 @@ export default function Profile() {
                 <p className="text-sm text-gray-500 truncate">{user?.email}</p>
               </div>
               <nav className="flex flex-col p-2 space-y-1">
-                {[
-                  { id: 'overview', label: 'Account Overview', icon: '👤' },
-                  { id: 'orders', label: 'Orders & Tracking', icon: '📦' },
-                  { id: 'warranty', label: 'E-Warranty Vault', icon: '🛡️' },
-                  { id: 'addresses', label: 'Address Book', icon: '📍' },
-                  { id: 'wishlist', label: 'My Wishlist', icon: '❤️' },
-                  { id: 'security', label: 'Security', icon: '🔒' }
-                ].map((tab) => (
+                {allTabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
