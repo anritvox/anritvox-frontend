@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-// 100% PROPER IMPORT
+// 100% PROPER 
 import { settings as settingsApi } from '../services/api';
 
 const SettingsContext = createContext();
