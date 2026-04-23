@@ -14,21 +14,23 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// REQUEST INTERCEPTOR: Auth Token Injection
+export const getImageUrl = (path) => {
+  if (!path) return "/logo.webp"; 
+  if (path.startsWith("http")) return path;
+  const cloudFrontUrl = import.meta.env.VITE_CLOUDFRONT_URL;
+  if (cloudFrontUrl) return `${cloudFrontUrl}/${path.replace(/^\//, "")}`;
+  return `${BASE_URL}/${path.replace(/^\//, "")}`;
+};
+
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token") || localStorage.getItem("ms_token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// GLOBAL 401 HANDLER: Auto-logout on token expiration
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -36,15 +38,15 @@ api.interceptors.response.use(
       localStorage.removeItem("token");
       localStorage.removeItem("ms_token");
       localStorage.removeItem("user");
-      // Optional: window.location.href = '/login';
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
 );
 
-// ==========================================
-// --- FULLY MAPPED API HELPER MODULES ---
-// ==========================================
+// --- STRICT OBJECT-ORIENTED EXPORTS ---
 
 export const auth = {
   register: (data) => api.post("/auth/register", data),
@@ -66,7 +68,7 @@ export const products = {
   create: (data) => api.post("/products", data),
   update: (id, data) => api.put(`/products/${id}`, data),
   toggleStatus: (id, status) => api.patch(`/products/${id}/status`, { status }),
-  uploadImages: (id, formData) => api.post(`/products/${id}/images`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  uploadImages: (id, formData) => api.post(`/products/${id}/images`, formData),
   deleteImage: (id, imageId) => api.delete(`/products/${id}/images`, { data: { imageId } }),
   addSerials: (id, serials) => api.post(`/products/${id}/serials`, { serials }),
   delete: (id) => api.delete(`/products/${id}`),
@@ -101,7 +103,7 @@ export const orders = {
   getById: (id) => api.get(`/orders/${id}`),
   create: (data) => api.post("/orders", data),
   getAllAdmin: () => api.get("/orders"),
-  updateStatus: (id, status) => api.patch(`/orders/${id}/status`, { status }),
+  updateStatus: (id, status) => patch(`/orders/${id}/status`, { status }),
   delete: (id) => api.delete(`/orders/${id}`),
 };
 
@@ -203,65 +205,6 @@ export const adminManagement = {
   getUserDetails: (id) => api.get(`/admin/users/${id}`),
   updateUserStatus: (id, status) => api.patch(`/admin/users/${id}/status`, { status }),
   getAllOrders: () => api.get("/admin/orders"),
-};
-
-// ==========================================
-// --- LEGACY EXPORTS (To prevent breaking current pages) ---
-// ==========================================
-
-export const fetchCart = () => cart.get();
-export const addToCartAPI = (productId, quantity) => cart.add({ productId, quantity });
-export const removeFromCartAPI = (productId) => cart.remove(productId);
-export const clearCartAPI = () => cart.clear();
-
-export const fetchPublicSettings = () => settings.get(); 
-export const fetchProducts = () => products.getAllActive(); 
-export const fetchCategories = () => categories.getAll();
-export const submitContact = (data) => contact.submit(data);
-
-export const fetchMyOrders = async () => {
-  const res = await orders.getMyOrders();
-  return res.data;
-};
-
-export const updateProfile = async (data) => {
-  const res = await users.updateProfile(data);
-  return res.data;
-};
-
-export const changePassword = async (data) => {
-  const res = await users.changePassword(data);
-  return res.data;
-};
-
-export const fetchAddressesAPI = async () => {
-  const res = await addresses.getAll();
-  return res.data;
-};
-
-export const saveAddressAPI = async (data) => {
-  const res = await addresses.create(data);
-  return res.data.addresses || res.data; 
-};
-
-export const placeOrderAPI = async (data) => {
-  const res = await orders.create(data);
-  return res.data;
-};
-
-export const fetchWishlistAPI = async () => {
-  const res = await wishlist.get();
-  return res.data;
-};
-
-export const removeFromWishlistAPI = async (productId) => {
-  const res = await wishlist.remove(productId);
-  return res.data;
-};
-
-export const registerWarranty = async (data) => {
-  const res = await warranty.register(data);
-  return res.data;
 };
 
 export default api;
