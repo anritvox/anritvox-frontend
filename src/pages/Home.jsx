@@ -1,3 +1,4 @@
+// src/pages/Home.jsx
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Star, ShoppingCart, Zap, ShieldCheck, Headphones, ImageIcon } from 'lucide-react';
@@ -13,38 +14,41 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   
   const { addToCart } = useCart();
-  const { showToast } = useToast();
+  const { showToast } = useToast() || {}; // Safety fallback
 
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
         setLoading(true);
-        // Fetch concurrently for performance
+        // FIXED: Corrected the banner endpoint to match backend route GET /api/banners
         const [productsRes, categoriesRes, bannersRes] = await Promise.all([
           api.get('/products/active'),
           api.get('/categories'),
-          api.get('/banners/active')
+          api.get('/banners') 
         ]);
 
-        setProducts(productsRes.data.data || []);
-        setCategories(categoriesRes.data.data || []);
-        setBanners(bannersRes.data.data || []);
+        setProducts(productsRes.data?.data || productsRes.data || []);
+        setCategories(categoriesRes.data?.data || categoriesRes.data || []);
+        // Safely extract banner array depending on backend wrapping
+        setBanners(bannersRes.data?.data || bannersRes.data || []);
       } catch (error) {
         console.error('Failed to fetch homepage data:', error);
-        showToast('Failed to load some content', 'error');
+        // Safely invoke toast only if context is available
+        if (typeof showToast === 'function') {
+          showToast('Failed to load some content', 'error');
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchHomeData();
-  }, [showToast]);
+  }, []); // Removed showToast from dependency array to prevent unnecessary re-renders
 
   const getProductImage = (product) => {
-    // Phase 3 Fix: Prioritize images array, fallback to single image, then fallback placeholder
     if (product.images && product.images.length > 0) return product.images[0].file_path || product.images[0];
     if (product.image) return product.image;
-    return '/logo.webp'; // Fallback
+    return '/logo.webp'; 
   };
 
   const calculateDiscount = (price, discountPrice) => {
@@ -222,7 +226,7 @@ const Home = () => {
                         onClick={(e) => {
                           e.preventDefault();
                           addToCart(product, 1);
-                          showToast('Added to cart!', 'success');
+                          if (typeof showToast === 'function') showToast('Added to cart!', 'success');
                         }}
                         className="bg-gray-100 dark:bg-gray-800 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-gray-900 dark:text-white p-3 rounded-full transition-colors duration-300"
                         aria-label="Add to cart"
