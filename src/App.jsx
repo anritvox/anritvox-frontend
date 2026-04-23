@@ -1,7 +1,7 @@
 import React, { lazy, Suspense, Component } from "react";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 
-// Components & Context
+// Components
 import Navbar from "./components/Navbar.jsx";
 import Footer from "./components/Footer.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
