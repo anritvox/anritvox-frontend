@@ -45,10 +45,15 @@ const Home = () => {
     fetchHomeData();
   }, []); // Removed showToast from dependency array to prevent unnecessary re-renders
 
-  const getProductImage = (product) => {
-    if (product.images && product.images.length > 0) return product.images[0].file_path || product.images[0];
-    if (product.image) return product.image;
-    return '/logo.webp'; 
+const getProductImage = (product) => {
+  
+    if (product.image_url) return product.image_url;
+  
+    if (product.images && product.images.length > 0) {
+      return product.images[0].url || product.images[0].file_path || product.images[0];
+    }
+    
+    return '/logo.webp';
   };
 
   const calculateDiscount = (price, discountPrice) => {
