@@ -1,14 +1,6 @@
 import React, { useState, useEffect } from "react";
-import {
-  fetchCategories,
-  createCategory,
-  updateCategory,
-  deleteCategory,
-  fetchSubcategories,
-  createSubcategory,
-  updateSubcategory,
-  deleteSubcategory,
-} from "../../services/api";
+// 100% STRICT IMPORT: Using the mapped objects
+import { categories as catApi, subcategories as subCatApi } from "../../services/api";
 import {
   Plus,
   Edit3,
@@ -42,12 +34,11 @@ export default function CategoryManagement({ token }) {
     setError(null);
     try {
       const [cats, subs] = await Promise.all([
-        fetchCategories(token),
-        fetchSubcategories(token),
+        catApi.getAll(),
+        subCatApi.getAll(),
       ]);
-      // Safely extract the data payload if wrapped inside an object
-      setCategories(Array.isArray(cats) ? cats : (cats?.data || []));
-      setSubcategories(Array.isArray(subs) ? subs : (subs?.data || []));
+      setCategories(Array.isArray(cats.data) ? cats.data : (cats.data?.data || cats || []));
+      setSubcategories(Array.isArray(subs.data) ? subs.data : (subs.data?.data || subs || []));
     } catch (err) {
       setError("Failed to load data: " + err.message);
     } finally {
@@ -73,9 +64,9 @@ export default function CategoryManagement({ token }) {
     try {
       if (!name.trim()) throw new Error("Category name is required.");
       if (editCatId) {
-        await updateCategory(editCatId, { name }, token);
+        await catApi.update(editCatId, { name });
       } else {
-        await createCategory({ name }, token);
+        await catApi.create({ name });
       }
       resetForm();
       loadData();
@@ -93,9 +84,9 @@ export default function CategoryManagement({ token }) {
       if (!name.trim() || !parentId) throw new Error("Subcategory name and parent category are required.");
       const data = { name, category_id: parentId };
       if (editSubId) {
-        await updateSubcategory(editSubId, data, token);
+        await subCatApi.update(editSubId, data);
       } else {
-        await createSubcategory(data, token);
+        await subCatApi.create(data);
       }
       resetForm();
       loadData();
@@ -111,7 +102,7 @@ export default function CategoryManagement({ token }) {
       setFormLoading(true);
       setError(null);
       try {
-        await deleteCategory(id, token);
+        await catApi.delete(id);
         loadData();
       } catch (e) {
         setError(e?.response?.data?.message || "Failed to delete category: " + e.message);
@@ -126,7 +117,7 @@ export default function CategoryManagement({ token }) {
       setFormLoading(true);
       setError(null);
       try {
-        await deleteSubcategory(id, token);
+        await subCatApi.delete(id);
         loadData();
       } catch (e) {
         setError(e?.response?.data?.message || "Failed to delete subcategory: " + e.message);
@@ -147,14 +138,12 @@ export default function CategoryManagement({ token }) {
 
   return (
     <div className="min-h-screen bg-[#0a0c10] text-gray-100 p-4 lg:p-8 font-sans selection:bg-cyan-500/30">
-      {/* Background Orbs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full animate-pulse" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-600/10 blur-[120px] rounded-full animate-pulse delay-700" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto space-y-8">
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#161b22]/40 backdrop-blur-xl border border-white/5 p-6 rounded-[2rem] shadow-2xl">
           <div>
             <h1 className="text-3xl font-black tracking-tighter bg-gradient-to-r from-white via-cyan-400 to-purple-500 bg-clip-text text-transparent flex items-center gap-3">
@@ -181,7 +170,6 @@ export default function CategoryManagement({ token }) {
         )}
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          {/* Categories Section */}
           <section className="space-y-6">
             <div className="bg-[#161b22]/40 backdrop-blur-xl border border-white/5 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -196,7 +184,6 @@ export default function CategoryManagement({ token }) {
                 </div>
               </div>
 
-              {/* Cat Form */}
               <div className="space-y-4 mb-8 p-6 bg-white/5 rounded-3xl border border-white/5">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Category Identifier</label>
@@ -225,7 +212,6 @@ export default function CategoryManagement({ token }) {
                 </div>
               </div>
 
-              {/* Table */}
               <div className="overflow-hidden rounded-3xl border border-white/5 bg-[#0a0c10]/50">
                 <table className="w-full text-left border-collapse">
                   <thead>
@@ -269,7 +255,6 @@ export default function CategoryManagement({ token }) {
             </div>
           </section>
 
-          {/* Subcategories Section */}
           <section className="space-y-6">
              <div className="bg-[#161b22]/40 backdrop-blur-xl border border-white/5 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-purple-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -284,7 +269,6 @@ export default function CategoryManagement({ token }) {
                 </div>
               </div>
 
-              {/* Sub Form */}
               <div className="space-y-4 mb-8 p-6 bg-white/5 rounded-3xl border border-white/5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
@@ -327,7 +311,6 @@ export default function CategoryManagement({ token }) {
                 </div>
               </div>
 
-              {/* Table */}
               <div className="overflow-hidden rounded-3xl border border-white/5 bg-[#0a0c10]/50">
                 <table className="w-full text-left border-collapse">
                   <thead>
