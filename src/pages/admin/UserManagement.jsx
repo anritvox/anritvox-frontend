@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Search, Shield, Trash2, Mail, Calendar, Activity, CheckCircle, XCircle } from 'lucide-react';
-import api from '../../services/api';
+// 100% STRICT IMPORT: Using default api and adminManagement object
+import api, { adminManagement } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
 export default function UserManagement() {
@@ -12,7 +13,7 @@ export default function UserManagement() {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/admin-users');
+      const res = await adminManagement.getAllUsers();
       setUsersList(res.data?.data || res.data || []);
     } catch (error) {
       console.error('Failed to load users:', error);
@@ -29,7 +30,8 @@ export default function UserManagement() {
   const handleToggleRole = async (userId, currentRole) => {
     try {
       const newRole = currentRole === 'admin' ? 'user' : 'admin';
-      await api.patch(`/admin-users/${userId}/role`, { role: newRole });
+      // Raw route is fine here because the base api handles the interceptor accurately
+      await api.patch(`/admin/users/${userId}/role`, { role: newRole });
       showToast?.(`Privileges updated to ${newRole.toUpperCase()}`, 'success');
       loadUsers();
     } catch (error) {
