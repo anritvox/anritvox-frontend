@@ -18,7 +18,24 @@ export default defineConfig({
     port: 3000,
   },
   build: {
-    // Let Rollup automatically chunk dependencies safely to preserve interop logic
-    chunkSizeWarningLimit: 1500
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+              return 'vendor-react';
+            }
+            if (id.includes('framer-motion')) {
+              return 'vendor-framer';
+            }
+            if (id.includes('recharts')) {
+              return 'vendor-recharts';
+            }
+            return 'vendor'; // Safely isolate all remaining dependencies
+          }
+        }
+      }
+    }
   }
 });
