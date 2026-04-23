@@ -73,13 +73,13 @@ export const orders = {
 export const warranty = {
   validate: (serial) => api.get(`/warranty/validate/${encodeURIComponent(serial)}`),
   register: (data) => api.post("/warranty/register", data),
-  getAll: () => api.get("/warranty"), 
+  getAll: () => api.get("/warranty"), // Admin only
   updateStatus: (id, status) => api.patch(`/warranty/${id}/status`, { status }),
 };
 
 export const users = {
   getProfile: () => api.get("/users/profile"),
-  getAll: () => api.get("/admin-users"), 
+  getAll: () => api.get("/admin-users"), // Admin only
   updateRole: (id, role) => api.patch(`/admin-users/${id}/role`, { role }),
 };
 
@@ -89,31 +89,10 @@ export const banners = {
   delete: (id) => api.delete(`/banners/${id}`),
 };
 
-// --- NAMED EXPORTS: CART, SETTINGS, SHOP, CONTACT (Legacy Context Preservation) ---
+// --- CART NAMED EXPORTS (Fix for Rollup Build Error) ---
 export const fetchCart = () => api.get("/cart");
 export const addToCartAPI = (productId, quantity) => api.post("/cart", { productId, quantity });
 export const removeFromCartAPI = (productId) => api.delete(`/cart/${productId}`);
 export const clearCartAPI = () => api.delete("/cart");
-
-export const fetchPublicSettings = () => api.get("/settings/public");
-export const fetchProducts = () => api.get("/products");
-export const fetchCategories = () => api.get("/categories");
-export const submitContact = (data) => api.post("/contact", data);
-
-// --- NAMED EXPORTS: CHECKOUT (New Dependencies Found in Deep Scan) ---
-export const fetchAddressesAPI = async () => {
-  const res = await api.get("/addresses");
-  return res.data;
-};
-
-export const saveAddressAPI = async (data) => {
-  const res = await api.post("/addresses", data);
-  return res.data.addresses || res.data; 
-};
-
-export const placeOrderAPI = async (data) => {
-  const res = await api.post("/orders", data);
-  return res.data;
-};
 
 export default api;
