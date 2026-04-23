@@ -16,7 +16,7 @@ export default function Contact() {
     e.preventDefault();
     setStatus({ loading: true, success: false, error: "" });
     try {
-      // REWRITTEN: Proper object-oriented API call
+      // REWRITTEN: Proper object-oriented API
       await contact.submit(formData);
       setStatus({ loading: false, success: true, error: "" });
       setFormData({ name: "", email: "", subject: "", message: "" });
