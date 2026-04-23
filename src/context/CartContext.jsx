@@ -7,7 +7,7 @@ const CartContext = createContext();
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [cartLoading, setCartLoading] = useState(false);
-  const [isCartOpen, setIsCartOpen] = useState(false); // Phase 2: Slide-out state
+  const [isCartOpen, setIsCartOpen] = useState(false); // Phase 2: Slide-out
   const [upsells, setUpsells] = useState([]); // Phase 2: In-cart upsells
   const { isAuthenticated } = useAuth();
 
