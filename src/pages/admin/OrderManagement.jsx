@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShoppingBag, Search, Filter, Eye, Truck, CheckCircle, XCircle, Clock, Package, MoreHorizontal, Activity } from 'lucide-react';
-import api from '../../services/api';
+// 100% STRICT IMPORT
+import { orders as ordersApi } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
 export default function OrderManagement() {
@@ -13,7 +14,7 @@ export default function OrderManagement() {
   const loadOrders = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/orders');
+      const res = await ordersApi.getAllAdmin();
       setOrdersList(res.data?.data || res.data || []);
     } catch (error) {
       showToast?.('Order pipeline sync failed', 'error');
@@ -28,7 +29,7 @@ export default function OrderManagement() {
 
   const handleUpdateStatus = async (orderId, newStatus) => {
     try {
-      await api.patch(`/orders/${orderId}/status`, { status: newStatus });
+      await ordersApi.updateStatus(orderId, newStatus);
       showToast?.(`Order ${orderId.slice(-6)} updated to ${newStatus.toUpperCase()}`, 'success');
       loadOrders();
     } catch (error) {
