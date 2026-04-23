@@ -14,18 +14,6 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// GLOBAL HELPER: Resolve Image URLs gracefully (S3/CloudFront/Local)
-export const getImageUrl = (path) => {
-  if (!path) return "/logo.webp"; // Safe fallback
-  if (path.startsWith("http")) return path;
-  
-  const cloudFrontUrl = import.meta.env.VITE_CLOUDFRONT_URL;
-  if (cloudFrontUrl) {
-    return `${cloudFrontUrl}/${path.replace(/^\//, "")}`;
-  }
-  return `${BASE_URL}/${path.replace(/^\//, "")}`;
-};
-
 // REQUEST INTERCEPTOR: Auth Token Injection
 api.interceptors.request.use(
   (config) => {
@@ -35,10 +23,12 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
-// GLOBAL 401 HANDLER: Auto-logout and hard redirect on token expiration
+// GLOBAL 401 HANDLER: Auto-logout on token expiration
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -46,11 +36,7 @@ api.interceptors.response.use(
       localStorage.removeItem("token");
       localStorage.removeItem("ms_token");
       localStorage.removeItem("user");
-      
-      // Stop infinite redirect loops
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
+      // Optional: window.location.href = '/login';
     }
     return Promise.reject(error);
   }
@@ -80,7 +66,7 @@ export const products = {
   create: (data) => api.post("/products", data),
   update: (id, data) => api.put(`/products/${id}`, data),
   toggleStatus: (id, status) => api.patch(`/products/${id}/status`, { status }),
-  uploadImages: (id, formData) => api.post(`/products/${id}/images`, formData),
+  uploadImages: (id, formData) => api.post(`/products/${id}/images`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   deleteImage: (id, imageId) => api.delete(`/products/${id}/images`, { data: { imageId } }),
   addSerials: (id, serials) => api.post(`/products/${id}/serials`, { serials }),
   delete: (id) => api.delete(`/products/${id}`),
@@ -220,49 +206,62 @@ export const adminManagement = {
 };
 
 // ==========================================
-// --- LEGACY EXPORTS (Bridges for older React components) ---
+// --- LEGACY EXPORTS (To prevent breaking current pages) ---
 // ==========================================
 
-// Global / Public Bridges
 export const fetchCart = () => cart.get();
 export const addToCartAPI = (productId, quantity) => cart.add({ productId, quantity });
 export const removeFromCartAPI = (productId) => cart.remove(productId);
 export const clearCartAPI = () => cart.clear();
+
 export const fetchPublicSettings = () => settings.get(); 
 export const fetchProducts = () => products.getAllActive(); 
 export const fetchCategories = () => categories.getAll();
 export const submitContact = (data) => contact.submit(data);
 
-// User / Profile Bridges
-export const fetchMyOrders = () => orders.getMyOrders();
-export const updateProfile = (data) => users.updateProfile(data);
-export const changePassword = (data) => users.changePassword(data);
-export const fetchWishlistAPI = () => wishlist.get();
-export const removeFromWishlistAPI = (productId) => wishlist.remove(productId);
-export const registerWarranty = (data) => warranty.register(data);
+export const fetchMyOrders = async () => {
+  const res = await orders.getMyOrders();
+  return res.data;
+};
+
+export const updateProfile = async (data) => {
+  const res = await users.updateProfile(data);
+  return res.data;
+};
+
+export const changePassword = async (data) => {
+  const res = await users.changePassword(data);
+  return res.data;
+};
+
 export const fetchAddressesAPI = async () => {
   const res = await addresses.getAll();
   return res.data;
 };
+
 export const saveAddressAPI = async (data) => {
   const res = await addresses.create(data);
   return res.data.addresses || res.data; 
 };
+
 export const placeOrderAPI = async (data) => {
   const res = await orders.create(data);
   return res.data;
 };
 
-// --- PREEMPTIVE ADMIN DASHBOARD BRIDGES ---
-export const fetchAdminDashboard = () => analytics.getDashboard();
-export const fetchAdminSales = () => analytics.getSales();
-export const fetchAdminProducts = () => products.getAllAdmin();
-export const fetchAdminOrders = () => orders.getAllAdmin();
-export const fetchAdminUsers = () => adminManagement.getAllUsers();
-export const fetchAllCoupons = () => coupons.getAllAdmin();
-export const fetchAllBanners = () => banners.getAllAdmin();
-export const fetchAllWarranties = () => warranty.getAllAdmin();
-export const fetchAllReturns = () => returns.getAllAdmin();
-export const fetchAllContacts = () => contact.getAllAdmin();
+export const fetchWishlistAPI = async () => {
+  const res = await wishlist.get();
+  return res.data;
+};
+
+export const removeFromWishlistAPI = async (productId) => {
+  const res = await wishlist.remove(productId);
+  return res.data;
+};
+
+export const registerWarranty = async (data) => {
+  const res = await warranty.register(data);
+  return res.data;
+};
 
 export default api;
