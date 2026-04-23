@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { fetchProducts } from "../services/api";
+// 100% PROPER IMPORT
+import { products as productsApi } from "../services/api";
 import { useCart } from "../context/CartContext";
 import { FiStar, FiChevronDown, FiSearch, FiCheck, FiShoppingCart, FiSliders, FiHeart, FiX, FiEye } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
@@ -40,13 +41,12 @@ export default function Shop() {
     const loadProducts = async () => {
       try {
         setLoading(true);
-        const data = await fetchProducts();
+        const response = await productsApi.getAllActive(); // REWRITTEN
+        const data = response.data;
         
-        // Fix: Safely extract the data array from the backend response
         const validData = Array.isArray(data) ? data : (data?.data || []);
         setProducts(validData);
 
-        // Fix: Safely map backend category_name
         const cats = ["All", ...new Set(validData.map(p => {
           if (p.category_name) return p.category_name;
           if (typeof p.category === 'object' && p.category) return p.category.name;
@@ -91,7 +91,6 @@ export default function Shop() {
       else if (priceRange === "₹5,000 - ₹10,000") matchesPrice = price >= 5000 && price <= 10000;
       else if (priceRange === "Over ₹10,000") matchesPrice = price > 10000;
 
-      // Fix: Check product.quantity instead of product.stock
       const qty = product.quantity !== undefined ? product.quantity : (product.stock || 0);
       const matchesStock = stockStatus === "All" || (stockStatus === "In Stock" ? qty > 0 : qty === 0);
 
@@ -131,7 +130,6 @@ export default function Shop() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row gap-6 p-4 md:p-8">
-      {/* Sidebar Filters */}
       <aside className="w-full md:w-64 space-y-8 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hidden md:block">
         <div>
           <h3 className="text-sm font-black uppercase tracking-widest text-gray-900 mb-4">Classifications</h3>
@@ -194,7 +192,6 @@ export default function Shop() {
         )}
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
@@ -238,7 +235,6 @@ export default function Shop() {
           </div>
         </div>
 
-        {/* Product Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {sortedProducts.map(product => {
             const id = product.id || product._id;
@@ -259,7 +255,6 @@ export default function Shop() {
                 <div className="relative aspect-square rounded-2xl overflow-hidden bg-gray-50 mb-4">
                   <img src={getProductImage(product)} alt={product.name} className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-700" />
                   
-                  {/* Overlay Actions */}
                   <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                     <button 
                       onClick={(e) => openQuickView(e, product)}
