@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+// Using the safe default export
 import api from '../../services/api';
 import { 
   TrendingUp, TrendingDown, Activity, Users, ShoppingCart, 
@@ -21,6 +22,7 @@ export default function AnalyticsManagement() {
     const fetchAnalytics = async () => {
       setLoading(true);
       try {
+        // Safe route calling through the globally protected api instance
         const res = await api.get(`/analytics/kpis?period=${period}`);
         setStats(res.data);
       } catch (err) {
