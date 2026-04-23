@@ -15,7 +15,7 @@ export default function MiniCart() {
       <div className="absolute inset-y-0 right-0 w-full max-w-md bg-slate-950 shadow-2xl border-l border-slate-900 animate-in slide-in-from-right duration-500">
         <div className="flex flex-col h-full">
           
-          {/* Header */}
+          {/* HeaDer */}
           <div className="p-8 border-b border-slate-900 flex justify-between items-center">
             <div className="flex items-center space-x-4">
                <ShoppingBag size={24} className="text-emerald-500" />
