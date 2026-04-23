@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-// 100% PROPER IMPORT
+// 100% PROPER
 import { addresses as addressesApi, orders as ordersApi } from '../services/api';
 import { 
   FiMapPin, FiTruck, FiCreditCard, FiCheckCircle, 
