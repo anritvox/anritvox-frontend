@@ -1,4 +1,4 @@
-// NotificationCenter - Revamped with premium neon dark Ui
+// NotificationCenter - Revamped with premium neon dark
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell, X, CheckCheck, Trash2, Package, Tag, Info, Star, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
