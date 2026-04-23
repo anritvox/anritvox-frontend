@@ -14,7 +14,7 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// REQUEST INTERCEPTOR: Auth Token Injection
+// REQUEST INTERCEPTOR: Auth Token Injectio
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token") || localStorage.getItem("ms_token");
