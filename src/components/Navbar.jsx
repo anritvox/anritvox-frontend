@@ -1,235 +1,156 @@
-// src/components/Navbar.jsx
-import { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import logo from "../assets/images/logo.webp";
-import { FiShoppingCart, FiSearch, FiMenu, FiX, FiChevronDown, FiUser, FiLogOut, FiPackage, FiHeart, FiTrendingUp, FiGift } from "react-icons/fi";
-import { useCart } from "../context/CartContext";
-import { useAuth } from "../context/AuthContext";
-import { searchProductSuggestions } from "../services/api";
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { 
+  ShoppingCart, User, Search, Menu, X, Mic, Camera, 
+  Car, Heart, Bell, ChevronDown, Package, Zap, Gift,
+  LogOut, Settings, Award, ShieldCheck, MapPin
+} from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+import api from '../services/api';
 
-export default function NavBar() {
-  const [open, setOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const { cartCount } = useCart();
+export default function Navbar() {
   const { user, logout } = useAuth();
-  const [searchQuery, setSearchQuery] = useState("");
+  const { cartItems } = useCart();
+  const [isMenuOpen, setMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [isGarageActive, setGarageActive] = useState(false);
+  const [garageData, setGarageData] = useState(null);
+  const [isListening, setIsListening] = useState(false);
   const navigate = useNavigate();
-  const searchRef = useRef(null);
-  const debounceRef = useRef(null);
 
-  // Close suggestions on outside click
   useEffect(() => {
-    const handleClick = (e) => {
-      if (searchRef.current && !searchRef.current.contains(e.target)) {
-        setShowSuggestions(false);
+    const checkGarage = () => {
+      const stored = localStorage.getItem('anritvox_garage');
+      if (stored) {
+        setGarageData(JSON.parse(stored));
+        setGarageActive(true);
       }
     };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    checkGarage();
+    window.addEventListener('storage', checkGarage);
+    return () => window.removeEventListener('storage', checkGarage);
   }, []);
-
-  const fetchSuggestions = useCallback(async (q) => {
-    if (!q || q.trim().length < 2) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-    try {
-      setSuggestionsLoading(true);
-      const data = await searchProductSuggestions(q);
-      const list = Array.isArray(data) ? data : (data?.suggestions || []);
-      setSuggestions(list.slice(0, 6));
-      setShowSuggestions(list.length > 0);
-    } catch {
-      setSuggestions([]);
-    } finally {
-      setSuggestionsLoading(false);
-    }
-  }, []);
-
-  const handleSearchChange = (e) => {
-    const val = e.target.value;
-    setSearchQuery(val);
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => fetchSuggestions(val), 300);
-  };
 
   const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery("");
-      setOpen(false);
-      setShowSuggestions(false);
+    const query = e.target.value;
+    setSearchQuery(query);
+    if (query.length > 2) {
+      // Mock Predictive Search thumbnails
+      setSuggestions([
+        { id: 1, name: 'Pro LED Headlight H4', price: 2499, img: 'https://via.placeholder.com/50' },
+        { id: 2, name: 'Ambient Light Strip RGB', price: 899, img: 'https://via.placeholder.com/50' },
+        { id: 3, name: 'Premium Subwoofer 12"', price: 12500, img: 'https://via.placeholder.com/50' }
+      ]);
+    } else {
+      setSuggestions([]);
     }
   };
 
-  const handleSuggestionClick = (suggestion) => {
-    const term = suggestion.name || suggestion;
-    navigate(`/shop?search=${encodeURIComponent(term)}`);
-    setSearchQuery("");
-    setShowSuggestions(false);
-    setOpen(false);
-  };
-
-  const handleLogout = () => {
-    logout();
-    setUserMenuOpen(false);
-    navigate("/");
+  const startVoiceSearch = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.onstart = () => setIsListening(true);
+      recognition.onend = () => setIsListening(false);
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setSearchQuery(transcript);
+        navigate(`/shop?q=${transcript}`);
+      };
+      recognition.start();
+    } else {
+      alert('Voice search not supported in this browser.');
+    }
   };
 
   return (
-    <nav className="bg-[#131921] text-white font-sans antialiased sticky top-0 z-50">
-      {/* Main Header Container */}
-      <div className="max-w-[1500px] mx-auto p-2 flex items-center gap-4 h-16">
-        {/* Logo */}
-        <Link to="/" className="flex-shrink-0">
-          <img src={logo} alt="Anritvox" className="h-10 object-contain" />
+    <nav className="bg-slate-950 border-b border-slate-900 sticky top-0 z-[100] backdrop-blur-xl bg-opacity-80">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        
+        {/* LOGO */}
+        <Link to="/" className="flex items-center space-x-2 group">
+          <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center font-black text-black group-hover:rotate-12 transition-transform">A</div>
+          <span className="text-xl font-black tracking-tighter italic uppercase text-white">Anritvox</span>
         </Link>
 
-        {/* Desktop Smart Search Bar */}
-        <div ref={searchRef} className="hidden md:flex flex-1 items-center max-w-2xl relative mx-4">
-          <form onSubmit={handleSearch} className="flex flex-1 items-center bg-[#232f3e] border border-gray-700 rounded overflow-hidden">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-              placeholder="Search products..."
-              className="flex-1 px-3 py-2 bg-transparent text-white text-sm outline-none placeholder-gray-400"
-            />
-            <button type="submit" className="bg-[#febd69] hover:bg-[#f3a847] px-4 py-2">
-              <FiSearch size={18} className="text-gray-900" />
+        {/* SEARCH BAR (Predictive + Voice + Visual) */}
+        <div className="hidden md:flex flex-1 max-w-2xl mx-12 relative group">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-500 transition-colors">
+            <Search size={18} />
+          </div>
+          <input 
+            type="text" 
+            value={searchQuery}
+            onChange={handleSearch}
+            placeholder="Search lights, audio, performance..."
+            className="w-full bg-slate-900/50 border-none rounded-2xl pl-12 pr-24 py-3 text-xs font-bold text-white focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-slate-700"
+          />
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-3 text-slate-500">
+            <button onClick={startVoiceSearch} className={`hover:text-emerald-500 transition-colors ${isListening ? 'text-rose-500 animate-pulse' : ''}`}>
+              <Mic size={18} />
             </button>
-          </form>
-          {/* Suggestions Dropdown */}
-          {showSuggestions && (
-            <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-b shadow-lg z-50 max-h-72 overflow-y-auto">
-              {suggestionsLoading ? (
-                <div className="px-4 py-3 text-sm text-gray-500 animate-pulse">Searching...</div>
-              ) : (
-                suggestions.map((s, i) => (
-                  <button
-                    key={i}
-                    onMouseDown={() => handleSuggestionClick(s)}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50 text-left transition-colors"
-                  >
-                    <FiSearch size={13} className="text-gray-400 flex-shrink-0" />
-                    <span className="truncate">{s.name || s}</span>
-                    {s.category && <span className="ml-auto text-xs text-gray-400 flex-shrink-0">{typeof s.category === 'object' ? s.category.name : s.category}</span>}
-                  </button>
-                ))
-              )}
+            <button className="hover:text-emerald-500 transition-colors">
+              <Camera size={18} />
+            </button>
+          </div>
+
+          {/* PREDICTIVE DROPDOWN */}
+          {suggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900 rounded-3xl border border-slate-800 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+               {suggestions.map(s => (
+                 <Link key={s.id} to={`/product/${s.id}`} className="flex items-center p-4 hover:bg-slate-800 transition-colors border-b border-slate-800/50 last:border-none">
+                    <img src={s.img} className="w-10 h-10 rounded-lg object-cover mr-4" alt={s.name} />
+                    <div className="flex-1">
+                       <div className="text-xs font-black uppercase text-white">{s.name}</div>
+                       <div className="text-[10px] font-bold text-emerald-500">₹{s.price}</div>
+                    </div>
+                    <ChevronDown size={14} className="-rotate-90 text-slate-700" />
+                 </Link>
+               ))}
             </div>
           )}
         </div>
 
-        {/* Right Action Icons */}
-        <div className="flex items-center gap-4 ml-auto">
-          {/* Wishlist */}
-          {user && (
-            <Link to="/wishlist" className="hidden md:flex items-center gap-1 hover:text-[#febd69] text-sm">
-              <FiHeart size={20} />
-              <span className="text-xs">Wishlist</span>
-            </Link>
-          )}
-
-          {/* User Menu */}
-          {user ? (
-            <div className="relative">
-              <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1 hover:text-[#febd69] text-sm">
-                <FiUser size={20} />
-                <span>{user.name?.split(" ")[0]}</span>
-                <FiChevronDown size={14} />
-              </button>
-              {userMenuOpen && (
-                <div className="absolute right-0 top-8 w-48 bg-white text-gray-800 rounded shadow-lg z-50 py-1">
-                  <Link to="/dashboard" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm"><FiUser size={14} /> Dashboard</Link>
-                  <Link to="/profile" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm"><FiUser size={14} /> My Profile</Link>
-                  <Link to="/order-tracking" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm"><FiPackage size={14} /> My Orders</Link>
-                  <Link to="/loyalty" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm"><FiTrendingUp size={14} /> Loyalty Points</Link>
-                  <Link to="/referral" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm"><FiGift size={14} /> Refer & Earn</Link>
-                  <hr className="my-1" />
-                  <button onClick={handleLogout} className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-red-500"><FiLogOut size={14} /> Logout</button>
-                </div>
-              )}
+        {/* ACTIONS */}
+        <div className="flex items-center space-x-6">
+          
+          {/* FITMENT ENGINE (MY GARAGE) */}
+          <Link to="/fitment" className={`hidden lg:flex items-center space-x-2 px-4 py-2 rounded-xl border transition-all ${
+            isGarageActive ? 'bg-emerald-500 border-emerald-500 text-black' : 'border-slate-800 text-slate-400 hover:border-emerald-500/50'
+          }`}>
+            <Car size={18} />
+            <div className="text-left">
+              <div className="text-[8px] font-black uppercase leading-none">{isGarageActive ? 'My Garage' : 'Select Vehicle'}</div>
+              <div className="text-[10px] font-black uppercase tracking-tighter">{isGarageActive ? garageData.model : 'Guaranteed Fit'}</div>
             </div>
-          ) : (
-            <Link to="/login" className="flex items-center gap-1 hover:text-[#febd69] text-sm"><FiUser size={20} /> Sign In</Link>
-          )}
-
-          {/* Cart */}
-          <Link to="/cart" className="flex items-center gap-1 hover:text-[#febd69] relative">
-            <FiShoppingCart size={22} />
-            {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-[#febd69] text-gray-900 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{cartCount}</span>
-            )}
-            <span className="hidden md:inline text-sm">Cart</span>
           </Link>
 
-          {/* Mobile Toggle */}
-          <button onClick={() => setOpen(!open)} className="md:hidden ml-2">
-            {open ? <FiX size={24} /> : <FiMenu size={24} />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Search */}
-      <div ref={searchRef} className="md:hidden px-2 pb-2 relative">
-        <form onSubmit={handleSearch} className="flex items-center bg-white rounded overflow-hidden">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={handleSearchChange}
-            onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-            placeholder="Search products..."
-            className="flex-1 px-3 py-2 bg-transparent text-black text-sm outline-none placeholder-gray-500"
-          />
-          <button type="submit" className="bg-[#febd69] px-4 py-2">
-            <FiSearch size={16} className="text-gray-900" />
-          </button>
-        </form>
-        {showSuggestions && suggestions.length > 0 && (
-          <div className="absolute left-2 right-2 bg-white border border-gray-200 rounded-b shadow-lg z-50 max-h-56 overflow-y-auto">
-            {suggestions.map((s, i) => (
-              <button key={i} onMouseDown={() => handleSuggestionClick(s)} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-800 hover:bg-gray-50 text-left">
-                <FiSearch size={12} className="text-gray-400" />
-                <span className="truncate">{s.name || s}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Mobile Nav Links */}
-      {open && (
-        <div className="md:hidden bg-[#232f3e] px-4 py-3 flex flex-col gap-3 text-sm">
-          <Link to="/" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Home</Link>
-          <Link to="/shop" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Shop</Link>
-          <Link to="/compare" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Compare</Link>
-          <Link to="/ewarranty" onClick={() => setOpen(false)} className="hover:text-[#febd69]">E-Warranty</Link>
-          <Link to="/contact" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Contact</Link>
+          {/* USER / AUTH */}
           {user ? (
-            <>
-              <hr className="border-gray-600" />
-              <Link to="/dashboard" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Dashboard</Link>
-              <Link to="/wishlist" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Wishlist</Link>
-              <Link to="/order-tracking" onClick={() => setOpen(false)} className="hover:text-[#febd69]">My Orders</Link>
-              <Link to="/loyalty" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Loyalty Points</Link>
-              <Link to="/referral" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Refer & Earn</Link>
-              <button onClick={() => { handleLogout(); setOpen(false); }} className="text-left text-red-400 hover:text-red-300">Logout</button>
-            </>
+            <div className="relative group">
+              <Link to="/profile" className="flex items-center space-x-2 text-white font-black uppercase text-xs tracking-tighter">
+                <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center border border-slate-800">
+                   {user.name?.charAt(0)}
+                </div>
+              </Link>
+            </div>
           ) : (
-            <>
-              <hr className="border-gray-600" />
-              <Link to="/login" onClick={() => setOpen(false)} className="hover:text-[#febd69]">Sign In</Link>
-            </>
+            <Link to="/login" className="text-xs font-black uppercase tracking-tighter text-slate-400 hover:text-white transition-colors">Login</Link>
           )}
+
+          {/* CART (AJAX Mini-Cart Trigger) */}
+          <Link to="/cart" className="relative p-2 text-white hover:text-emerald-500 transition-colors">
+            <ShoppingCart size={22} />
+            {cartItems?.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-black text-[10px] font-black rounded-full flex items-center justify-center border-2 border-slate-950">
+                {cartItems.length}
+              </span>
+            )}
+          </Link>
         </div>
-      )}
+      </div>
     </nav>
   );
 }
