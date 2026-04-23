@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-// 100% STRICT IMPORT: Using the contact object
+// 100% STRICT IMPORT: Using the contact objec
 import { contact as contactApi } from "../../services/api";
 import {
   Loader2, Mail, Phone, MessageSquare, Search, Trash2,
