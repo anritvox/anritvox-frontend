@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { fetchPublicSettings } from '../services/api';
+// 100% PROPER IMPORT
+import { settings as settingsApi } from '../services/api';
 
 const SettingsContext = createContext();
 
@@ -12,7 +13,8 @@ export const SettingsProvider = ({ children }) => {
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const data = await fetchPublicSettings();
+        const res = await settingsApi.get(); // REWRITTEN
+        const data = res.data;
         setSettings(data.settings || data);
       } catch (error) {
         console.error("Failed to fetch settings:", error);
