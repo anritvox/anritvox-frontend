@@ -6,7 +6,7 @@ import {
   Lock, CreditCard, Award, Info, MapPin, Youtube, Play,
   RotateCcw, Eye, Settings, Terminal, Cpu, Clock
 } from 'lucide-react';
-// 100% STRICT IMPORT: Mapped to the correct product object
+// 100% STRICT IMPORT: Mapped to the correct product
 import { products as productsApi } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
