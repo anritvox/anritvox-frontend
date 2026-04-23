@@ -220,7 +220,7 @@ export const adminManagement = {
 };
 
 // ==========================================
-// --- LEGACY EXPORTS (Bridges for components like Profile.jsx) ---
+// --- LEGACY EXPORTS (To prevent breaking current pages) ---
 // ==========================================
 
 export const fetchCart = () => cart.get();
@@ -233,13 +233,22 @@ export const fetchProducts = () => products.getAllActive();
 export const fetchCategories = () => categories.getAll();
 export const submitContact = (data) => contact.submit(data);
 
-// Missing exports added here specifically for Profile.jsx compatibility:
-export const fetchMyOrders = () => orders.getMyOrders();
-export const updateProfile = (data) => users.updateProfile(data);
-export const changePassword = (data) => users.changePassword(data);
-export const fetchWishlistAPI = () => wishlist.get();
-export const removeFromWishlistAPI = (productId) => wishlist.remove(productId);
-export const registerWarranty = (data) => warranty.register(data);
+// --- ADDED MISSING PROFILE, ORDER, & WISHLIST EXPORTS ---
+export const fetchMyOrders = async () => {
+  const res = await orders.getMyOrders();
+  return res.data;
+};
+
+export const updateProfile = async (data) => {
+  const res = await users.updateProfile(data);
+  return res.data;
+};
+
+// ADDED MISSING CHANGE PASSWORD EXPORT HERE
+export const changePassword = async (data) => {
+  const res = await users.changePassword(data);
+  return res.data;
+};
 
 export const fetchAddressesAPI = async () => {
   const res = await addresses.getAll();
@@ -253,6 +262,16 @@ export const saveAddressAPI = async (data) => {
 
 export const placeOrderAPI = async (data) => {
   const res = await orders.create(data);
+  return res.data;
+};
+
+export const fetchWishlistAPI = async () => {
+  const res = await wishlist.get();
+  return res.data;
+};
+
+export const removeFromWishlistAPI = async (productId) => {
+  const res = await wishlist.remove(productId);
   return res.data;
 };
 
