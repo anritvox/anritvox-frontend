@@ -14,6 +14,18 @@ const api = axios.create({
   withCredentials: true,
 });
 
+// GLOBAL HELPER: Resolve Image URLs gracefully (S3/CloudFront/Local)
+export const getImageUrl = (path) => {
+  if (!path) return "/logo.webp"; // Safe fallback
+  if (path.startsWith("http")) return path;
+  
+  const cloudFrontUrl = import.meta.env.VITE_CLOUDFRONT_URL;
+  if (cloudFrontUrl) {
+    return `${cloudFrontUrl}/${path.replace(/^\//, "")}`;
+  }
+  return `${BASE_URL}/${path.replace(/^\//, "")}`;
+};
+
 // REQUEST INTERCEPTOR: Auth Token Injection
 api.interceptors.request.use(
   (config) => {
@@ -23,12 +35,10 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// GLOBAL 401 HANDLER: Auto-logout on token expiration
+// GLOBAL 401 HANDLER: Auto-logout and hard redirect on token expiration
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -36,7 +46,11 @@ api.interceptors.response.use(
       localStorage.removeItem("token");
       localStorage.removeItem("ms_token");
       localStorage.removeItem("user");
-      // Optional: window.location.href = '/login';
+      
+      // Stop infinite redirect loops
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -59,14 +73,15 @@ export const users = {
 };
 
 export const products = {
-  getAllActive: (params) => api.get("/products", { params }), // params: category_id, subcategory_id, min_price, search, etc.
+  getAllActive: (params) => api.get("/products", { params }), 
   getAllAdmin: () => api.get("/products/all"),
   getById: (id) => api.get(`/products/${id}`),
   getBySlug: (slug) => api.get(`/products/slug/${slug}`),
   create: (data) => api.post("/products", data),
   update: (id, data) => api.put(`/products/${id}`, data),
   toggleStatus: (id, status) => api.patch(`/products/${id}/status`, { status }),
-  uploadImages: (id, formData) => api.post(`/products/${id}/images`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  // FIX: Let Axios infer Content-Type to generate the Multi-Part Boundary properly
+  uploadImages: (id, formData) => api.post(`/products/${id}/images`, formData),
   deleteImage: (id, imageId) => api.delete(`/products/${id}/images`, { data: { imageId } }),
   addSerials: (id, serials) => api.post(`/products/${id}/serials`, { serials }),
   delete: (id) => api.delete(`/products/${id}`),
@@ -205,9 +220,8 @@ export const adminManagement = {
   getAllOrders: () => api.get("/admin/orders"),
 };
 
-
 // ==========================================
-// --- LEGACY EXPORTS (To prevent breaking current pages) ---
+// --- LEGACY EXPORTS ---
 // ==========================================
 
 export const fetchCart = () => cart.get();
@@ -219,17 +233,6 @@ export const fetchPublicSettings = () => settings.get();
 export const fetchProducts = () => products.getAllActive(); 
 export const fetchCategories = () => categories.getAll();
 export const submitContact = (data) => contact.submit(data);
-
-// --- ADDED MISSING PROFILE, ORDER, & WISHLIST EXPORTS ---
-export const fetchMyOrders = async () => {
-  const res = await orders.getMyOrders();
-  return res.data;
-};
-
-export const updateProfile = async (data) => {
-  const res = await users.updateProfile(data);
-  return res.data;
-};
 
 export const fetchAddressesAPI = async () => {
   const res = await addresses.getAll();
@@ -243,16 +246,6 @@ export const saveAddressAPI = async (data) => {
 
 export const placeOrderAPI = async (data) => {
   const res = await orders.create(data);
-  return res.data;
-};
-
-export const fetchWishlistAPI = async () => {
-  const res = await wishlist.get();
-  return res.data;
-};
-
-export const removeFromWishlistAPI = async (productId) => {
-  const res = await wishlist.remove(productId);
   return res.data;
 };
 
