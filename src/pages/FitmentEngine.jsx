@@ -16,7 +16,7 @@ export default function FitmentEngine() {
 
   const handleMakeChange = (make) => {
     setSelectedMake(make);
-    // Dynamic Model Loading
+    // Dynamic Model
     const mockModels = {
       'Maruti Suzuki': ['Swift', 'Baleno', 'Brezza', 'Ertiga'],
       'Hyundai': ['Creta', 'Verna', 'i20', 'Venue'],
