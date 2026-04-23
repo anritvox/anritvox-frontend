@@ -215,10 +215,21 @@ export const addToCartAPI = (productId, quantity) => cart.add({ productId, quant
 export const removeFromCartAPI = (productId) => cart.remove(productId);
 export const clearCartAPI = () => cart.clear();
 
-export const fetchPublicSettings = () => settings.get(); // Updated to map to correct backend endpoint
-export const fetchProducts = () => products.getAllActive(); // Updated to map to active products
+export const fetchPublicSettings = () => settings.get(); 
+export const fetchProducts = () => products.getAllActive(); 
 export const fetchCategories = () => categories.getAll();
 export const submitContact = (data) => contact.submit(data);
+
+// ADDED MISSING PROFILE & ORDER EXPORTS HERE
+export const fetchMyOrders = async () => {
+  const res = await orders.getMyOrders();
+  return res.data;
+};
+
+export const updateProfile = async (data) => {
+  const res = await users.updateProfile(data);
+  return res.data;
+};
 
 export const fetchAddressesAPI = async () => {
   const res = await addresses.getAll();
