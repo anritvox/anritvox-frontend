@@ -1,8 +1,8 @@
-//tracking
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { fetchMyOrders } from '../services/api';
+// 100% STRICT IMPORT: Using the mapped orders object
+import { orders as ordersApi } from '../services/api';
 
 const STATUS_STEPS = [
   { key: 'placed', label: 'Order Placed', icon: '📦', description: 'Your order has been placed successfully.' },
@@ -34,8 +34,9 @@ export default function OrderTracking() {
     const load = async () => {
       try {
         setLoading(true);
-        const data = await fetchMyOrders(token);
-        setOrders(data);
+        // REWRITTEN: Strict object-oriented API call
+        const res = await ordersApi.getMyOrders();
+        setOrders(res.data?.data || res.data || []);
       } catch (e) {
         setError('Failed to load orders.');
       } finally {
