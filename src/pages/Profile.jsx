@@ -5,7 +5,7 @@ import {
   User, Package, MapPin, Lock, Heart, ShieldCheck, 
   LogOut, ChevronRight, Award, Save, Plus
 } from 'lucide-react';
-// 100% PROPER IMPORTS: Using the strictly mapped objects
+// 100% PROPER IMPORTS: Using the strictly mapped 
 import { 
   users, 
   orders as ordersApi, 
