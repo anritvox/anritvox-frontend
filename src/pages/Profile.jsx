@@ -24,7 +24,7 @@ export default function Profile() {
   const { showToast } = useToast() || {};
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Data States
+  // Data State
   const [orders, setOrders] = useState([]);
   const [addresses, setAddresses] = useState([]);
   const [wishlist, setWishlist] = useState([]);
