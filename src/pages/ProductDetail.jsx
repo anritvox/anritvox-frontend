@@ -6,11 +6,11 @@ import {
   Lock, CreditCard, Award, Info, MapPin, Youtube, Play,
   RotateCcw, Eye, Settings, Terminal, Cpu, Clock
 } from 'lucide-react';
-import api from '../services/api';
+// 100% STRICT IMPORT: Mapped to the correct product object
+import { products as productsApi } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 
-// Advanced Sub-Component: 360
 const Product360Viewer = ({ images }) => {
   const [frame, setFrame] = useState(0);
   const totalFrames = images?.length || 8;
@@ -24,7 +24,6 @@ const Product360Viewer = ({ images }) => {
             <span className="text-[10px] font-black uppercase tracking-widest text-white">Interactive 360° Vision</span>
          </div>
       </div>
-      {/* Slider for rotation */}
       <input 
         type="range" min="0" max={totalFrames - 1} value={frame} 
         onChange={(e) => setFrame(parseInt(e.target.value))}
@@ -48,8 +47,9 @@ export default function ProductDetail() {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await api.get(`/products/${id}`);
-        setProduct(res.data);
+        // REWRITTEN: Strict object call
+        const res = await productsApi.getById(id);
+        setProduct(res.data?.data || res.data);
       } catch (err) {
         console.error(err);
       }
@@ -76,7 +76,6 @@ export default function ProductDetail() {
         <div className="space-y-8">
            <Product360Viewer images={product.images} />
            
-           {/* Visual Search Hook */}
            <div className="p-6 bg-slate-900/50 rounded-3xl border border-slate-800 flex items-center justify-between">
               <div className="flex items-center space-x-4">
                  <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500">
@@ -93,8 +92,6 @@ export default function ProductDetail() {
 
         {/* RIGHT: DATA */}
         <div className="space-y-10">
-          
-          {/* Header & Fitment */}
           <div className="space-y-4">
              {garage && (
                <div className="inline-flex items-center space-x-2 bg-emerald-500/10 px-4 py-2 rounded-full border border-emerald-500/20 text-emerald-400">
@@ -111,7 +108,6 @@ export default function ProductDetail() {
              </div>
           </div>
 
-          {/* EMI Widget */}
           <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl flex items-center justify-between group hover:border-emerald-500/30 transition-all cursor-pointer">
              <div className="flex items-center space-x-4">
                 <CreditCard size={24} className="text-slate-500 group-hover:text-emerald-500 transition-colors" />
@@ -123,7 +119,6 @@ export default function ProductDetail() {
              <ChevronRight size={18} className="text-slate-700" />
           </div>
 
-          {/* Pin-Code Estimator */}
           <div className="space-y-4">
              <label className="text-[10px] font-black uppercase text-slate-600 tracking-widest ml-4">Delivery Node Check</label>
              <div className="relative">
@@ -146,7 +141,6 @@ export default function ProductDetail() {
              {deliveryDate && <div className="text-[10px] font-bold text-emerald-400 ml-4 animate-in fade-in slide-in-from-left-2">{deliveryDate}</div>}
           </div>
 
-          {/* Core Specs Toggles */}
           <div className="border-t border-slate-900 pt-10">
              <div className="flex space-x-8 mb-8 border-b border-slate-900 pb-4">
                 {['specs', 'details', 'shipping'].map(t => (
