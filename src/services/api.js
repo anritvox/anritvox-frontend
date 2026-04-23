@@ -89,13 +89,16 @@ export const banners = {
   delete: (id) => api.delete(`/banners/${id}`),
 };
 
-// --- CART NAMED EXPORTS (Maintained for Zero Regressions) ---
+// --- NAMED EXPORTS (Maintained for Zero Regressions across all contexts) ---
 export const fetchCart = () => api.get("/cart");
 export const addToCartAPI = (productId, quantity) => api.post("/cart", { productId, quantity });
 export const removeFromCartAPI = (productId) => api.delete(`/cart/${productId}`);
 export const clearCartAPI = () => api.delete("/cart");
-
-// --- SETTINGS EXPORT (Fix for Current Rollup Build Error) ---
 export const fetchPublicSettings = () => api.get("/settings/public");
+
+// --- SHOP EXPORTS (Fix for Current Rollup Build Error) ---
+export const fetchProducts = () => api.get("/products");
+// Proactively adding fetchCategories to prevent the next likely Rollup error
+export const fetchCategories = () => api.get("/categories");
 
 export default api;
