@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-// 100% PROPER IMPORT
+// 100% PROPER
 import { products as productsApi } from "../services/api";
 import { useCart } from "../context/CartContext";
 import { FiStar, FiChevronDown, FiSearch, FiCheck, FiShoppingCart, FiSliders, FiHeart, FiX, FiEye } from "react-icons/fi";
