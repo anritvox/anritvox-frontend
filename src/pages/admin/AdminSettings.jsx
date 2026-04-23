@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { changeAdminPassword } from '../../services/api';
+import { users } from '../../services/api';
 import { FiLock, FiSave, FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 
 export default function AdminSettings({ token }) {
@@ -32,13 +32,13 @@ export default function AdminSettings({ token }) {
 
     setLoading(true);
     try {
-      await changeAdminPassword(currentPassword, newPassword, token);
+      await users.changePassword({ currentPassword, newPassword });
       setMessage('Password changed successfully!');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err) {
-      setError(err.message || 'Failed to change password');
+      setError(err.response?.data?.message || err.message || 'Failed to change password');
     } finally {
       setLoading(false);
     }
@@ -72,51 +72,19 @@ export default function AdminSettings({ token }) {
         <h3 className="text-lg font-semibold text-white mb-4">Change Password</h3>
         <form onSubmit={handlePasswordChange} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Current Password
-            </label>
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full px-4 py-2 bg-[#0f1419] border border-gray-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
-              disabled={loading}
-            />
+            <label className="block text-sm font-medium text-gray-300 mb-2">Current Password</label>
+            <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="w-full px-4 py-2 bg-[#0f1419] border border-gray-700 rounded-lg text-white focus:outline-none focus:border-cyan-500" disabled={loading} />
           </div>
-
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              New Password
-            </label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full px-4 py-2 bg-[#0f1419] border border-gray-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
-              disabled={loading}
-            />
+            <label className="block text-sm font-medium text-gray-300 mb-2">New Password</label>
+            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full px-4 py-2 bg-[#0f1419] border border-gray-700 rounded-lg text-white focus:outline-none focus:border-cyan-500" disabled={loading} />
           </div>
-
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Confirm New Password
-            </label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-2 bg-[#0f1419] border border-gray-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
-              disabled={loading}
-            />
+            <label className="block text-sm font-medium text-gray-300 mb-2">Confirm New Password</label>
+            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full px-4 py-2 bg-[#0f1419] border border-gray-700 rounded-lg text-white focus:outline-none focus:border-cyan-500" disabled={loading} />
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex items-center gap-2 px-6 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <FiSave />
-            {loading ? 'Changing...' : 'Change Password'}
+          <button type="submit" disabled={loading} className="flex items-center gap-2 px-6 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <FiSave /> {loading ? 'Changing...' : 'Change Password'}
           </button>
         </form>
       </div>
@@ -124,22 +92,10 @@ export default function AdminSettings({ token }) {
       <div className="mt-6 bg-[#1a1f2e] rounded-xl p-6 border border-gray-800">
         <h3 className="text-lg font-semibold text-white mb-4">Site Information</h3>
         <div className="space-y-3 text-gray-400">
-          <div className="flex justify-between">
-            <span>Site Name:</span>
-            <span className="text-white">Anritvox</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Domain:</span>
-            <span className="text-white">anritvox.com</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Payment Method:</span>
-            <span className="text-white">Cash on Delivery (COD)</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Delivery Types:</span>
-            <span className="text-white">Standard, Express</span>
-          </div>
+          <div className="flex justify-between"><span>Site Name:</span><span className="text-white">Anritvox</span></div>
+          <div className="flex justify-between"><span>Domain:</span><span className="text-white">anritvox.com</span></div>
+          <div className="flex justify-between"><span>Payment Method:</span><span className="text-white">Cash on Delivery (COD)</span></div>
+          <div className="flex justify-between"><span>Delivery Types:</span><span className="text-white">Standard, Express</span></div>
         </div>
       </div>
     </div>
