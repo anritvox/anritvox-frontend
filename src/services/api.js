@@ -46,7 +46,7 @@ api.interceptors.response.use(
   }
 );
 
-// --- STRICT OBJECT-ORIENTED EXPORTS ---
+// --- STRICT OBJECT-ORIENTED EXPORTS
 
 export const auth = {
   register: (data) => api.post("/auth/register", data),
