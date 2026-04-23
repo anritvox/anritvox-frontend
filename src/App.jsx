@@ -2,37 +2,37 @@ import React, { lazy, Suspense, Component } from "react";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 
 // Components & Context
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
+import Navbar from "./components/Navbar.jsx";
+import Footer from "./components/Footer.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
-import { ToastProvider } from "./context/ToastContext";
-import { WishlistProvider } from "./context/WishlistContext";
-import { CompareProvider } from "./context/CompareContext";
+import { ToastProvider } from "./context/ToastContext.jsx";
+import { WishlistProvider } from "./context/WishlistContext.jsx";
+import { CompareProvider } from "./context/CompareContext.jsx";
 import "./index.css";
 
-// Lazy load pages
-const Home = lazy(() => import("./pages/Home"));
-const Shop = lazy(() => import("./pages/Shop"));
-const ProductDetail = lazy(() => import("./pages/ProductDetail"));
-const EWarranty = lazy(() => import("./pages/EWarranty"));
-const Contact = lazy(() => import("./pages/Contact"));
-const Cart = lazy(() => import("./pages/Cart"));
-const Checkout = lazy(() => import("./pages/Checkout"));
-const OrderSuccess = lazy(() => import("./pages/OrderSuccess"));
-const Login = lazy(() => import("./pages/Login"));
-const Register = lazy(() => import("./pages/Register"));
-const Profile = lazy(() => import("./pages/Profile"));
-const AdminLogin = lazy(() => import("./pages/AdminLogin"));
-const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
-const Wishlist = lazy(() => import("./pages/Wishlist"));
-const OrderTracking = lazy(() => import("./pages/OrderTracking"));
-const Compare = lazy(() => import("./pages/Compare"));
-const AddressBook = lazy(() => import("./pages/AddressBook"));
-const Returns = lazy(() => import("./pages/Returns"));
-const Affiliate = lazy(() => import("./pages/Affiliate"));
-const About = lazy(() => import("./pages/About"));
-const Legal = lazy(() => import("./pages/Legal"));
+// Lazy load pages - Strict extensions added to prevent deployment missing links
+const Home = lazy(() => import("./pages/Home.jsx"));
+const Shop = lazy(() => import("./pages/Shop.jsx"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail.jsx"));
+const EWarranty = lazy(() => import("./pages/EWarranty.jsx"));
+const Contact = lazy(() => import("./pages/Contact.jsx"));
+const Cart = lazy(() => import("./pages/Cart.jsx"));
+const Checkout = lazy(() => import("./pages/Checkout.jsx"));
+const OrderSuccess = lazy(() => import("./pages/OrderSuccess.jsx"));
+const Login = lazy(() => import("./pages/Login.jsx"));
+const Register = lazy(() => import("./pages/Register.jsx"));
+const Profile = lazy(() => import("./pages/Profile.jsx"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin.jsx"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard.jsx"));
+const Wishlist = lazy(() => import("./pages/Wishlist.jsx"));
+const OrderTracking = lazy(() => import("./pages/OrderTracking.jsx"));
+const Compare = lazy(() => import("./pages/Compare.jsx"));
+const AddressBook = lazy(() => import("./pages/AddressBook.jsx"));
+const Returns = lazy(() => import("./pages/Returns.jsx"));
+const Affiliate = lazy(() => import("./pages/Affiliate.jsx"));
+const About = lazy(() => import("./pages/About.jsx"));
+const Legal = lazy(() => import("./pages/Legal.jsx"));
 
 const PageLoader = () => (
   <div className="min-h-screen bg-gray-950 flex items-center justify-center">
