@@ -1,20 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
   User, Package, MapPin, Lock, Heart, ShieldCheck, 
-  LogOut, ChevronRight, Award, LifeBuoy, CreditCard,
-  Settings, Bell, Edit2, Save, X, Plus
+  LogOut, ChevronRight, Award, Save, Plus
 } from 'lucide-react';
+// 100% PROPER IMPORTS: Using the strictly mapped objects
 import { 
-  updateProfile, 
-  fetchMyOrders, 
-  fetchAddressesAPI, 
-  saveAddressAPI, 
-  changePassword,
-  fetchWishlistAPI,
-  registerWarranty,
-  removeFromWishlistAPI
+  users, 
+  orders as ordersApi, 
+  addresses as addressesApi, 
+  wishlist as wishlistApi, 
+  warranty 
 } from '../services/api';
 import { useToast } from '../context/ToastContext';
 
@@ -47,10 +44,11 @@ export default function Profile() {
   const loadAllData = async () => {
     try {
       setLoading(true);
+      // REWRITTEN API CALLS
       const [oRes, aRes, wRes] = await Promise.all([
-        fetchMyOrders(),
-        fetchAddressesAPI(),
-        fetchWishlistAPI()
+        ordersApi.getMyOrders(),
+        addressesApi.getAll(),
+        wishlistApi.get()
       ]);
       setOrders(oRes.data);
       setAddresses(aRes.data);
@@ -65,7 +63,7 @@ export default function Profile() {
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     try {
-      await updateProfile(profileForm);
+      await users.updateProfile(profileForm); // REWRITTEN
       showToast?.('Profile updated successfully', 'success');
     } catch (err) {
       showToast?.('Failed to update profile', 'error');
@@ -75,7 +73,7 @@ export default function Profile() {
   const handlePasswordChange = async (e) => {
     e.preventDefault();
     try {
-      await changePassword(pwdForm);
+      await users.changePassword(pwdForm); // REWRITTEN
       showToast?.('Password changed successfully', 'success');
       setPwdForm({ current: '', new: '' });
     } catch (err) {
@@ -86,10 +84,10 @@ export default function Profile() {
   const handleAddAddress = async (e) => {
     e.preventDefault();
     try {
-      await saveAddressAPI(addressForm);
+      await addressesApi.create(addressForm); // REWRITTEN
       showToast?.('Address added', 'success');
       setAddressForm({ street: '', city: '', state: '', zip: '', country: '' });
-      const aRes = await fetchAddressesAPI();
+      const aRes = await addressesApi.getAll();
       setAddresses(aRes.data);
     } catch (err) {
       showToast?.('Failed to add address', 'error');
@@ -99,7 +97,7 @@ export default function Profile() {
   const handleWarranty = async (e) => {
     e.preventDefault();
     try {
-      await registerWarranty({ serialNumber: warrantySerial });
+      await warranty.register({ serialNumber: warrantySerial }); // REWRITTEN
       showToast?.('Warranty registered', 'success');
       setWarrantySerial('');
     } catch (err) {
