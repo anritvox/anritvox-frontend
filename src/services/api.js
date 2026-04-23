@@ -14,7 +14,7 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// REQUEST INTERCEPTOR: Auth Token Injectio
+// REQUEST INTERCEPTOR: Auth Token Injection
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token") || localStorage.getItem("ms_token");
@@ -89,10 +89,13 @@ export const banners = {
   delete: (id) => api.delete(`/banners/${id}`),
 };
 
-// --- CART NAMED EXPORTS (Fix for Rollup Build Error) ---
+// --- CART NAMED EXPORTS (Maintained for Zero Regressions) ---
 export const fetchCart = () => api.get("/cart");
 export const addToCartAPI = (productId, quantity) => api.post("/cart", { productId, quantity });
 export const removeFromCartAPI = (productId) => api.delete(`/cart/${productId}`);
 export const clearCartAPI = () => api.delete("/cart");
+
+// --- SETTINGS EXPORT (Fix for Current Rollup Build Error) ---
+export const fetchPublicSettings = () => api.get("/settings/public");
 
 export default api;
