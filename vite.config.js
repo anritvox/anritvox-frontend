@@ -32,7 +32,7 @@ export default defineConfig({
             if (id.includes('recharts')) {
               return 'vendor-recharts';
             }
-            return 'vendor'; // Safely isolate all remaining dependencies
+            return 'vendor'; // Safely isolate all remaining
           }
         }
       }
