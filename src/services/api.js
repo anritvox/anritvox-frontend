@@ -80,7 +80,6 @@ export const products = {
   create: (data) => api.post("/products", data),
   update: (id, data) => api.put(`/products/${id}`, data),
   toggleStatus: (id, status) => api.patch(`/products/${id}/status`, { status }),
-  // FIX: Let Axios infer Content-Type to generate the Multi-Part Boundary properly
   uploadImages: (id, formData) => api.post(`/products/${id}/images`, formData),
   deleteImage: (id, imageId) => api.delete(`/products/${id}/images`, { data: { imageId } }),
   addSerials: (id, serials) => api.post(`/products/${id}/serials`, { serials }),
@@ -221,7 +220,7 @@ export const adminManagement = {
 };
 
 // ==========================================
-// --- LEGACY EXPORTS ---
+// --- LEGACY EXPORTS (Bridges for components like Profile.jsx) ---
 // ==========================================
 
 export const fetchCart = () => cart.get();
@@ -233,6 +232,14 @@ export const fetchPublicSettings = () => settings.get();
 export const fetchProducts = () => products.getAllActive(); 
 export const fetchCategories = () => categories.getAll();
 export const submitContact = (data) => contact.submit(data);
+
+// Missing exports added here specifically for Profile.jsx compatibility:
+export const fetchMyOrders = () => orders.getMyOrders();
+export const updateProfile = (data) => users.updateProfile(data);
+export const changePassword = (data) => users.changePassword(data);
+export const fetchWishlistAPI = () => wishlist.get();
+export const removeFromWishlistAPI = (productId) => wishlist.remove(productId);
+export const registerWarranty = (data) => warranty.register(data);
 
 export const fetchAddressesAPI = async () => {
   const res = await addresses.getAll();
