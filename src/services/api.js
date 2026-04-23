@@ -96,9 +96,11 @@ export const removeFromCartAPI = (productId) => api.delete(`/cart/${productId}`)
 export const clearCartAPI = () => api.delete("/cart");
 export const fetchPublicSettings = () => api.get("/settings/public");
 
-// --- SHOP EXPORTS (Fix for Current Rollup Build Error) ---
+// --- SHOP EXPORTS ---
 export const fetchProducts = () => api.get("/products");
-// Proactively adding fetchCategories to prevent the next likely Rollup error
 export const fetchCategories = () => api.get("/categories");
+
+// --- CONTACT EXPORTS (Fix for Current Rollup Build Error) ---
+export const submitContact = (data) => api.post("/contact", data);
 
 export default api;
