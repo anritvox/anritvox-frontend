@@ -220,59 +220,49 @@ export const adminManagement = {
 };
 
 // ==========================================
-// --- LEGACY EXPORTS (To prevent breaking current pages) ---
+// --- LEGACY EXPORTS (Bridges for older React components) ---
 // ==========================================
 
+// Global / Public Bridges
 export const fetchCart = () => cart.get();
 export const addToCartAPI = (productId, quantity) => cart.add({ productId, quantity });
 export const removeFromCartAPI = (productId) => cart.remove(productId);
 export const clearCartAPI = () => cart.clear();
-
 export const fetchPublicSettings = () => settings.get(); 
 export const fetchProducts = () => products.getAllActive(); 
 export const fetchCategories = () => categories.getAll();
 export const submitContact = (data) => contact.submit(data);
 
-// --- ADDED MISSING PROFILE, ORDER, & WISHLIST EXPORTS ---
-export const fetchMyOrders = async () => {
-  const res = await orders.getMyOrders();
-  return res.data;
-};
-
-export const updateProfile = async (data) => {
-  const res = await users.updateProfile(data);
-  return res.data;
-};
-
-// ADDED MISSING CHANGE PASSWORD EXPORT HERE
-export const changePassword = async (data) => {
-  const res = await users.changePassword(data);
-  return res.data;
-};
-
+// User / Profile Bridges
+export const fetchMyOrders = () => orders.getMyOrders();
+export const updateProfile = (data) => users.updateProfile(data);
+export const changePassword = (data) => users.changePassword(data);
+export const fetchWishlistAPI = () => wishlist.get();
+export const removeFromWishlistAPI = (productId) => wishlist.remove(productId);
+export const registerWarranty = (data) => warranty.register(data);
 export const fetchAddressesAPI = async () => {
   const res = await addresses.getAll();
   return res.data;
 };
-
 export const saveAddressAPI = async (data) => {
   const res = await addresses.create(data);
   return res.data.addresses || res.data; 
 };
-
 export const placeOrderAPI = async (data) => {
   const res = await orders.create(data);
   return res.data;
 };
 
-export const fetchWishlistAPI = async () => {
-  const res = await wishlist.get();
-  return res.data;
-};
-
-export const removeFromWishlistAPI = async (productId) => {
-  const res = await wishlist.remove(productId);
-  return res.data;
-};
+// --- PREEMPTIVE ADMIN DASHBOARD BRIDGES ---
+export const fetchAdminDashboard = () => analytics.getDashboard();
+export const fetchAdminSales = () => analytics.getSales();
+export const fetchAdminProducts = () => products.getAllAdmin();
+export const fetchAdminOrders = () => orders.getAllAdmin();
+export const fetchAdminUsers = () => adminManagement.getAllUsers();
+export const fetchAllCoupons = () => coupons.getAllAdmin();
+export const fetchAllBanners = () => banners.getAllAdmin();
+export const fetchAllWarranties = () => warranty.getAllAdmin();
+export const fetchAllReturns = () => returns.getAllAdmin();
+export const fetchAllContacts = () => contact.getAllAdmin();
 
 export default api;
