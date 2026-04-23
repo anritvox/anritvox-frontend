@@ -10,7 +10,7 @@ import api from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 
-// Advanced Sub-Component: 360 Viewer
+// Advanced Sub-Component: 360
 const Product360Viewer = ({ images }) => {
   const [frame, setFrame] = useState(0);
   const totalFrames = images?.length || 8;
