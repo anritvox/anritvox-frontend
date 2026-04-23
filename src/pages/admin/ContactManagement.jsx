@@ -1,373 +1,224 @@
-import React, { useState, useEffect } from "react";
-// 100% STRICT IMPORT: Using the mapped objects
-import { categories as catApi, subcategories as subCatApi } from "../../services/api";
+import React, { useState, useEffect, useCallback } from "react";
+import { fetchContactsAdmin } from "../../services/api";
 import {
-  Plus,
-  Edit3,
-  Trash2,
-  Folder,
-  FolderPlus,
-  Save,
-  X,
-  AlertCircle,
-  Loader2,
-  Grid3x3,
-  Layers,
-  ChevronRight,
-  Sparkles,
-  Zap
+  Loader2, Mail, Phone, MessageSquare, Search, Trash2,
+  RefreshCw, User, Calendar, Eye, X, CheckCircle
 } from "lucide-react";
 
-export default function CategoryManagement({ token }) {
-  const [categories, setCategories] = useState([]);
-  const [subcategories, setSubcategories] = useState([]);
-  const [name, setName] = useState("");
-  const [parentId, setParentId] = useState("");
-  const [editCatId, setEditCatId] = useState(null);
-  const [editSubId, setEditSubId] = useState(null);
+export default function ContactManagement({ token }) {
+  const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedContact, setSelectedContact] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordsPerPage = 10;
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [cats, subs] = await Promise.all([
-        catApi.getAll(),
-        subCatApi.getAll(),
-      ]);
-      setCategories(Array.isArray(cats.data) ? cats.data : (cats.data?.data || cats || []));
-      setSubcategories(Array.isArray(subs.data) ? subs.data : (subs.data?.data || subs || []));
+      const data = await fetchContactsAdmin(token);
+      setContacts(data || []);
     } catch (err) {
-      setError("Failed to load data: " + err.message);
+      console.error("Contact load error:", err);
+      setError(err.message || "Failed to load contacts");
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     loadData();
-  }, [token]);
+  }, [loadData]);
 
-  const resetForm = () => {
-    setName("");
-    setParentId("");
-    setEditCatId(null);
-    setEditSubId(null);
-    setError(null);
-  };
+  const filtered = contacts.filter(c =>
+    c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.message?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const handleCatSave = async () => {
-    setFormLoading(true);
-    setError(null);
-    try {
-      if (!name.trim()) throw new Error("Category name is required.");
-      if (editCatId) {
-        await catApi.update(editCatId, { name });
-      } else {
-        await catApi.create({ name });
-      }
-      resetForm();
-      loadData();
-    } catch (e) {
-      setError(e?.response?.data?.message || "Failed to save category: " + e.message);
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const handleSubSave = async () => {
-    setFormLoading(true);
-    setError(null);
-    try {
-      if (!name.trim() || !parentId) throw new Error("Subcategory name and parent category are required.");
-      const data = { name, category_id: parentId };
-      if (editSubId) {
-        await subCatApi.update(editSubId, data);
-      } else {
-        await subCatApi.create(data);
-      }
-      resetForm();
-      loadData();
-    } catch (e) {
-      setError(e?.response?.data?.message || "Failed to save subcategory: " + e.message);
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const handleRemoveCat = async (id) => {
-    if (window.confirm("Are you sure you want to delete this category? This will also delete all associated subcategories.")) {
-      setFormLoading(true);
-      setError(null);
-      try {
-        await catApi.delete(id);
-        loadData();
-      } catch (e) {
-        setError(e?.response?.data?.message || "Failed to delete category: " + e.message);
-      } finally {
-        setFormLoading(false);
-      }
-    }
-  };
-
-  const handleRemoveSub = async (id) => {
-    if (window.confirm("Are you sure you want to delete this subcategory?")) {
-      setFormLoading(true);
-      setError(null);
-      try {
-        await subCatApi.delete(id);
-        loadData();
-      } catch (e) {
-        setError(e?.response?.data?.message || "Failed to delete subcategory: " + e.message);
-      } finally {
-        setFormLoading(false);
-      }
-    }
-  };
+  const indexOfLast = currentPage * recordsPerPage;
+  const indexOfFirst = indexOfLast - recordsPerPage;
+  const currentRecords = filtered.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(filtered.length / recordsPerPage);
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0a0c10] flex items-center justify-center">
-      <div className="relative">
-        <div className="w-16 h-16 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
-        <Zap className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-cyan-500 animate-pulse" size={20} />
-      </div>
+    <div className="flex items-center justify-center h-64">
+      <Loader2 className="animate-spin text-cyan-400" size={32} />
+      <span className="ml-3 text-gray-400 font-mono text-sm">Loading messages...</span>
+    </div>
+  );
+
+  if (error) return (
+    <div className="flex flex-col items-center justify-center h-64 gap-4">
+      <div className="text-red-400 font-mono text-sm">Error: {error}</div>
+      <button onClick={loadData} className="px-4 py-2 bg-cyan-500/20 text-cyan-400 rounded-xl text-sm hover:bg-cyan-500/30 transition-all">
+        Retry
+      </button>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#0a0c10] text-gray-100 p-4 lg:p-8 font-sans selection:bg-cyan-500/30">
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-600/10 blur-[120px] rounded-full animate-pulse delay-700" />
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Message <span className="text-cyan-400">Inbox</span></h1>
+          <p className="text-gray-500 text-sm mt-1">Customer contact submissions</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-gray-600 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
+            {contacts.length} total messages
+          </span>
+          <button
+            onClick={loadData}
+            className="p-2 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-cyan-400 rounded-xl transition-all"
+          >
+            <RefreshCw size={15} />
+          </button>
+        </div>
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#161b22]/40 backdrop-blur-xl border border-white/5 p-6 rounded-[2rem] shadow-2xl">
-          <div>
-            <h1 className="text-3xl font-black tracking-tighter bg-gradient-to-r from-white via-cyan-400 to-purple-500 bg-clip-text text-transparent flex items-center gap-3">
-              <Layers className="text-cyan-400" />
-              Taxonomy Engine
-            </h1>
-            <p className="text-gray-400 text-xs mt-1 font-mono uppercase tracking-widest">Global Classification & Hierarchy</p>
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: "Total Messages", val: contacts.length, icon: MessageSquare, color: "text-cyan-400", bg: "bg-cyan-500/5" },
+          { label: "Today", val: contacts.filter(c => new Date(c.created_at).toDateString() === new Date().toDateString()).length, icon: Calendar, color: "text-purple-400", bg: "bg-purple-500/5" },
+          { label: "Unique Customers", val: new Set(contacts.map(c => c.email)).size, icon: User, color: "text-emerald-400", bg: "bg-emerald-500/5" },
+        ].map((stat, i) => (
+          <div key={i} className={`${stat.bg} border border-white/5 rounded-2xl p-4 flex items-center gap-4`}>
+            <stat.icon size={20} className={stat.color} />
+            <div>
+              <div className={`text-2xl font-bold ${stat.color}`}>{stat.val}</div>
+              <div className="text-xs text-gray-500">{stat.label}</div>
+            </div>
           </div>
-          <div className="flex gap-2">
-             <button onClick={loadData} className="p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all">
-                <Sparkles size={18} className="text-cyan-400" />
-             </button>
-          </div>
-        </div>
+        ))}
+      </div>
 
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/50 p-4 rounded-2xl flex items-center gap-3 text-red-400 animate-fade-in backdrop-blur-md">
-            <AlertCircle size={20} />
-            <span className="text-sm font-medium">{error}</span>
-            <button onClick={() => setError(null)} className="ml-auto hover:bg-red-500/20 p-1 rounded-lg transition-colors">
-              <X size={18} />
+      {/* Search */}
+      <div className="relative">
+        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" />
+        <input
+          type="text"
+          placeholder="Search by name, email, or message..."
+          value={searchTerm}
+          onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+          className="w-full bg-[#0a0c10] border border-white/10 rounded-2xl pl-12 pr-6 py-3 outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all text-sm placeholder:text-gray-700"
+        />
+      </div>
+
+      {/* Table */}
+      <div className="space-y-2">
+        {currentRecords.length === 0 ? (
+          <div className="text-center text-gray-600 py-16">No messages found.</div>
+        ) : (
+          currentRecords.map((c, i) => (
+            <div key={i} className="bg-white/3 border border-white/5 rounded-2xl p-4 flex items-start justify-between gap-4 hover:border-white/10 transition-all">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <User size={13} className="text-cyan-400 shrink-0" />
+                  <span className="text-sm font-semibold text-white">{c.name}</span>
+                </div>
+                <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
+                  <span className="flex items-center gap-1"><Mail size={11} />{c.email}</span>
+                  {c.phone && <span className="flex items-center gap-1"><Phone size={11} />{c.phone}</span>}
+                </div>
+                <p className="text-sm text-gray-400 line-clamp-2">{c.message}</p>
+              </div>
+              <div className="flex flex-col items-end gap-2 shrink-0">
+                <span className="text-xs text-gray-600">
+                  {c.created_at ? new Date(c.created_at).toLocaleDateString() : "-"}
+                </span>
+                <button
+                  onClick={() => setSelectedContact(c)}
+                  className="p-2 bg-white/5 hover:bg-cyan-500/20 text-cyan-400 rounded-xl transition-all"
+                >
+                  <Eye size={14} />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={() => setCurrentPage(p => p - 1)}
+            disabled={currentPage === 1}
+            className="px-4 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 rounded-xl text-xs font-bold uppercase tracking-widest transition-all"
+          >
+            Prev
+          </button>
+          {[...Array(totalPages)].map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`w-8 h-8 rounded-lg text-xs font-mono transition-all ${
+                currentPage === i + 1 ? "bg-cyan-500 text-white" : "bg-white/5 text-gray-500 hover:bg-white/10"
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+          <button
+            onClick={() => setCurrentPage(p => p + 1)}
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 rounded-xl text-xs font-bold uppercase tracking-widest transition-all"
+          >
+            Next
+          </button>
+        </div>
+      )}
+
+      {/* View Modal */}
+      {selectedContact && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0d0f14] border border-white/10 rounded-3xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-white">Message Detail</h3>
+              <button onClick={() => setSelectedContact(null)} className="text-gray-500 hover:text-white transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="space-y-4 text-sm">
+              <div>
+                <div className="text-xs text-gray-600 uppercase tracking-widest mb-1">Name</div>
+                <div className="text-white font-medium">{selectedContact.name}</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-600 uppercase tracking-widest mb-1">Email</div>
+                <div className="text-cyan-400">{selectedContact.email}</div>
+              </div>
+              {selectedContact.phone && (
+                <div>
+                  <div className="text-xs text-gray-600 uppercase tracking-widest mb-1">Phone</div>
+                  <div className="text-white">{selectedContact.phone}</div>
+                </div>
+              )}
+              <div>
+                <div className="text-xs text-gray-600 uppercase tracking-widest mb-1">Message</div>
+                <div className="text-gray-300 leading-relaxed">{selectedContact.message}</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-600 uppercase tracking-widest mb-1">Received</div>
+                <div className="text-gray-400">
+                  {selectedContact.created_at ? new Date(selectedContact.created_at).toLocaleString() : "-"}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setSelectedContact(null)}
+              className="w-full mt-6 py-3 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 font-bold rounded-2xl transition-all"
+            >
+              Close
             </button>
           </div>
-        )}
-
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          <section className="space-y-6">
-            <div className="bg-[#161b22]/40 backdrop-blur-xl border border-white/5 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              
-              <div className="flex items-center gap-4 mb-8">
-                <div className="p-3 bg-cyan-500/10 rounded-2xl border border-cyan-500/20">
-                  <Grid3x3 className="text-cyan-400" size={24} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold">Primary Departments</h2>
-                  <p className="text-xs text-gray-500 font-mono">Top-level structural nodes</p>
-                </div>
-              </div>
-
-              <div className="space-y-4 mb-8 p-6 bg-white/5 rounded-3xl border border-white/5">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Category Identifier</label>
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter category name..."
-                    className="w-full bg-[#0a0c10] border border-white/10 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-cyan-500/50 outline-none transition-all placeholder:text-gray-700 text-sm"
-                    disabled={formLoading}
-                  />
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleCatSave}
-                    disabled={formLoading || !name.trim()}
-                    className="flex-1 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 disabled:opacity-50 text-black font-black text-xs uppercase tracking-widest py-4 rounded-2xl shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all flex items-center justify-center gap-2"
-                  >
-                    {formLoading ? <Loader2 className="animate-spin" size={16} /> : (editCatId ? <Save size={16} /> : <Plus size={16} />)}
-                    {editCatId ? "Commit Update" : "Deploy Category"}
-                  </button>
-                  {editCatId && (
-                    <button onClick={resetForm} className="px-6 bg-white/5 hover:bg-white/10 text-gray-400 rounded-2xl transition-colors">
-                      <X size={20} />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="overflow-hidden rounded-3xl border border-white/5 bg-[#0a0c10]/50">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-white/5">
-                      <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Ref ID</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Label</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5 text-sm">
-                    {(Array.isArray(categories) ? categories : []).map((c) => (
-                      <tr key={c.id} className="hover:bg-white/[0.02] transition-colors group">
-                        <td className="px-6 py-4 font-mono text-cyan-500/70 text-xs">#{c.id.toString().padStart(3, '0')}</td>
-                        <td className="px-6 py-4 font-bold text-gray-300">{c.name}</td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button 
-                              onClick={() => { setEditCatId(c.id); setName(c.name); setEditSubId(null); setParentId(""); }}
-                              className="p-2 hover:bg-cyan-500/20 text-cyan-400 rounded-lg transition-colors"
-                            >
-                              <Edit3 size={16} />
-                            </button>
-                            <button 
-                              onClick={() => handleRemoveCat(c.id)}
-                              className="p-2 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {(!Array.isArray(categories) || categories.length === 0) && (
-                      <tr>
-                        <td colSpan="3" className="px-6 py-12 text-center text-gray-600 italic">No primary departments detected.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-
-          <section className="space-y-6">
-             <div className="bg-[#161b22]/40 backdrop-blur-xl border border-white/5 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-purple-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              
-              <div className="flex items-center gap-4 mb-8">
-                <div className="p-3 bg-purple-500/10 rounded-2xl border border-purple-500/20">
-                  <FolderPlus className="text-purple-400" size={24} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold">Sub-Classifications</h2>
-                  <p className="text-xs text-gray-500 font-mono">Secondary hierarchical clusters</p>
-                </div>
-              </div>
-
-              <div className="space-y-4 mb-8 p-6 bg-white/5 rounded-3xl border border-white/5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Parent Nexus</label>
-                    <select
-                      value={parentId}
-                      onChange={(e) => setParentId(e.target.value)}
-                      className="w-full bg-[#0a0c10] border border-white/10 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-purple-500/50 outline-none transition-all text-sm appearance-none"
-                      disabled={formLoading || !Array.isArray(categories) || categories.length === 0}
-                    >
-                      <option value="">Select Parent</option>
-                      {(Array.isArray(categories) ? categories : []).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Sub Label</label>
-                    <input
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Smartphones"
-                      className="w-full bg-[#0a0c10] border border-white/10 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-purple-500/50 outline-none transition-all placeholder:text-gray-700 text-sm"
-                      disabled={formLoading}
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleSubSave}
-                    disabled={formLoading || !name.trim() || !parentId}
-                    className="flex-1 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 disabled:opacity-50 text-black font-black text-xs uppercase tracking-widest py-4 rounded-2xl shadow-[0_0_20px_rgba(168,85,247,0.3)] transition-all flex items-center justify-center gap-2"
-                  >
-                    {formLoading ? <Loader2 className="animate-spin" size={16} /> : (editSubId ? <Save size={16} /> : <Plus size={16} />)}
-                    {editSubId ? "Commit Change" : "Initialize Sub-Node"}
-                  </button>
-                  {editSubId && (
-                    <button onClick={resetForm} className="px-6 bg-white/5 hover:bg-white/10 text-gray-400 rounded-2xl transition-colors">
-                      <X size={20} />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="overflow-hidden rounded-3xl border border-white/5 bg-[#0a0c10]/50">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-white/5">
-                      <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Cluster</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Nexus</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5 text-sm">
-                    {(Array.isArray(subcategories) ? subcategories : []).map((sc) => (
-                      <tr key={sc.id} className="hover:bg-white/[0.02] transition-colors group">
-                        <td className="px-6 py-4 font-bold text-gray-300">{sc.name}</td>
-                        <td className="px-6 py-4">
-                          <span className="px-3 py-1 bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-mono rounded-full uppercase tracking-tighter">
-                            {(Array.isArray(categories) ? categories : []).find(c => c.id === sc.category_id)?.name || "N/A"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                           <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button 
-                              onClick={() => { setEditSubId(sc.id); setName(sc.name); setParentId(sc.category_id); setEditCatId(null); }}
-                              className="p-2 hover:bg-purple-500/20 text-purple-400 rounded-lg transition-colors"
-                            >
-                              <Edit3 size={16} />
-                            </button>
-                            <button 
-                              onClick={() => handleRemoveSub(sc.id)}
-                              className="p-2 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {(!Array.isArray(subcategories) || subcategories.length === 0) && (
-                      <tr>
-                        <td colSpan="3" className="px-6 py-12 text-center text-gray-600 italic">No sub-clusters indexed.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
         </div>
-      </div>
-
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #374151; }
-      `}</style>
+      )}
     </div>
   );
 }
