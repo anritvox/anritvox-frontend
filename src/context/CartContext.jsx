@@ -61,6 +61,15 @@ export const CartProvider = ({ children }) => {
     }
     loadCart();
   };
+  
+  const clearCart = async () => {
+    if (isAuthenticated) {
+      await clearCartAPI();
+    } else {
+      localStorage.removeItem("anritvox_guest_cart");
+    }
+    setCart([]);
+  };
 
   const getSubtotal = () => cart.reduce((acc, item) => acc + (item.product?.price * item.quantity), 0);
   const freeShippingThreshold = 5000;
@@ -74,6 +83,7 @@ export const CartProvider = ({ children }) => {
       setIsCartOpen,
       addToCart, 
       removeFromCart,
+      clearCart,
       upsells,
       getSubtotal,
       shippingProgress,
