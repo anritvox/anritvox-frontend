@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-// 100% PROPER IMPORT
+// 100% PROPER
 import { auth, users } from '../services/api';
 
 const AuthContext = createContext(null);
