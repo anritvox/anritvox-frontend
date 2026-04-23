@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { fetchAddressesAPI, saveAddressAPI, placeOrderAPI } from '../services/api';
+// 100% PROPER IMPORT
+import { addresses as addressesApi, orders as ordersApi } from '../services/api';
 import { 
   FiMapPin, FiTruck, FiCreditCard, FiCheckCircle, 
   FiAlertCircle, FiPlus, FiChevronRight, FiShield 
@@ -11,7 +12,7 @@ import {
 
 export default function Checkout() {
   const { user } = useAuth();
-  const { cart, cartTotal, clearCart } = useCart();
+  const { cartItems, getSubtotal, clearCart } = useCart();
   const navigate = useNavigate();
 
   const [addresses, setAddresses] = useState([]);
@@ -29,9 +30,11 @@ export default function Checkout() {
 
   const loadAddresses = useCallback(async () => {
     try {
-      const data = await fetchAddressesAPI();
-      setAddresses(Array.isArray(data) ? data : []);
-      const def = data.find?.(a => a.is_default === 1) || data[0];
+      const res = await addressesApi.getAll(); // REWRITTEN
+      const data = res.data;
+      const addrList = Array.isArray(data) ? data : (data.addresses || []);
+      setAddresses(addrList);
+      const def = addrList.find?.(a => a.is_default === 1) || addrList[0];
       if (def) setSelectedAddress(def.id);
     } catch (err) {
       console.error("Failed to load addresses:", err);
@@ -43,12 +46,12 @@ export default function Checkout() {
       navigate('/login', { state: { from: '/checkout' } });
       return;
     }
-    if (cart.length === 0) {
+    if (cartItems && cartItems.length === 0) {
       navigate('/cart');
       return;
     }
     loadAddresses();
-  }, [user, cart.length, navigate, loadAddresses]);
+  }, [user, cartItems, navigate, loadAddresses]);
 
   const handleFormChange = (key) => (e) => {
     const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -60,10 +63,10 @@ export default function Checkout() {
     setLoading(true);
     setError('');
     try {
-      const list = await saveAddressAPI(addrForm);
-      setAddresses(list);
-      // Select the newly added address
-      if (list.length > 0) {
+      const res = await addressesApi.create(addrForm); // REWRITTEN
+      const list = res.data.addresses || res.data;
+      setAddresses(Array.isArray(list) ? list : []);
+      if (Array.isArray(list) && list.length > 0) {
         setSelectedAddress(list[list.length - 1].id);
       }
       setShowForm(false);
@@ -95,9 +98,10 @@ export default function Checkout() {
         notes: orderNotes
       };
       
-      const resData = await placeOrderAPI(payload);
+      const res = await ordersApi.create(payload); // REWRITTEN
+      const resData = res.data;
       clearCart();
-      navigate('/order-success', { state: { orderId: resData.orderId } });
+      navigate('/order-success', { state: { orderId: resData.orderId || resData.id } });
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to place order');
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -106,7 +110,7 @@ export default function Checkout() {
     }
   };
 
-  const subtotal = cartTotal;
+  const subtotal = getSubtotal ? getSubtotal() : 0;
   const shippingCharge = deliveryType === 'express' ? 99 : 0;
   const finalTotal = subtotal + shippingCharge;
 
@@ -136,10 +140,8 @@ export default function Checkout() {
         </AnimatePresence>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          {/* Main Content */}
           <div className="lg:col-span-8 space-y-8">
             
-            {/* Step 1: Delivery Address */}
             <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-all hover:shadow-md">
               <div className="bg-[#232f3e] px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -265,7 +267,6 @@ export default function Checkout() {
               </div>
             </section>
 
-            {/* Step 2: Delivery Options */}
             <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="bg-[#232f3e] px-6 py-4 flex items-center gap-3">
                 <div className="bg-white/20 p-2 rounded-lg text-white">
@@ -306,7 +307,6 @@ export default function Checkout() {
               </div>
             </section>
 
-            {/* Step 3: Payment Method */}
             <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="bg-[#232f3e] px-6 py-4 flex items-center gap-3">
                 <div className="bg-white/20 p-2 rounded-lg text-white">
@@ -337,19 +337,17 @@ export default function Checkout() {
             </section>
           </div>
 
-          {/* Sidebar Area */}
           <div className="lg:col-span-4">
             <div className="sticky top-24 space-y-6">
               
-              {/* Order Summary */}
               <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                 <div className="p-6 border-b border-gray-50">
                   <h2 className="text-lg font-bold text-gray-900">Order Summary</h2>
-                  <p className="text-xs text-gray-500 font-bold uppercase mt-1 tracking-widest">{cart.length} Items in cart</p>
+                  <p className="text-xs text-gray-500 font-bold uppercase mt-1 tracking-widest">{cartItems ? cartItems.length : 0} Items in cart</p>
                 </div>
                 
                 <div className="p-6 space-y-6 max-h-[300px] overflow-y-auto custom-scrollbar">
-                  {cart.map(item => (
+                  {cartItems && cartItems.map(item => (
                     <div key={item.id} className="flex gap-4 group">
                       <div className="w-16 h-16 bg-gray-100 rounded-lg flex-shrink-0 p-1 border border-gray-100 overflow-hidden">
                         <img 
@@ -390,7 +388,7 @@ export default function Checkout() {
 
                   <button
                     onClick={handlePlaceOrder}
-                    disabled={loading || cart.length === 0}
+                    disabled={loading || !cartItems || cartItems.length === 0}
                     className="w-full bg-[#febd69] hover:bg-[#f3a847] text-gray-900 py-4 rounded-xl font-black text-base uppercase tracking-widest transition-all shadow-[0_4px_0_rgb(226,149,36)] active:shadow-none active:translate-y-[2px] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 group mt-4"
                   >
                     {loading ? (
@@ -413,7 +411,6 @@ export default function Checkout() {
                 </div>
               </div>
 
-              {/* Policy Notes */}
               <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 flex gap-3 items-start">
                 <FiAlertCircle className="text-blue-500 mt-1 flex-shrink-0" />
                 <p className="text-[11px] text-blue-700 leading-normal font-medium">
@@ -424,13 +421,6 @@ export default function Checkout() {
           </div>
         </div>
       </div>
-      
-      <style dangerouslySetInnerHTML={{ __html: `
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
-      `}} />
     </div>
   );
 }
