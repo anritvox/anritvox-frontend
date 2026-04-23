@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useAuth } from "./AuthContext";
-// 100% PROPER IMPORT: Using the strictly mapped cart object
+// 100% PROPER IMPORT: Using the strictly mapped cart 
 import { cart as cartApi } from "../services/api";
 
 const CartContext = createContext();
