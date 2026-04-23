@@ -89,4 +89,10 @@ export const banners = {
   delete: (id) => api.delete(`/banners/${id}`),
 };
 
+// --- CART NAMED EXPORTS (Fix for Rollup Build Error) ---
+export const fetchCart = () => api.get("/cart");
+export const addToCartAPI = (productId, quantity) => api.post("/cart", { productId, quantity });
+export const removeFromCartAPI = (productId) => api.delete(`/cart/${productId}`);
+export const clearCartAPI = () => api.delete("/cart");
+
 export default api;
