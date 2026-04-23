@@ -13,7 +13,7 @@ export default function Home() {
   useEffect(() => {
     const loadHomeData = async () => {
       try {
-        // REWRITTEN: Proper object-oriented API calls mapped perfectly
+        // REWRITTEN: Proper object-oriented API calls mapped 
         const [prodRes, catRes, banRes] = await Promise.all([
           productsApi.getAllActive({ limit: 8 }),
           categoriesApi.getAll(),
