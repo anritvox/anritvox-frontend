@@ -26,7 +26,7 @@ export default function Breadcrumbs({ productName }) {
     let label = isId ? (productName || 'Detail') : (ROUTE_LABELS[seg] || seg.charAt(0).toUpperCase() + seg.slice(1));
     return { path, label, isLast };
   });
-
+  
   return (
     <nav aria-label="Breadcrumb" className="bg-white border-b border-gray-100 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-2 text-[13px] font-bold text-gray-400 uppercase tracking-wide flex-wrap">
