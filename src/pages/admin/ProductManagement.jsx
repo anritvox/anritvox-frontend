@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Package, Search, Plus, Edit3, Trash2, ExternalLink, Activity, Filter, Archive } from 'lucide-react';
-import api from '../../services/api';
+// 100% STRICT IMPORT
+import { products as prodApi, categories as catApi } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
 export default function ProductManagement() {
@@ -14,11 +15,11 @@ export default function ProductManagement() {
     try {
       setLoading(true);
       const [pRes, cRes] = await Promise.all([
-        api.get('/products'),
-        api.get('/categories')
+        prodApi.getAllAdmin(),
+        catApi.getAll()
       ]);
       setProductsList(pRes.data?.data || pRes.data || []);
-      setCategories(cRes.data || []);
+      setCategories(cRes.data?.data || cRes.data || []);
     } catch (error) {
       showToast?.('Registry synchronization failed', 'error');
     } finally {
@@ -33,7 +34,7 @@ export default function ProductManagement() {
   const handleDelete = async (id) => {
     if (!window.confirm('Confirm product de-registration?')) return;
     try {
-      await api.delete(`/products/${id}`);
+      await prodApi.delete(id);
       showToast?.('Product purged from database', 'success');
       fetchData();
     } catch (error) {
