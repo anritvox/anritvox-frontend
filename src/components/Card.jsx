@@ -21,7 +21,7 @@ export default function Card({ product }) {
 
   if (!product) return null;
 
-  // Mock fitment logic: In real app, this would check against product.compatibleVehicles
+  // Mock fitment logic: In real app, this would check against product.compatibleVehicle
   const isCompatible = garage && (product.category === 'Lights' || product.category === 'Audio');
 
   return (
