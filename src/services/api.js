@@ -14,39 +14,37 @@ const api = axios.create({
   withCredentials: true,
 });
 
-export const getImageUrl = (path) => {
-  if (!path) return "/logo.webp"; 
-  if (path.startsWith("http")) return path;
-  const cloudFrontUrl = import.meta.env.VITE_CLOUDFRONT_URL;
-  if (cloudFrontUrl) return `${cloudFrontUrl}/${path.replace(/^\//, "")}`;
-  return `${BASE_URL}/${path.replace(/^\//, "")}`;
-};
-
+// REQUEST INTERCEPTOR: Auth Token Injection
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token") || localStorage.getItem("ms_token");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
+// GLOBAL 401 HANDLER: SILENT LOGOUT ONLY. NO HARD REDIRECTS.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // Clean up local state silently so public pages (Home/Shop) don't break
       localStorage.removeItem("token");
       localStorage.removeItem("ms_token");
       localStorage.removeItem("user");
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
     }
     return Promise.reject(error);
   }
 );
 
-// --- STRICT OBJECT-ORIENTED
+// ==========================================
+// --- FULLY MAPPED API HELPER MODULES ---
+// ==========================================
 
 export const auth = {
   register: (data) => api.post("/auth/register", data),
@@ -68,7 +66,7 @@ export const products = {
   create: (data) => api.post("/products", data),
   update: (id, data) => api.put(`/products/${id}`, data),
   toggleStatus: (id, status) => api.patch(`/products/${id}/status`, { status }),
-  uploadImages: (id, formData) => api.post(`/products/${id}/images`, formData),
+  uploadImages: (id, formData) => api.post(`/products/${id}/images`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   deleteImage: (id, imageId) => api.delete(`/products/${id}/images`, { data: { imageId } }),
   addSerials: (id, serials) => api.post(`/products/${id}/serials`, { serials }),
   delete: (id) => api.delete(`/products/${id}`),
@@ -103,7 +101,7 @@ export const orders = {
   getById: (id) => api.get(`/orders/${id}`),
   create: (data) => api.post("/orders", data),
   getAllAdmin: () => api.get("/orders"),
-  updateStatus: (id, status) => patch(`/orders/${id}/status`, { status }),
+  updateStatus: (id, status) => api.patch(`/orders/${id}/status`, { status }),
   delete: (id) => api.delete(`/orders/${id}`),
 };
 
@@ -206,5 +204,17 @@ export const adminManagement = {
   updateUserStatus: (id, status) => api.patch(`/admin/users/${id}/status`, { status }),
   getAllOrders: () => api.get("/admin/orders"),
 };
+
+export const fetchCart = () => cart.get();
+export const addToCartAPI = (productId, quantity) => cart.add({ productId, quantity });
+export const removeFromCartAPI = (productId) => cart.remove(productId);
+export const clearCartAPI = () => cart.clear();
+export const fetchPublicSettings = () => settings.get(); 
+export const fetchProducts = () => products.getAllActive(); 
+export const fetchCategories = () => categories.getAll();
+export const submitContact = (data) => contact.submit(data);
+export const fetchAddressesAPI = async () => { const res = await addresses.getAll(); return res.data; };
+export const saveAddressAPI = async (data) => { const res = await addresses.create(data); return res.data.addresses || res.data; };
+export const placeOrderAPI = async (data) => { const res = await orders.create(data); return res.data; };
 
 export default api;
