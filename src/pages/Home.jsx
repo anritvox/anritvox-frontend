@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FiArrowRight, FiShield, FiTruck, FiClock } from 'react-icons/fi';
-// 100% PROPER IMPORT
+// 100% PROPER
 import { products as productsApi, categories as categoriesApi, banners as bannersApi } from '../services/api';
 
 export default function Home() {
