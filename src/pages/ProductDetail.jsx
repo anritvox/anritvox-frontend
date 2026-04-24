@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   Star, ChevronRight, Check, ShoppingCart, Heart, Share2, 
   Shield, Plus, Minus, Zap, Tag, Box, Truck, RefreshCw, 
   Lock, CreditCard, Award, Info, MapPin, Youtube, Play,
-  RotateCcw, Eye, Settings, Terminal, Cpu, Clock
+  RotateCcw, Eye, Settings, Terminal, Cpu, Clock, AlertTriangle
 } from 'lucide-react';
-// 100% STRICT IMPORT: Mapped to the correct product
 import { products as productsApi } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
@@ -17,7 +16,7 @@ const Product360Viewer = ({ images }) => {
 
   return (
     <div className="relative aspect-square bg-slate-900 rounded-[3rem] overflow-hidden group border border-slate-800">
-      <img src={images?.[frame] || images?.[0]} className="w-full h-full object-contain" alt="360 view" />
+      <img src={images?.[frame] || images?.[0] || '/logo.webp'} className="w-full h-full object-contain" alt="360 view" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent flex items-end justify-center p-8">
          <div className="flex items-center space-x-4 bg-black/60 backdrop-blur-xl px-6 py-3 rounded-full border border-white/10">
             <RotateCcw size={16} className="text-emerald-500 animate-spin-slow" />
@@ -35,9 +34,12 @@ const Product360Viewer = ({ images }) => {
 
 export default function ProductDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { addToCart } = useCart();
   const { showToast } = useToast() || {};
   const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [pincode, setPincode] = useState('');
   const [deliveryDate, setDeliveryDate] = useState(null);
@@ -46,12 +48,19 @@ export default function ProductDetail() {
 
   useEffect(() => {
     const fetchProduct = async () => {
+      setLoading(true);
+      setNotFound(false);
       try {
-        // REWRITTEN: Strict object call
         const res = await productsApi.getById(id);
         setProduct(res.data?.data || res.data);
       } catch (err) {
-        console.error(err);
+        console.error("Product fetch error:", err);
+        // CRITICAL FIX: Gracefully handle 404 instead of crashing
+        if (err.response && err.response.status === 404) {
+          setNotFound(true);
+        }
+      } finally {
+        setLoading(false);
       }
     };
     fetchProduct();
@@ -66,7 +75,23 @@ export default function ProductDetail() {
     }
   };
 
-  if (!product) return <div className="p-20 text-emerald-500 font-black uppercase animate-pulse">Scanning Product Node...</div>;
+  // Safe fallback UI if the product doesn't exist in the database
+  if (notFound) {
+    return (
+      <div className="min-h-[80vh] flex flex-col items-center justify-center bg-slate-950 text-white p-6">
+        <AlertTriangle size={64} className="text-amber-500 mb-6" />
+        <h2 className="text-4xl font-black uppercase tracking-tighter mb-4">Node Not Found</h2>
+        <p className="text-slate-400 font-medium mb-8">The requested hardware specification (ID: {id}) does not exist in the active registry.</p>
+        <button onClick={() => navigate('/shop')} className="px-8 py-4 bg-emerald-500 text-black font-black uppercase tracking-widest rounded-full hover:bg-emerald-400 transition-all">
+          Return to Catalog
+        </button>
+      </div>
+    );
+  }
+
+  if (loading || !product) {
+    return <div className="min-h-screen flex items-center justify-center bg-slate-950 text-emerald-500 font-black uppercase animate-pulse">Scanning Product Node...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-white font-sans py-12 px-6">
@@ -99,12 +124,14 @@ export default function ProductDetail() {
                   <span className="text-[10px] font-black uppercase tracking-widest">Verified Fit for {garage.year} {garage.model}</span>
                </div>
              )}
-             <h1 className="text-6xl font-black uppercase tracking-tighter leading-none italic italic">
+             <h1 className="text-6xl font-black uppercase tracking-tighter leading-none italic">
                 {product.name}
              </h1>
              <div className="flex items-center space-x-4">
-                <div className="text-4xl font-black text-emerald-500 font-mono italic">₹{product.price}</div>
-                <div className="px-3 py-1 bg-rose-500/10 text-rose-500 text-[10px] font-black uppercase rounded-lg border border-rose-500/20">-20% OFF</div>
+                <div className="text-4xl font-black text-emerald-500 font-mono italic">₹{product.discount_price || product.price}</div>
+                {product.discount_price && (
+                  <div className="px-3 py-1 bg-rose-500/10 text-rose-500 text-[10px] font-black uppercase rounded-lg border border-rose-500/20">Sale Active</div>
+                )}
              </div>
           </div>
 
@@ -129,7 +156,7 @@ export default function ProductDetail() {
                   maxLength={6}
                   value={pincode}
                   onChange={(e) => setPincode(e.target.value)}
-                  className="w-full bg-slate-900 border-slate-800 rounded-2xl pl-12 pr-28 py-4 text-xs font-bold focus:ring-2 focus:ring-emerald-500"
+                  className="w-full bg-slate-900 border-slate-800 rounded-2xl pl-12 pr-28 py-4 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none"
                 />
                 <button 
                   onClick={checkDelivery}
@@ -155,10 +182,10 @@ export default function ProductDetail() {
              </div>
              <div className="grid grid-cols-2 gap-6">
                 {[
-                  { label: 'Lumens', val: '8000 LM' },
-                  { label: 'Wattage', val: '50W' },
-                  { label: 'Voltage', val: '12V DC' },
-                  { label: 'IP Rating', val: 'IP67' }
+                  { label: 'Brand', val: product.brand || 'Original' },
+                  { label: 'Category', val: product.category_name || product.category || 'Hardware' },
+                  { label: 'Stock Status', val: product.quantity > 0 ? 'In Stock' : 'Depleted' },
+                  { label: 'Warranty', val: product.warranty_months ? `${product.warranty_months} Months` : 'Standard' }
                 ].map((spec, i) => (
                   <div key={i} className="flex flex-col">
                      <span className="text-[9px] font-black uppercase text-slate-600 tracking-widest">{spec.label}</span>
