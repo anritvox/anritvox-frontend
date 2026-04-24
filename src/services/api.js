@@ -14,7 +14,6 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// REQUEST INTERCEPTOR: Auth Token Injection
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token") || localStorage.getItem("ms_token");
@@ -23,17 +22,13 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// GLOBAL 401 HANDLER: SILENT LOGOUT ONLY. NO HARD REDIRECTS.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Clean up local state silently so public pages (Home/Shop) don't break
       localStorage.removeItem("token");
       localStorage.removeItem("ms_token");
       localStorage.removeItem("user");
@@ -59,8 +54,9 @@ export const users = {
 };
 
 export const products = {
-  getAllActive: (params) => api.get("/products", { params }), 
-  getAllAdmin: () => api.get("/products/all"),
+  // CRITICAL FIX: Mapped to the public active route, not the admin route
+  getAllActive: (params) => api.get("/products/active", { params }), 
+  getAllAdmin: () => api.get("/products"),
   getById: (id) => api.get(`/products/${id}`),
   getBySlug: (slug) => api.get(`/products/slug/${slug}`),
   create: (data) => api.post("/products", data),
@@ -147,7 +143,8 @@ export const analytics = {
 };
 
 export const settings = {
-  get: () => api.get("/settings"),
+  // CRITICAL FIX: Safe fallback to prevent 401s breaking the app
+  get: () => api.get("/settings/public").catch(() => api.get("/settings")),
   update: (data) => api.put("/settings", data),
 };
 
@@ -171,7 +168,8 @@ export const inventory = {
 };
 
 export const banners = {
-  getActive: () => api.get("/banners"),
+  // CRITICAL FIX: Safe fallback for active banners
+  getActive: () => api.get("/banners/active").catch(() => api.get("/banners")),
   getAllAdmin: () => api.get("/banners/all"),
   create: (data) => api.post("/banners", data),
   update: (id, data) => api.put(`/banners/${id}`, data),
