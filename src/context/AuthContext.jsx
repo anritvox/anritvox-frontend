@@ -3,7 +3,7 @@ import { auth, users } from '../services/api';
 
 const AuthContext = createContext(null);
 
-// Helper function to read the token's real payload
+// Helper function to safely read the token's real payload
 const decodeJWT = (token) => {
   try {
     const base64Url = token.split('.')[1];
@@ -23,13 +23,10 @@ export const AuthProvider = ({ children }) => {
     const initAuth = async () => {
       if (token) {
         try {
-          // Check what the token ACTUALLY says your role is
           const decodedPayload = decodeJWT(token);
-          
           const res = await users.getProfile();
           const fetchedUser = res.data.user || res.data;
           
-          // Force merge the role from the token so the backend doesn't accidentally demote you
           setUser({ 
             ...fetchedUser, 
             role: decodedPayload?.role || fetchedUser.role || 'user' 
@@ -48,27 +45,27 @@ export const AuthProvider = ({ children }) => {
     const res = await auth.login(credentials);
     const { token: newToken, user: userData } = res.data;
     
-    // Safety check on login
     const decodedPayload = decodeJWT(newToken);
     const finalUser = { ...userData, role: decodedPayload?.role || userData?.role || 'user' };
 
     localStorage.setItem('token', newToken);
     setToken(newToken);
     setUser(finalUser);
-    return res.data;
+    
+    return finalUser; // CRITICAL FIX: Return the user object, not the full response
   };
 
   const adminLogin = async (credentials) => {
     const res = await auth.adminLogin(credentials);
     const { token: newToken, admin: adminData, user: userData } = res.data;
     
-    // Hardcode the admin presence
     const finalUser = { ...(adminData || userData), role: 'admin' };
     
     localStorage.setItem('token', newToken);
     setToken(newToken);
     setUser(finalUser);
-    return res.data;
+    
+    return finalUser; // CRITICAL FIX: Return the user object so AdminLogin can read finalUser.role
   };
 
   const register = async (data) => {
@@ -77,7 +74,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('token', newToken);
     setToken(newToken);
     setUser(userData);
-    return res.data;
+    return userData;
   };
 
   const logout = () => {
