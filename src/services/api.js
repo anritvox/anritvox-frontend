@@ -1,6 +1,7 @@
 import axios from "axios";
 
 let envBaseUrl = import.meta.env.VITE_BASE_URL || "https://service.anritvox.com";
+
 if (envBaseUrl.startsWith("http://") && !envBaseUrl.includes("localhost")) {
   envBaseUrl = envBaseUrl.replace("http://", "https://");
 }
@@ -36,6 +37,10 @@ api.interceptors.response.use(
   }
 );
 
+// ==========================================
+// --- FULLY MAPPED API HELPER MODULES ---
+// ==========================================
+
 export const auth = {
   register: (data) => api.post("/auth/register", data),
   login: (data) => api.post("/auth/login", data),
@@ -52,7 +57,7 @@ export const users = {
 };
 
 export const products = {
-  getAllActive: (params) => api.get("/products/active", { params }),
+  getAllActive: (params) => api.get("/products/active", { params }), 
   getAllAdmin: () => api.get("/products"),
   getById: (id) => api.get(`/products/${id}`),
   getBySlug: (slug) => api.get(`/products/slug/${slug}`),
@@ -122,8 +127,6 @@ export const coupons = {
 
 export const reviews = {
   getByProduct: (productId) => api.get(`/reviews/product/${productId}`),
-  getAllAdmin: () => api.get("/reviews"),
-  approve: (id) => api.put(`/reviews/${id}/approve`),
   submit: (data) => api.post("/reviews", data),
   delete: (id) => api.delete(`/reviews/${id}`),
 };
@@ -137,13 +140,13 @@ export const notifications = {
 
 export const analytics = {
   getDashboard: () => api.get("/analytics/dashboard"),
-  getSales: (period) => api.get(`/analytics/kpis?period=${period || '30'}`),
+  getSales: () => api.get("/analytics/sales"),
   getProducts: () => api.get("/analytics/products"),
-  getKpis: (period) => api.get(`/analytics/kpis?period=${period || '30'}`),
 };
 
 export const settings = {
-  get: () => api.get("/settings/public").catch(() => api.get("/settings")),
+  // CRITICAL FIX: Directly calls root settings endpoint
+  get: () => api.get("/settings"),
   update: (data) => api.put("/settings", data),
 };
 
@@ -167,8 +170,9 @@ export const inventory = {
 };
 
 export const banners = {
-  getActive: () => api.get("/banners/active").catch(() => api.get("/banners")),
-  getAllAdmin: () => api.get("/banners"),
+  // CRITICAL FIX: Directly calls root banner endpoint
+  getActive: () => api.get("/banners"),
+  getAllAdmin: () => api.get("/banners/admin/all"),
   create: (data) => api.post("/banners", data),
   update: (id, data) => api.put(`/banners/${id}`, data),
   delete: (id) => api.delete(`/banners/${id}`),
@@ -201,55 +205,12 @@ export const adminManagement = {
   getAllOrders: () => api.get("/admin/orders"),
 };
 
-export const support = {
-  getAllTickets: () => api.get("/support/tickets"),
-  getTicket: (id) => api.get(`/support/tickets/${id}`),
-  createTicket: (data) => api.post("/support/tickets", data),
-  replyToTicket: (id, data) => api.post(`/support/tickets/${id}/reply`, data),
-  updateTicketStatus: (id, status) => api.patch(`/support/tickets/${id}/status`, { status }),
-  deleteTicket: (id) => api.delete(`/support/tickets/${id}`),
-  uploadAttachment: (formData) => api.post("/support/upload", formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
-};
-
-export const loyalty = {
-  getConfig: () => api.get("/loyalty/config"),
-  updateConfig: (data) => api.put("/loyalty/config", data),
-  getAllMembers: () => api.get("/loyalty/members"),
-  getMemberPoints: (userId) => api.get(`/loyalty/members/${userId}`),
-  adjustPoints: (userId, data) => api.post(`/loyalty/members/${userId}/adjust`, data),
-  getTiers: () => api.get("/loyalty/tiers"),
-  createTier: (data) => api.post("/loyalty/tiers", data),
-  updateTier: (id, data) => api.put(`/loyalty/tiers/${id}`, data),
-  deleteTier: (id) => api.delete(`/loyalty/tiers/${id}`),
-};
-
-export const flashSales = {
-  getAll: () => api.get("/flash-sales"),
-  getById: (id) => api.get(`/flash-sales/${id}`),
-  create: (data) => api.post("/flash-sales", data),
-  update: (id, data) => api.put(`/flash-sales/${id}`, data),
-  delete: (id) => api.delete(`/flash-sales/${id}`),
-  toggleStatus: (id) => api.patch(`/flash-sales/${id}/toggle`),
-};
-
-export const affiliate = {
-  getAllPartners: () => api.get("/affiliate/partners"),
-  getPartner: (id) => api.get(`/affiliate/partners/${id}`),
-  updatePartnerStatus: (id, status) => api.patch(`/affiliate/partners/${id}/status`, { status }),
-  getCommissions: () => api.get("/affiliate/commissions"),
-  updateCommission: (id, data) => api.put(`/affiliate/commissions/${id}`, data),
-  getConfig: () => api.get("/affiliate/config"),
-  updateConfig: (data) => api.put("/affiliate/config", data),
-  approveWithdrawal: (id) => api.patch(`/affiliate/withdrawals/${id}/approve`),
-  getAllWithdrawals: () => api.get("/affiliate/withdrawals"),
-};
-
 export const fetchCart = () => cart.get();
 export const addToCartAPI = (productId, quantity) => cart.add({ productId, quantity });
 export const removeFromCartAPI = (productId) => cart.remove(productId);
 export const clearCartAPI = () => cart.clear();
-export const fetchPublicSettings = () => settings.get();
-export const fetchProducts = () => products.getAllActive();
+export const fetchPublicSettings = () => settings.get(); 
+export const fetchProducts = () => products.getAllActive(); 
 export const fetchCategories = () => categories.getAll();
 export const submitContact = (data) => contact.submit(data);
 export const fetchAddressesAPI = async () => { const res = await addresses.getAll(); return res.data; };
