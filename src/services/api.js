@@ -45,16 +45,20 @@ export const auth = {
   register: (data) => api.post("/auth/register", data),
   login: (data) => api.post("/auth/login", data),
   adminLogin: (data) => api.post("/auth/admin/login", data),
+  // CRITICAL FIX: Admin specific profile routes mapped to authRoutes.js
+  getAdminProfile: () => api.get("/auth/me"),
+  updateAdminProfile: (data) => api.put("/auth/me", data),
+  changeAdminPassword: (data) => api.post("/auth/change-password", data),
 };
 
 export const users = {
-  getProfile: () => api.get("/users/me"),
-  updateProfile: (data) => api.put("/users/me", data),
-  changePassword: (data) => api.put("/users/me/password", data),
+  // CRITICAL FIX: Customer specific profile routes mapped to userRoutes.js
+  getProfile: () => api.get("/users/profile"),
+  updateProfile: (data) => api.put("/users/profile", data),
+  changePassword: (data) => api.post("/users/change-password", data),
 };
 
 export const products = {
-  // CRITICAL FIX: Mapped to the public active route, not the admin route
   getAllActive: (params) => api.get("/products/active", { params }), 
   getAllAdmin: () => api.get("/products"),
   getById: (id) => api.get(`/products/${id}`),
@@ -143,7 +147,6 @@ export const analytics = {
 };
 
 export const settings = {
-  // CRITICAL FIX: Safe fallback to prevent 401s breaking the app
   get: () => api.get("/settings/public").catch(() => api.get("/settings")),
   update: (data) => api.put("/settings", data),
 };
@@ -168,7 +171,6 @@ export const inventory = {
 };
 
 export const banners = {
-  // CRITICAL FIX: Safe fallback for active banners
   getActive: () => api.get("/banners/active").catch(() => api.get("/banners")),
   getAllAdmin: () => api.get("/banners/all"),
   create: (data) => api.post("/banners", data),
