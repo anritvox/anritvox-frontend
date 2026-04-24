@@ -3,7 +3,6 @@ import { auth, users } from '../services/api';
 
 const AuthContext = createContext(null);
 
-// Helper function to safely read the token's real payload
 const decodeJWT = (token) => {
   try {
     const base64Url = token.split('.')[1];
@@ -24,12 +23,20 @@ export const AuthProvider = ({ children }) => {
       if (token) {
         try {
           const decodedPayload = decodeJWT(token);
-          const res = await users.getProfile();
-          const fetchedUser = res.data.user || res.data;
+          let fetchedUser;
+
+          // STRICT ROUTING: Admins hit authRoutes, Customers hit userRoutes
+          if (decodedPayload?.role === 'admin') {
+            const res = await auth.getAdminProfile();
+            fetchedUser = res.data;
+          } else {
+            const res = await users.getProfile();
+            fetchedUser = res.data.user || res.data;
+          }
           
           setUser({ 
             ...fetchedUser, 
-            role: decodedPayload?.role || fetchedUser.role || 'user' 
+            role: decodedPayload?.role || fetchedUser?.role || 'user' 
           });
         } catch (err) {
           console.error("Session verification failed", err);
@@ -52,20 +59,20 @@ export const AuthProvider = ({ children }) => {
     setToken(newToken);
     setUser(finalUser);
     
-    return finalUser; // CRITICAL FIX: Return the user object, not the full response
+    return finalUser;
   };
 
   const adminLogin = async (credentials) => {
     const res = await auth.adminLogin(credentials);
-    const { token: newToken, admin: adminData, user: userData } = res.data;
+    const { token: newToken, admin: adminData } = res.data;
     
-    const finalUser = { ...(adminData || userData), role: 'admin' };
+    const finalUser = { ...adminData, role: 'admin' };
     
     localStorage.setItem('token', newToken);
     setToken(newToken);
     setUser(finalUser);
     
-    return finalUser; // CRITICAL FIX: Return the user object so AdminLogin can read finalUser.role
+    return finalUser;
   };
 
   const register = async (data) => {
