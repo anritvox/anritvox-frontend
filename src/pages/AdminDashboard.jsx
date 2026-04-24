@@ -24,36 +24,10 @@ import BannerManagement from './admin/BannerManagement';
 import ContactManagement from './admin/ContactManagement';
 import ReturnManagement from './admin/ReturnManagement';
 import AdminSettings from './admin/AdminSettings';
-
-// Lazy-loaded optional modules
-const SupportPlaceholder = () => (
-  <div className="p-8 text-center space-y-4">
-    <Headphones className="mx-auto text-emerald-500/40" size={64} />
-    <h2 className="text-2xl font-black text-white">Support Tickets</h2>
-    <p className="text-slate-400">Customer support module — coming soon.</p>
-  </div>
-);
-const LoyaltyPlaceholder = () => (
-  <div className="p-8 text-center space-y-4">
-    <Gift className="mx-auto text-emerald-500/40" size={64} />
-    <h2 className="text-2xl font-black text-white">Loyalty Config</h2>
-    <p className="text-slate-400">Loyalty & rewards module — coming soon.</p>
-  </div>
-);
-const AffiliatePlaceholder = () => (
-  <div className="p-8 text-center space-y-4">
-    <Share2 className="mx-auto text-emerald-500/40" size={64} />
-    <h2 className="text-2xl font-black text-white">Affiliate Network</h2>
-    <p className="text-slate-400">Affiliate program module — coming soon.</p>
-  </div>
-);
-const FlashSalesPlaceholder = () => (
-  <div className="p-8 text-center space-y-4">
-    <Zap className="mx-auto text-emerald-500/40" size={64} />
-    <h2 className="text-2xl font-black text-white">Flash Sales Scheduler</h2>
-    <p className="text-slate-400">Flash sales module — coming soon.</p>
-  </div>
-);
+import SupportManagement from './admin/SupportManagement';
+import FlashSalesManagement from './admin/FlashSalesManagement';
+import LoyaltyManagement from './admin/LoyaltyManagement';
+import AffiliateManagement from './admin/AffiliateManagement';
 
 // Tab to component mapping
 const TAB_COMPONENTS = {
@@ -61,15 +35,15 @@ const TAB_COMPONENTS = {
   products: ProductManagement,
   categories: CategoryManagement,
   inventory: InventoryManagement,
-  orders: OrderManagement,
+  orders: OrderManaement,
   returns: ReturnManagement,
-  'flash-sales': FlashSalesPlaceholder,
+  'flash-sales': FlashSalesManagement,
   coupons: CouponManagement,
   users: UserManagement,
-  support: SupportPlaceholder,
+  support: SupportManagement,
   reviews: ReviewManagement,
-  loyalty: LoyaltyPlaceholder,
-  affiliate: AffiliatePlaceholder,
+  loyalty: LoyaltyManagement,
+  affiliate: AffiliateManagement,
   ewarranty: EWarrantyManagement,
   analytics: AnalyticsManagement,
   banners: BannerManagement,
