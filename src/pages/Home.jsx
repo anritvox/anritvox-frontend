@@ -134,10 +134,10 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {featuredProducts.map((product) => (
+            {featuredProducts.map((product, index) => (
               <Link 
-                key={product._id} 
-                to={`/product/${product.slug || product._id}`} 
+                key={product._id || product.id || `home-feat-${index}`} 
+                to={`/product/${product.slug || product._id || product.id}`} 
                 className="group block"
               >
                 <div className="relative aspect-square overflow-hidden bg-slate-100 mb-6 border border-slate-100 group-hover:border-emerald-500/20 transition-all">
