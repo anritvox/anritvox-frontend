@@ -3,14 +3,13 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { 
   Star, ShoppingBag, Heart, Shield, Truck, Zap, ChevronRight, 
-  Minus, Plus, Info, CheckCircle2, AlertCircle, Car, Play, Box
+  Minus, Plus, CheckCircle2, AlertCircle, Car, Play
 } from 'lucide-react';
 import { 
   products as productsApi, 
   reviews as reviewsApi, 
   fitment as fitmentApi, 
-  cart as cartApi, 
-  wishlist as wishlistApi 
+  cart as cartApi
 } from '../services/api';
 
 // --- Safe Image URL Helper ---
@@ -24,39 +23,37 @@ const getImageUrl = (img) => {
 };
 
 export default function ProductDetail() {
-  const { id } = useParams(); // Could be numeric ID or string Slug
+  const { id } = useParams();
   const navigate = useNavigate();
   
+  // --- STATE HOOKS ---
   const [product, setProduct] = useState(null);
   const [reviewsData, setReviewsData] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // Interactions State
   const [activeMedia, setActiveMedia] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('details');
   const [isAdding, setIsAdding] = useState(false);
-  
-  // Fitment Engine State
   const [fitment, setFitment] = useState({ make: '', model: '', year: '' });
   const [fitmentStatus, setFitmentStatus] = useState(null);
 
-  // Sticky Scroll Magic (Hooks must ALWAYS execute, regardless of loading state)
+  // --- ANIMATION HOOKS (MUST BE TOP LEVEL!) ---
   const { scrollY } = useScroll();
   const showStickyBar = useTransform(scrollY, [0, 800], [0, 1]);
+  // FIXED: Extracted useTransform out of the conditional JSX
+  const stickyYOffset = useTransform(showStickyBar, [0, 1], [50, 0]);
 
+  // --- EFFECT HOOKS ---
   useEffect(() => {
     const fetchProductData = async () => {
       try {
         setLoading(true);
         
-        // 1. Fetch Product First (Safely handle Slug vs ID)
         let fetchedProduct = null;
         try {
           const prodRes = await productsApi.getById(id);
           fetchedProduct = prodRes.data?.data || prodRes.data;
         } catch (err) {
-          // If 400 Bad Request (because it's a slug), fallback to getBySlug
           const slugRes = await productsApi.getBySlug(id);
           fetchedProduct = slugRes.data?.data || slugRes.data;
         }
@@ -66,7 +63,6 @@ export default function ProductDetail() {
           setActiveMedia(fetchedProduct.images[0]);
         }
 
-        // 2. Fetch Reviews ONLY if we successfully got the numeric Product ID
         if (fetchedProduct && fetchedProduct.id) {
           try {
             const revRes = await reviewsApi.getByProduct(fetchedProduct.id);
@@ -111,12 +107,10 @@ export default function ProductDetail() {
     }
   };
 
-  // Safe calculated variables
   const isOutOfStock = product?.quantity <= 0;
   const savings = product?.discount_price ? product.price - product.discount_price : 0;
   const savingsPercent = savings > 0 ? Math.round((savings / product.price) * 100) : 0;
 
-  // Render everything inside fragments so React Hooks NEVER mismatch their execution order
   return (
     <>
       {loading && <SkeletonPDP />}
@@ -130,7 +124,6 @@ export default function ProductDetail() {
       {!loading && product && (
         <div className="bg-slate-950 text-white min-h-screen selection:bg-emerald-500 selection:text-black pt-24 pb-32 font-sans relative">
           
-          {/* BREADCRUMBS */}
           <div className="max-w-7xl mx-auto px-6 mb-8 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500">
             <Link to="/" className="hover:text-emerald-500 transition-colors">Home</Link>
             <ChevronRight size={14} />
@@ -141,7 +134,7 @@ export default function ProductDetail() {
 
           <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
             
-            {/* ADVANCED MEDIA GALLERY (Left Column) */}
+            {/* MEDIA GALLERY */}
             <div className="lg:col-span-7 flex flex-col-reverse md:flex-row gap-6 relative">
               <div className="flex md:flex-col gap-4 overflow-x-auto md:overflow-y-auto md:w-24 shrink-0 no-scrollbar py-1">
                 {product.images?.map((media, idx) => (
@@ -190,7 +183,7 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            {/* PRODUCT DETAILS (Right Column) */}
+            {/* PRODUCT DETAILS */}
             <div className="lg:col-span-5 flex flex-col relative">
               <div className="mb-8">
                 <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-[1.1] mb-4 text-white">
@@ -235,7 +228,7 @@ export default function ProductDetail() {
                 </p>
               </div>
 
-              {/* FITMENT ENGINE WIDGET */}
+              {/* FITMENT WIDGET */}
               <div className="bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-6 mb-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none"><Car size={150} /></div>
                 <h3 className="text-sm font-black uppercase tracking-widest text-emerald-500 mb-4 flex items-center gap-2">
@@ -337,7 +330,7 @@ export default function ProductDetail() {
             <div className="min-h-[400px]">
               <AnimatePresence mode="wait">
                 {activeTab === 'details' && (
-                  <motion.div key="details" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="text-slate-400 leading-loose text-lg max-w-4xl font-medium">
+                  <motion.div key="details" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="text-slate-400 leading-loose text-lg max-w-4xl font-medium whitespace-pre-wrap">
                     {product.description}
                   </motion.div>
                 )}
@@ -384,9 +377,9 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          {/* STICKY MOBILE/DESKTOP ADD TO CART BAR */}
+          {/* STICKY BAR - FIXED HOOK USAGE */}
           <motion.div 
-            style={{ opacity: showStickyBar, y: useTransform(showStickyBar, [0, 1], [50, 0]) }}
+            style={{ opacity: showStickyBar, y: stickyYOffset }}
             className="fixed bottom-0 left-0 w-full z-50 p-4 pointer-events-none"
           >
             <div className="max-w-4xl mx-auto bg-slate-900/90 backdrop-blur-2xl border border-slate-800 p-4 rounded-3xl shadow-2xl flex items-center justify-between pointer-events-auto">
@@ -412,7 +405,6 @@ export default function ProductDetail() {
   );
 }
 
-// --- High-End Skeleton Loader ---
 const SkeletonPDP = () => (
   <div className="bg-slate-950 min-h-screen pt-24 pb-32 px-6">
     <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 animate-pulse">
