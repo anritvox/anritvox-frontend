@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import axios from 'axios'; // Using clean axios to prevent token attachment to Cloudflare
+import axios from 'axios';
 import { 
-  Box, Plus, Edit2, Trash2, Search, Filter, RefreshCw, AlertTriangle, 
+  Box, Plus, Edit2, Trash2, Search, RefreshCw, AlertTriangle, 
   CheckCircle, XCircle, ChevronLeft, ChevronRight, Image as ImageIcon, 
   Video, BoxSelect, ShieldCheck, Tag, Activity, Cpu, QrCode, List
 } from 'lucide-react';
-import api, { products as productsApi, categories as categoriesApi, serials as serialsApi, BASE_URL } from '../../services/api';
+import api, { products as productsApi, categories as categoriesApi, serials as serialsApi } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
 export default function ProductManagement() {
@@ -26,7 +26,6 @@ export default function ProductManagement() {
   const [productSerials, setProductSerials] = useState([]);
   const [loadingSerials, setLoadingSerials] = useState(false);
   
-  // --- NEW UPLOAD PROGRESS STATES ---
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadingFileName, setUploadingFileName] = useState('');
@@ -63,14 +62,17 @@ export default function ProductManagement() {
     }
   };
 
+  // The critical fix: Connects to your environment variables dynamically
   const getImageUrl = (img) => {
     if (!img) return '/logo.webp';
-    let url = typeof img === 'object' ? img.url || img.path : img;
-    if (!url) return '/logo.webp';
-    if (url.startsWith('http')) return url;
+    let path = typeof img === 'object' ? (img.file_path || img.url || img.path) : img;
+    if (!path) return '/logo.webp';
+    if (path.startsWith('http')) return path;
     
-    // Fallback if backend CLOUDFRONT_BASE_URL is missing
-    return `https://pub-22cd43cce9bc475680ad496e199706c4.r2.dev/${url}`;
+    const baseUrl = import.meta.env.VITE_R2_PUBLIC_URL || import.meta.env.VITE_IMAGE_BASE_URL || 'https://pub-22cd43cce9bc475680ad496e199706c4.r2.dev';
+    const cleanBase = baseUrl.replace(/\/$/, '');
+    const cleanPath = path.replace(/^\//, '');
+    return `${cleanBase}/${cleanPath}`;
   };
 
   const handleToggleStatus = async (id, currentStatus) => {
@@ -133,7 +135,6 @@ export default function ProductManagement() {
     setProductModalOpen(true);
   };
 
-  // --- THE FIXED UPLOAD LOGIC WITH PROGRESS BAR ---
   const handleSaveProduct = async (e) => {
     e.preventDefault();
     setIsUploading(true);
@@ -163,11 +164,9 @@ export default function ProductManagement() {
           setUploadingFileName(`Uploading ${file.name} (${i + 1}/${filesArray.length})...`);
           setUploadProgress(0);
 
-          // 1. Get secure URL from backend
           const urlRes = await productsApi.getUploadUrl(file.name, file.type);
           const { uploadUrl, key } = urlRes.data;
 
-          // 2. Upload using CLEAN Axios (no interceptors) to track progress
           await axios.put(uploadUrl, file, {
             headers: { 'Content-Type': file.type },
             onUploadProgress: (progressEvent) => {
@@ -467,7 +466,6 @@ export default function ProductManagement() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-xl overflow-y-auto custom-scrollbar">
           <div className="bg-[#0a0c10] border border-slate-800 w-full max-w-4xl rounded-[3rem] shadow-2xl overflow-hidden my-auto animate-in zoom-in-95 duration-300 relative">
             
-            {/* PROGRESS BAR OVERLAY */}
             {isUploading && (
               <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-8 rounded-[3rem]">
                 <Activity className="w-16 h-16 text-emerald-500 animate-bounce mb-6" />
@@ -583,219 +581,4 @@ export default function ProductManagement() {
                       />
                       <ImageIcon size={40} className="mx-auto text-slate-600 mb-3 group-hover:text-emerald-500 transition-colors" />
                       <p className="text-sm font-bold text-white mb-1">Inject Visual Payloads</p>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Drag & Drop or Click (JPEG, PNG, WEBP)</p>
-                      {images.length > 0 && (
-                        <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl inline-block">
-                          <p className="text-xs font-black text-emerald-500 uppercase tracking-widest">{images.length} payload(s) queued for uplink</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {currentProduct && (
-                      <button 
-                        type="button"
-                        onClick={() => handleWipeImages(currentProduct.id || currentProduct._id)}
-                        className="w-full py-4 border border-rose-500/30 bg-rose-500/5 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center justify-center gap-2"
-                      >
-                        <Trash2 size={14} /> Purge All Existing Database Images
-                      </button>
-                    )}
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2 flex items-center gap-2"><Video size={12} /> YouTube Embedded Stream</label>
-                      <input 
-                        type="url" 
-                        value={form.video_urls} onChange={e => setForm({...form, video_urls: e.target.value})}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-blue-500/50 transition-all placeholder:text-slate-700" 
-                        placeholder="https://www.youtube.com/watch?v=..."
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2 flex items-center gap-2"><Box size={12} /> 3D Spatial Model URL (GLTF/GLB)</label>
-                      <input 
-                        type="url" 
-                        value={form.model_3d_url} onChange={e => setForm({...form, model_3d_url: e.target.value})}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-purple-500/50 transition-all placeholder:text-slate-700" 
-                        placeholder="https://models.anritvox.com/hardware.glb"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'warranty' && (
-                  <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                    <div className="p-6 bg-slate-900/50 border border-slate-800 rounded-3xl">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4 block">Standard Warranty Horizon (Months)</label>
-                      <div className="flex items-center gap-4">
-                        <input 
-                          type="range" min="0" max="60" step="6"
-                          value={form.warranty_period} onChange={e => setForm({...form, warranty_period: e.target.value})}
-                          className="flex-1 accent-emerald-500"
-                        />
-                        <div className="w-20 py-2 bg-slate-950 border border-slate-800 rounded-xl text-center text-emerald-400 font-black text-lg">
-                          {form.warranty_period}
-                        </div>
-                      </div>
-                      <p className="text-[10px] font-bold text-slate-600 mt-4 leading-relaxed">
-                        This dictates the default validity period injected into generated RMA Serial Hashes upon purchase.
-                      </p>
-                    </div>
-
-                    <div className="flex items-center justify-between p-6 bg-slate-900/50 border border-slate-800 rounded-3xl cursor-pointer" onClick={() => setForm({...form, status: form.status === 'active' ? 'inactive' : 'active'})}>
-                      <div>
-                        <h4 className="text-sm font-black text-white uppercase tracking-tight">Deploy to Live Front-End</h4>
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Make this hardware visible to retail clients</p>
-                      </div>
-                      <div className={`w-14 h-8 rounded-full p-1 transition-colors ${form.status === 'active' ? 'bg-emerald-500' : 'bg-slate-800'}`}>
-                        <div className={`w-6 h-6 bg-white rounded-full transition-transform shadow-md ${form.status === 'active' ? 'translate-x-6' : 'translate-x-0'}`} />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-6 border-t border-slate-800 bg-slate-950/80 flex justify-end gap-4">
-                <button disabled={isUploading} type="button" onClick={() => setProductModalOpen(false)} className="px-8 py-3.5 text-slate-400 font-black uppercase tracking-widest text-xs rounded-xl hover:bg-slate-900 transition-all disabled:opacity-50">
-                  Abort
-                </button>
-                <button disabled={isUploading} type="submit" className="px-10 py-3.5 bg-emerald-500 text-slate-950 font-black uppercase tracking-widest text-xs rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:bg-emerald-400 transition-all hover:-translate-y-0.5 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                  Execute Deployment
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* --- SERIAL GENERATOR / REGISTRY MODAL --- */}
-      {isSerialModalOpen && currentProduct && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-xl">
-          <div className="bg-[#0a0c10] border border-slate-800 w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-8 border-b border-slate-800 flex justify-between items-start bg-amber-500/5">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500">
-                    <QrCode size={20} />
-                  </div>
-                  <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Serial Console</h2>
-                </div>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Target Node: <span className="text-amber-400">{currentProduct.name}</span></p>
-              </div>
-              <button onClick={() => setSerialModalOpen(false)} className="text-slate-500 hover:text-white transition-colors p-2">
-                <XCircle size={24} />
-              </button>
-            </div>
-            
-            <div className="flex border-b border-slate-800 px-8 bg-slate-950/30">
-              <button
-                onClick={() => setSerialTab('generate')}
-                className={`flex items-center gap-2 px-6 py-4 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${
-                  serialTab === 'generate' ? 'border-amber-500 text-amber-400 bg-amber-500/5' : 'border-transparent text-slate-500 hover:text-slate-300'
-                }`}
-              >
-                <Plus size={16} /> Batch Generate
-              </button>
-              <button
-                onClick={() => setSerialTab('view')}
-                className={`flex items-center gap-2 px-6 py-4 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${
-                  serialTab === 'view' ? 'border-amber-500 text-amber-400 bg-amber-500/5' : 'border-transparent text-slate-500 hover:text-slate-300'
-                }`}
-              >
-                <List size={16} /> View Registry
-              </button>
-            </div>
-
-            {serialTab === 'generate' && (
-              <form onSubmit={handleGenerateSerials} className="p-8 space-y-6">
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Batch Count</label>
-                    <input 
-                      type="number" min="1" max="1000" required
-                      value={serialForm.count} onChange={e => setSerialForm({...serialForm, count: parseInt(e.target.value)})}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-amber-500/50 transition-all text-center text-xl" 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Hash Prefix</label>
-                    <input 
-                      type="text" required maxLength="6"
-                      value={serialForm.prefix} onChange={e => setSerialForm({...serialForm, prefix: e.target.value.toUpperCase()})}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-amber-500 font-mono font-bold outline-none focus:border-amber-500/50 transition-all text-center text-xl uppercase" 
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Encryption Format</label>
-                  <select 
-                    value={serialForm.format} onChange={e => setSerialForm({...serialForm, format: e.target.value})}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-amber-500/50 transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="advanced">Advanced Secure (Checksum Auth)</option>
-                    <option value="legacy">Legacy / Standard</option>
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Override Warranty Horizon (Months)</label>
-                  <input 
-                    type="number" required
-                    value={serialForm.base_warranty_months} onChange={e => setSerialForm({...serialForm, base_warranty_months: e.target.value})}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-amber-500/50 transition-all" 
-                  />
-                </div>
-
-                <button type="submit" className="w-full py-4 bg-amber-500 text-slate-950 font-black uppercase tracking-widest text-sm rounded-2xl shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:bg-amber-400 transition-all hover:-translate-y-0.5 mt-4">
-                  Execute Batch Generation
-                </button>
-              </form>
-            )}
-
-            {serialTab === 'view' && (
-              <div className="p-8 h-[400px] overflow-y-auto custom-scrollbar">
-                {loadingSerials ? (
-                  <div className="flex justify-center items-center h-full">
-                    <RefreshCw className="w-8 h-8 text-amber-500 animate-spin" />
-                  </div>
-                ) : productSerials.length === 0 ? (
-                  <div className="text-center text-slate-500 font-bold uppercase tracking-widest mt-20">
-                    No Serials Found in Registry
-                  </div>
-                ) : (
-                  <table className="w-full text-left">
-                    <thead>
-                      <tr className="border-b border-slate-800 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                        <th className="pb-3">Hash Identity</th>
-                        <th className="pb-3">Status</th>
-                        <th className="pb-3 text-right">Created</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {productSerials.map((s, idx) => (
-                        <tr key={idx} className="border-b border-slate-800/50 hover:bg-slate-900/50">
-                          <td className="py-3 font-mono text-sm font-bold text-amber-400">{s.serial_number || s.serial}</td>
-                          <td className="py-3">
-                            <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest ${
-                              s.status === 'available' ? 'bg-blue-500/10 text-blue-500' : 'bg-emerald-500/10 text-emerald-500'
-                            }`}>
-                              {s.status}
-                            </span>
-                          </td>
-                          <td className="py-3 text-right text-xs text-slate-400 font-medium">
-                            {new Date(s.created_at).toLocaleDateString()}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Drag & Drop or Click
