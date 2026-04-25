@@ -270,4 +270,4 @@ export const placeOrderAPI = async (data) => {
   return res.data;
 };
 
-export default api;
+// --- FITMENT MODULE --- export const fitment = {   check: (productId, make, model, year) => api.get('/fitment/check', { params: { productId, make, model, year } }),   getByProduct: (productId) => api.get(`/fitment/product/${productId}`),   getMakes: () => api.get('/fitment/makes'),   getModels: (make) => api.get('/fitment/models', { params: { make } }),   uploadExcel: (productId, formData) => api.post('/fitment/upload-excel', formData, { headers: { 'Content-Type': 'multipart/form-data' }, params: { productId } }),   addManual: (data) => api.post('/fitment/manual', data),   delete: (id) => api.delete(`/fitment/${id}`),   clearAll: (productId) => api.delete(`/fitment/product/${productId}/all`), };  export default api;
