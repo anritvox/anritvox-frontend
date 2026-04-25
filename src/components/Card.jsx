@@ -21,13 +21,14 @@ export default function Card({ product }) {
 
   if (!product) return null;
 
-  // Mock fitment logic: In real app, this would check against product.compatibleVehicle
   const isCompatible = garage && (product.category === 'Lights' || product.category === 'Audio');
+
+  // Intelligent ID routing fallback
+  const productLink = `/product/${product.slug || product._id || product.id}`;
 
   return (
     <div className="group relative bg-slate-900 border border-slate-800 rounded-[2rem] overflow-hidden transition-all hover:border-emerald-500/50 hover:shadow-[0_0_40px_rgba(16,185,129,0.1)]">
       
-      {/* Fitment Badge */}
       {garage && (
         <div className={`absolute top-4 left-4 z-10 px-3 py-1 rounded-full flex items-center space-x-2 backdrop-blur-md border ${
           isCompatible ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-slate-800/50 border-slate-700 text-slate-500 opacity-50'
@@ -39,7 +40,6 @@ export default function Card({ product }) {
         </div>
       )}
 
-      {/* Image Container */}
       <div className="aspect-[4/5] overflow-hidden relative">
         <img 
           src={product.images?.[0] || 'https://via.placeholder.com/400x500'} 
@@ -47,12 +47,11 @@ export default function Card({ product }) {
           alt={product.name} 
         />
         
-        {/* Quick Actions Overlay */}
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-4">
            <button className="p-4 bg-white text-black rounded-full hover:bg-emerald-500 transition-all hover:-translate-y-1">
              <Heart size={20} />
            </button>
-           <Link to={`/product/${product._id}`} className="p-4 bg-white text-black rounded-full hover:bg-emerald-500 transition-all hover:-translate-y-1">
+           <Link to={productLink} className="p-4 bg-white text-black rounded-full hover:bg-emerald-500 transition-all hover:-translate-y-1">
              <Eye size={20} />
            </Link>
            <button className="p-4 bg-white text-black rounded-full hover:bg-emerald-500 transition-all hover:-translate-y-1">
@@ -61,7 +60,6 @@ export default function Card({ product }) {
         </div>
       </div>
 
-      {/* Product Info */}
       <div className="p-8 space-y-4">
         <div className="flex justify-between items-start">
           <div>
