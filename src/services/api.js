@@ -145,7 +145,7 @@ export const analytics = {
 };
 
 export const settings = {
-  // CRITICAL FIX: Directly calls root settings endpoint
+  // CRITICAL FIX: Straight to /settings. No fallback probing.
   get: () => api.get("/settings"),
   update: (data) => api.put("/settings", data),
 };
@@ -170,7 +170,7 @@ export const inventory = {
 };
 
 export const banners = {
-  // CRITICAL FIX: Directly calls root banner endpoint
+  // CRITICAL FIX: Maps perfectly to router.get('/', ...) in bannerRoutes.js
   getActive: () => api.get("/banners"),
   getAllAdmin: () => api.get("/banners/admin/all"),
   create: (data) => api.post("/banners", data),
