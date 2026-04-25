@@ -26,7 +26,6 @@ export const AuthProvider = ({ children }) => {
           const decodedPayload = decodeJWT(storedToken);
           let fetchedUser;
 
-          // STRICT ROUTING: Admins hit authRoutes, Customers hit userRoutes
           if (decodedPayload?.role === 'admin') {
             const res = await authApi.getAdminProfile();
             fetchedUser = res.data;
