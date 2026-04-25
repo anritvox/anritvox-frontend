@@ -1,357 +1,645 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Package, Search, Plus, Edit3, Trash2, ExternalLink, Activity, 
-  Filter, Archive, Upload, FileText, X, Check, AlertTriangle, Image, 
-  Copy, Barcode, Eye, ArrowRight, Download, Settings, ChevronRight,
-  TrendingUp, TrendingDown, Clock, Shield, Truck, Zap, Box, Tag
+  Box, Plus, Edit2, Trash2, Search, Filter, RefreshCw, AlertTriangle, 
+  CheckCircle, XCircle, ChevronLeft, ChevronRight, Image as ImageIcon, 
+  Video, BoxSelect, ShieldCheck, Tag, Zap, Activity, Cpu, QrCode
 } from 'lucide-react';
-import { products as prodApi, categories as catApi, fitment as fitmentApi, serials as serialApi } from '../../services/api';
+import { products as productsApi, categories as categoriesApi, serials as serialsApi, BASE_URL } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
 export default function ProductManagement() {
-  const [productsList, setProductsList] = useState([]);
+  const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeCategory, setActiveCategory] = useState('all');
-  const { showToast } = useToast() || {};
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(8);
 
   // Modals State
-  const [productModal, setProductModal] = useState({ show: false, mode: 'create', data: null });
-  const [imageModal, setImageModal] = useState({ show: false, product: null });
-  const [serialModal, setSerialModal] = useState({ show: false, product: null, count: 10 });
-  const [fitmentModal, setFitmentModal] = useState({ show: false, product: null });
-  const [deleteModal, setDeleteModal] = useState({ show: false, productId: null });
+  const [isProductModalOpen, setProductModalOpen] = useState(false);
+  const [isSerialModalOpen, setSerialModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('basic'); // 'basic', 'media', 'warranty'
+  
+  const [currentProduct, setCurrentProduct] = useState(null);
+  const { showToast } = useToast() || {};
 
-  // Form State
-  const [formData, setFormData] = useState({
-    name: '', sku: '', price: '', discount_price: '', quantity: 0, 
-    category_id: '', brand: '', status: 'active', description: ''
+  // Form States
+  const [form, setForm] = useState({
+    name: '', description: '', price: '', stock: '', category: '', 
+    youtube_url: '', three_d_model_url: '', warranty_months: 12, is_active: true
   });
-  const [uploading, setUploading] = useState(false);
+  const [images, setImages] = useState([]);
+
+  const [serialForm, setSerialForm] = useState({
+    count: 10, prefix: 'ANR', format: 'advanced', base_warranty_months: 12
+  });
 
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const [pRes, cRes] = await Promise.all([prodApi.getAllAdmin(), catApi.getAll()]);
-      setProductsList(pRes.data?.data || pRes.data || []);
-      setCategories(cRes.data?.data || cRes.data || []);
-    } catch (error) {
-      showToast?.('Registry synchronization failed', 'error');
+      const [prodRes, catRes] = await Promise.all([
+        productsApi.getAllAdmin(),
+        categoriesApi.getAll()
+      ]);
+      setProducts(prodRes.data?.products || prodRes.data?.data || prodRes.data || []);
+      setCategories(catRes.data?.categories || catRes.data?.data || catRes.data || []);
+    } catch (err) {
+      showToast?.('Failed to synchronize product nodes.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateOrUpdate = async (e) => {
+  // Safe Image Resolver
+  const getImageUrl = (img) => {
+    if (!img) return '/logo.webp';
+    let url = typeof img === 'object' ? img.url || img.path : img;
+    if (!url) return '/logo.webp';
+    if (url.startsWith('http')) return url;
+    return `${BASE_URL.replace(/\/api$/, '')}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
+  // Handlers
+  const handleToggleStatus = async (id, currentStatus) => {
+    try {
+      await productsApi.toggleStatus(id, !currentStatus);
+      showToast?.(`Node ${!currentStatus ? 'activated' : 'deactivated'} successfully`, 'success');
+      fetchData();
+    } catch (err) {
+      showToast?.('Status toggle failed', 'error');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Permanently purge this hardware node from the registry?')) return;
+    try {
+      await productsApi.delete(id);
+      showToast?.('Node purged successfully', 'success');
+      fetchData();
+    } catch (err) {
+      showToast?.('Purge sequence failed', 'error');
+    }
+  };
+
+  const openProductModal = (product = null) => {
+    if (product) {
+      setCurrentProduct(product);
+      setForm({
+        name: product.name || '',
+        description: product.description || '',
+        price: product.price || '',
+        stock: product.stock || '',
+        category: typeof product.category === 'object' ? product.category?._id || product.category?.id : product.category || '',
+        youtube_url: product.youtube_url || product.videos?.[0] || '',
+        three_d_model_url: product.three_d_model_url || product.threeDModel || '',
+        warranty_months: product.warranty_months || 12,
+        is_active: product.is_active !== undefined ? product.is_active : true
+      });
+      setImages([]); // Handled separately via API usually, or append existing
+    } else {
+      setCurrentProduct(null);
+      setForm({
+        name: '', description: '', price: '', stock: '', category: '', 
+        youtube_url: '', three_d_model_url: '', warranty_months: 12, is_active: true
+      });
+      setImages([]);
+    }
+    setActiveTab('basic');
+    setProductModalOpen(true);
+  };
+
+  const handleSaveProduct = async (e) => {
     e.preventDefault();
     try {
-      if (productModal.mode === 'create') {
-        await prodApi.create(formData);
-        showToast?.('New node deployed successfully', 'success');
+      // Basic payload (could use FormData if backend requires multipart for creation)
+      const payload = { ...form };
+      
+      let savedProduct;
+      if (currentProduct) {
+        const res = await productsApi.update(currentProduct._id || currentProduct.id, payload);
+        savedProduct = res.data?.product || res.data;
+        showToast?.('Node configuration updated.', 'success');
       } else {
-        await prodApi.update(productModal.data.id, formData);
-        showToast?.('Hardware node updated', 'success');
+        const res = await productsApi.create(payload);
+        savedProduct = res.data?.product || res.data;
+        showToast?.('New node deployed to registry.', 'success');
       }
-      setProductModal({ show: false, mode: 'create', data: null });
+
+      // Handle Image Upload if new images were selected
+      if (images.length > 0 && savedProduct) {
+        const formData = new FormData();
+        Array.from(images).forEach(img => formData.append('images', img));
+        await productsApi.uploadImages(savedProduct._id || savedProduct.id, formData);
+      }
+
+      setProductModalOpen(false);
       fetchData();
     } catch (err) {
-      showToast?.(err.response?.data?.message || 'Transaction failed', 'error');
+      showToast?.(err.response?.data?.message || 'Error processing hardware node', 'error');
     }
   };
 
-  const handleDelete = async () => {
+  const openSerialModal = (product) => {
+    setCurrentProduct(product);
+    setSerialForm({
+      count: 10,
+      prefix: product.name.substring(0, 3).toUpperCase(),
+      format: 'advanced',
+      base_warranty_months: product.warranty_months || 12
+    });
+    setSerialModalOpen(true);
+  };
+
+  const handleGenerateSerials = async (e) => {
+    e.preventDefault();
     try {
-      await prodApi.delete(deleteModal.productId);
-      showToast?.('Node purged from registry', 'success');
-      setDeleteModal({ show: false, productId: null });
-      fetchData();
+      const payload = {
+        productId: currentProduct._id || currentProduct.id,
+        ...serialForm
+      };
+      const res = await serialsApi.generate(payload);
+      showToast?.(`Generated ${res.data?.count || serialForm.count} serial hashes successfully.`, 'success');
+      setSerialModalOpen(false);
     } catch (err) {
-      showToast?.('Purge failed', 'error');
+      showToast?.('Serial generation protocol failed.', 'error');
     }
   };
 
-  const generateSerials = async () => {
-    try {
-      const prefix = serialModal.product.brand?.substring(0,2).toUpperCase() || 'AV';
-      const timestamp = Date.now().toString().slice(-4);
-      const newSerials = Array.from({ length: serialModal.count }, (_, i) => 
-        `${prefix}${timestamp}${Math.random().toString(36).substring(2,6).toUpperCase()}${i}`
-      );
-      await prodApi.addSerials(serialModal.product.id, newSerials);
-      showToast?.(`${serialModal.count} identity keys generated`, 'success');
-      setSerialModal({ show: false, product: null, count: 10 });
-    } catch (err) {
-      showToast?.('Key generation failed', 'error');
-    }
-  };
+  // Pagination & Filtering Logic
+  const filteredProducts = useMemo(() => {
+    return products.filter(p => 
+      p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.category?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [products, searchTerm]);
 
-  const filteredProducts = productsList.filter(p => {
-    const matchesSearch = p.name?.toLowerCase().includes(searchTerm.toLowerCase()) || p.sku?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCat = activeCategory === 'all' || p.category_id?.toString() === activeCategory;
-    return matchesSearch && matchesCat;
-  });
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * itemsPerPage, 
+    currentPage * itemsPerPage
+  );
+
+  if (loading && products.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+        <div className="relative">
+          <div className="w-20 h-20 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+          <Cpu className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-500 animate-pulse" size={24} />
+        </div>
+        <p className="text-slate-500 font-black uppercase text-[10px] tracking-[0.3em] animate-pulse">Syncing Hardware Registry...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-8 bg-[#0a0c10] min-h-screen text-slate-300 font-sans">
+    <div className="p-4 md:p-8 space-y-8 bg-[#020617] min-h-screen text-slate-300 font-sans animate-in fade-in duration-500">
+      
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-800/80">
         <div>
-          <h2 className="text-4xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
-            <Package size={36} className="text-emerald-500" /> Product Registry
-          </h2>
-          <p className="text-slate-500 font-medium mt-1">Manage all hardware nodes and inventory levels</p>
+          <h1 className="text-4xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+            Product <span className="text-emerald-500">Audit</span>
+          </h1>
+          <p className="text-slate-500 font-bold mt-2 uppercase text-[10px] tracking-[0.2em] flex items-center gap-2">
+            <ShieldCheck size={12} className="text-emerald-500" /> Advanced Hardware Node Management & Telemetry
+          </p>
         </div>
-        <button 
-          onClick={() => {
-            setFormData({ name: '', sku: '', price: '', discount_price: '', quantity: 0, category_id: '', brand: '', status: 'active', description: '' });
-            setProductModal({ show: true, mode: 'create', data: null });
-          }}
-          className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-lg shadow-emerald-900/20 transition-all flex items-center gap-3 active:scale-95"
-        >
-          <Plus size={20} strokeWidth={3} /> Deploy New Product
-        </button>
+        <div className="flex gap-4">
+          <button onClick={fetchData} className="p-3 bg-slate-900 border border-slate-800 text-slate-400 rounded-xl hover:bg-slate-800 hover:text-emerald-400 transition-all shadow-lg">
+            <RefreshCw size={20} />
+          </button>
+          <button 
+            onClick={() => openProductModal()}
+            className="flex items-center gap-2 px-6 py-3 bg-emerald-500 text-slate-950 font-black uppercase text-xs tracking-widest rounded-xl hover:bg-emerald-400 transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:scale-105 active:scale-95"
+          >
+            <Plus size={16} /> Deploy Node
+          </button>
+        </div>
       </div>
 
-      {/* Analytics Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+      {/* Overview Analytics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Total Nodes', val: productsList.length, icon: Box, color: 'blue' },
-          { label: 'Out of Stock', val: productsList.filter(p => p.quantity === 0).length, icon: AlertTriangle, color: 'rose' },
-          { label: 'Active Sale', val: productsList.filter(p => p.discount_price).length, icon: Tag, color: 'emerald' },
-          { label: 'New Arrivals', val: productsList.filter(p => p.is_new_arrival).length, icon: Zap, color: 'amber' }
-        ].map((s, i) => (
-          <div key={i} className="bg-slate-900/50 p-6 rounded-3xl border border-slate-800 flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black uppercase text-slate-500 mb-1">{s.label}</p>
-              <h4 className="text-2xl font-black text-white">{s.val}</h4>
+          { label: 'Total Nodes', val: products.length, icon: Box, color: 'emerald' },
+          { label: 'Active Streams', val: products.filter(p => p.is_active).length, icon: Activity, color: 'blue' },
+          { label: 'Low Stock Alerts', val: products.filter(p => p.stock < 10).length, icon: AlertTriangle, color: 'amber' },
+          { label: 'Avg Node Valuation', val: `₹${(products.reduce((acc, p) => acc + (p.price || 0), 0) / (products.length || 1)).toFixed(0)}`, icon: Tag, color: 'purple' }
+        ].map((stat, i) => (
+          <div key={i} className="bg-slate-900/40 border border-slate-800/80 p-6 rounded-[2rem] flex items-center gap-6 shadow-xl relative overflow-hidden group">
+            <div className={`absolute top-0 right-0 w-24 h-24 bg-${stat.color}-500/10 blur-2xl -mr-8 -mt-8 group-hover:bg-${stat.color}-500/20 transition-colors duration-500`}></div>
+            <div className={`p-4 rounded-2xl bg-slate-950 border border-slate-800 text-${stat.color}-500 relative z-10 group-hover:scale-110 transition-transform`}>
+              <stat.icon size={24} />
             </div>
-            <div className={`w-12 h-12 bg-${s.color}-500/10 rounded-2xl flex items-center justify-center text-${s.color}-500`}>
-              <s.icon size={24} />
+            <div className="relative z-10">
+              <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{stat.label}</p>
+              <h4 className="text-2xl font-black text-white tracking-tighter mt-1">{stat.val}</h4>
             </div>
           </div>
         ))}
       </div>
 
       {/* Toolbar */}
-      <div className="bg-slate-900/80 backdrop-blur-xl p-4 rounded-3xl border border-slate-800 mb-8 flex flex-col lg:flex-row gap-4">
+      <div className="flex flex-col md:flex-row gap-4 bg-slate-900/40 border border-slate-800/80 p-4 rounded-[2rem] shadow-lg">
         <div className="relative flex-1 group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-500 transition-colors" size={20} />
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-500 transition-colors" size={18} />
           <input 
             type="text" 
-            placeholder="Search Registry by Name or SKU..." 
-            className="w-full bg-slate-950 border-2 border-slate-800 focus:border-emerald-500/50 rounded-2xl py-3 pl-12 pr-4 text-white font-bold outline-none transition-all"
+            placeholder="Search registry by hardware name or taxonomy..." 
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500/50 rounded-xl py-3.5 pl-12 pr-4 text-white font-bold text-sm outline-none transition-all"
           />
         </div>
-        <div className="flex gap-3">
-          <select 
-            className="bg-slate-950 border-2 border-slate-800 rounded-2xl px-6 py-3 text-white font-bold outline-none focus:border-blue-500/50 transition-all cursor-pointer"
-            value={activeCategory}
-            onChange={(e) => setActiveCategory(e.target.value)}
-          >
-            <option value="all">All Categories</option>
-            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-          <button className="p-3 bg-slate-950 border-2 border-slate-800 rounded-2xl text-slate-400 hover:text-white hover:border-slate-600 transition-all">
-            <Filter size={20} />
-          </button>
-        </div>
+        <button className="px-6 py-3.5 bg-slate-950 border border-slate-800 text-slate-400 rounded-xl hover:text-white transition-all flex items-center gap-2 font-black uppercase text-[10px] tracking-widest">
+          <Filter size={16} /> Filters
+        </button>
       </div>
 
-      {/* Table */}
-      <div className="bg-slate-900/50 rounded-[2.5rem] border border-slate-800 overflow-hidden shadow-2xl">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-950/50">
-              <th className="p-6 text-[10px] font-black uppercase text-slate-500 tracking-widest">Hardware Node</th>
-              <th className="p-6 text-[10px] font-black uppercase text-slate-500 tracking-widest">Pricing</th>
-              <th className="p-6 text-[10px] font-black uppercase text-slate-500 tracking-widest">Inventory</th>
-              <th className="p-6 text-[10px] font-black uppercase text-slate-500 tracking-widest">Warranty Keys</th>
-              <th className="p-6 text-[10px] font-black uppercase text-slate-500 tracking-widest">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800">
-            {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i} className="animate-pulse">
-                  <td colSpan={5} className="p-12 text-center text-slate-600 font-bold uppercase tracking-widest">Synchronizing Data...</td>
+      {/* Products Registry Grid */}
+      <div className="bg-slate-900/30 border border-slate-800/80 rounded-[2.5rem] overflow-hidden shadow-2xl">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-950/80 border-b border-slate-800 backdrop-blur-md">
+                <th className="p-6 text-[10px] font-black uppercase text-slate-500 tracking-widest">Hardware Node</th>
+                <th className="p-6 text-[10px] font-black uppercase text-slate-500 tracking-widest">Taxonomy</th>
+                <th className="p-6 text-[10px] font-black uppercase text-slate-500 tracking-widest">Valuation & Stock</th>
+                <th className="p-6 text-[10px] font-black uppercase text-slate-500 tracking-widest">State</th>
+                <th className="p-6 text-[10px] font-black uppercase text-slate-500 tracking-widest text-right">Operations</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/50">
+              {paginatedProducts.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="p-16 text-center">
+                    <BoxSelect size={48} className="mx-auto text-slate-700 mb-4" />
+                    <p className="text-slate-500 font-black uppercase tracking-widest text-sm">No hardware matched parameters</p>
+                  </td>
                 </tr>
-              ))
-            ) : filteredProducts.map(prod => (
-              <tr key={prod.id} className="hover:bg-white/[0.02] transition-colors group">
-                <td className="p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-center overflow-hidden relative group/img">
-                      <img src={prod.imageUrl || '/logo.png'} className="w-full h-full object-cover" />
+              ) : paginatedProducts.map(product => (
+                <tr key={product._id || product.id} className="hover:bg-emerald-500/[0.02] transition-colors group">
+                  <td className="p-6">
+                    <div className="flex items-center gap-5">
+                      <div className="w-16 h-16 rounded-2xl bg-slate-950 border border-slate-800 p-1.5 flex-shrink-0 group-hover:border-emerald-500/30 transition-colors">
+                        <img 
+                          src={getImageUrl(product.images?.[0])} 
+                          alt={product.name}
+                          className="w-full h-full object-cover rounded-xl"
+                          onError={(e) => { e.target.src = '/logo.webp'; }}
+                        />
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-white uppercase tracking-tight line-clamp-1">{product.name}</p>
+                        <div className="flex items-center gap-3 mt-1.5">
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1"><ShieldCheck size={10} className="text-emerald-500"/> {product.warranty_months} Mo</span>
+                          {(product.youtube_url || product.videos?.length > 0) && <Video size={12} className="text-blue-500" title="Video Embedded" />}
+                          {(product.three_d_model_url || product.threeDModel) && <Box size={12} className="text-purple-500" title="3D Model Attached" />}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="p-6">
+                    <span className="px-3 py-1 bg-slate-950 border border-slate-800 text-slate-400 rounded-lg text-[10px] font-bold uppercase tracking-widest">
+                      {typeof product.category === 'object' ? product.category?.name : 'Component'}
+                    </span>
+                  </td>
+                  <td className="p-6">
+                    <div className="flex flex-col">
+                      <span className="text-emerald-400 font-black tracking-tight">₹{product.price?.toLocaleString()}</span>
+                      <span className={`text-[10px] font-black uppercase tracking-widest mt-1 ${product.stock > 10 ? 'text-slate-500' : 'text-rose-500'}`}>
+                        {product.stock} Units
+                      </span>
+                    </div>
+                  </td>
+                  <td className="p-6">
+                    <button 
+                      onClick={() => handleToggleStatus(product._id || product.id, product.is_active)}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${
+                        product.is_active ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
+                      }`}
+                    >
+                      {product.is_active ? <CheckCircle size={10} /> : <XCircle size={10} />}
+                      {product.is_active ? 'Live' : 'Offline'}
+                    </button>
+                  </td>
+                  <td className="p-6 text-right">
+                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <button 
-                        onClick={() => setImageModal({ show: true, product: prod })}
-                        className="absolute inset-0 bg-emerald-600/80 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity"
+                        onClick={() => openSerialModal(product)}
+                        className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-amber-500 hover:bg-amber-500 hover:text-slate-950 transition-all"
+                        title="Generate RMA Serials"
                       >
-                        <Image size={20} className="text-white" />
+                        <QrCode size={16} />
+                      </button>
+                      <button 
+                        onClick={() => openProductModal(product)}
+                        className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-blue-500 hover:bg-blue-500 hover:text-white transition-all"
+                        title="Edit Node Configuration"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(product._id || product.id)}
+                        className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-rose-500 hover:bg-rose-500 hover:text-white transition-all"
+                        title="Purge Node"
+                      >
+                        <Trash2 size={16} />
                       </button>
                     </div>
-                    <div>
-                      <p className="text-white font-black uppercase tracking-tight group-hover:text-emerald-400 transition-colors">{prod.name}</p>
-                      <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">SKU: {prod.sku || 'N/A'}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="p-6">
-                  <div className="font-black text-white">
-                    {prod.discount_price ? (
-                      <div className="flex flex-col">
-                        <span className="text-emerald-500">₹{prod.discount_price}</span>
-                        <span className="text-[10px] text-slate-500 line-through">₹{prod.price}</span>
-                      </div>
-                    ) : (
-                      <span>₹{prod.price}</span>
-                    )}
-                  </div>
-                </td>
-                <td className="p-6">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${prod.quantity > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
-                      <span className="text-sm font-black text-white">{prod.quantity} Units</span>
-                    </div>
-                    <div className="w-24 h-1 bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-500" style={{ width: `${Math.min(prod.quantity, 100)}%` }}></div>
-                    </div>
-                  </div>
-                </td>
-                <td className="p-6">
-                  <button 
-                    onClick={() => setSerialModal({ show: true, product: prod, count: 10 })}
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-950 border border-slate-800 hover:border-blue-500/50 rounded-xl text-[10px] font-black uppercase text-slate-400 hover:text-blue-400 transition-all"
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="p-4 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between">
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-4">
+              Showing {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredProducts.length)} of {filteredProducts.length}
+            </span>
+            <div className="flex items-center gap-2 mr-4">
+              <button 
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                className="p-2 bg-slate-900 border border-slate-800 text-slate-400 rounded-lg hover:bg-slate-800 hover:text-emerald-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <div className="flex items-center gap-1">
+                {[...Array(totalPages)].map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentPage(i + 1)}
+                    className={`w-8 h-8 rounded-lg text-xs font-black transition-all ${
+                      currentPage === i + 1 
+                      ? 'bg-emerald-500 text-slate-950 shadow-[0_0_10px_rgba(16,185,129,0.3)]' 
+                      : 'bg-transparent text-slate-500 hover:bg-slate-800'
+                    }`}
                   >
-                    <Barcode size={14} /> Identity Generator
+                    {i + 1}
                   </button>
-                </td>
-                <td className="p-6">
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => {
-                        setFormData({ ...prod });
-                        setProductModal({ show: true, mode: 'edit', data: prod });
-                      }}
-                      className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-500 hover:text-amber-500 hover:border-amber-500/50 transition-all"
-                    >
-                      <Edit3 size={18} />
-                    </button>
-                    <button 
-                      onClick={() => setDeleteModal({ show: true, productId: prod.id })}
-                      className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-500 hover:text-rose-500 hover:border-rose-500/50 transition-all"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                    <a href={`/product/${prod.id}`} target="_blank" className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-500 hover:text-blue-500 hover:border-blue-500/50 transition-all">
-                      <ExternalLink size={18} />
-                    </a>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                ))}
+              </div>
+              <button 
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                className="p-2 bg-slate-900 border border-slate-800 text-slate-400 rounded-lg hover:bg-slate-800 hover:text-emerald-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Product Create/Edit Modal */}
-      {productModal.show && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-sm">
-          <div className="w-full max-w-4xl bg-[#0a0c10] border border-slate-800 rounded-[3rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-8 border-b border-slate-800 flex items-center justify-between">
-              <h3 className="text-2xl font-black text-white uppercase">{productModal.mode === 'create' ? 'Deploy New Node' : 'Update Node Config'}</h3>
-              <button onClick={() => setProductModal({ show: false, mode: 'create', data: null })} className="p-2 text-slate-500 hover:text-white"><X /></button>
+      {/* --- ADD / EDIT PRODUCT MODAL --- */}
+      {isProductModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-xl overflow-y-auto custom-scrollbar">
+          <div className="bg-[#0a0c10] border border-slate-800 w-full max-w-4xl rounded-[3rem] shadow-2xl overflow-hidden my-auto animate-in zoom-in-95 duration-300">
+            {/* Modal Header */}
+            <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500">
+                  <BoxSelect size={24} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-white uppercase tracking-tighter">
+                    {currentProduct ? 'Modify Hardware Node' : 'Deploy New Node'}
+                  </h2>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Configure registry specifications and media payloads</p>
+                </div>
+              </div>
+              <button onClick={() => setProductModalOpen(false)} className="p-3 bg-slate-950 hover:bg-rose-500/10 text-slate-500 hover:text-rose-500 rounded-2xl transition-all">
+                <XCircle size={24} />
+              </button>
             </div>
-            <form onSubmit={handleCreateOrUpdate} className="p-8 grid grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="text-[10px] font-black uppercase text-slate-500 ml-2">Product Name</label>
-                  <input required className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-emerald-500" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[10px] font-black uppercase text-slate-500 ml-2">Price (₹)</label>
-                    <input type="number" required className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-emerald-500" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-black uppercase text-slate-500 ml-2">Sale Price (₹)</label>
-                    <input type="number" className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-emerald-500" value={formData.discount_price} onChange={e => setFormData({...formData, discount_price: e.target.value})} />
-                  </div>
-                </div>
+
+            <form onSubmit={handleSaveProduct}>
+              <div className="flex border-b border-slate-800 px-8 bg-slate-950/30">
+                {[
+                  { id: 'basic', label: 'Core Specs', icon: Cpu },
+                  { id: 'media', label: 'Media & Assets', icon: ImageIcon },
+                  { id: 'warranty', label: 'Logic & Warranty', icon: ShieldCheck }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-2 px-6 py-4 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${
+                      activeTab === tab.id ? 'border-emerald-500 text-emerald-400 bg-emerald-500/5' : 'border-transparent text-slate-500 hover:text-slate-300'
+                    }`}
+                  >
+                    <tab.icon size={16} /> {tab.label}
+                  </button>
+                ))}
               </div>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[10px] font-black uppercase text-slate-500 ml-2">SKU Identifier</label>
-                    <input className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-emerald-500" value={formData.sku} onChange={e => setFormData({...formData, sku: e.target.value})} />
+
+              <div className="p-8 min-h-[350px]">
+                {/* TAB 1: BASIC INFO */}
+                {activeTab === 'basic' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="col-span-2 space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Node Designation (Name)</label>
+                      <input 
+                        required type="text" 
+                        value={form.name} onChange={e => setForm({...form, name: e.target.value})}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-emerald-500/50 transition-all placeholder:text-slate-700" 
+                        placeholder="e.g. RTX 5090 Ti Vanguard"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Base Valuation (₹)</label>
+                      <input 
+                        required type="number" 
+                        value={form.price} onChange={e => setForm({...form, price: e.target.value})}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-emerald-500/50 transition-all" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Available Units (Stock)</label>
+                      <input 
+                        required type="number" 
+                        value={form.stock} onChange={e => setForm({...form, stock: e.target.value})}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-emerald-500/50 transition-all" 
+                      />
+                    </div>
+                    <div className="col-span-2 space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Taxonomy Assignment</label>
+                      <select 
+                        required 
+                        value={form.category} onChange={e => setForm({...form, category: e.target.value})}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-emerald-500/50 transition-all appearance-none cursor-pointer"
+                      >
+                        <option value="">Select Primary Category Cluster</option>
+                        {categories.map(c => (
+                          <option key={c._id || c.id} value={c._id || c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-span-2 space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Hardware Specifications (Description)</label>
+                      <textarea 
+                        rows={4}
+                        value={form.description} onChange={e => setForm({...form, description: e.target.value})}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-300 font-medium text-sm outline-none focus:border-emerald-500/50 transition-all resize-none custom-scrollbar" 
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-[10px] font-black uppercase text-slate-500 ml-2">Inventory Qty</label>
-                    <input type="number" className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-emerald-500" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} />
+                )}
+
+                {/* TAB 2: MEDIA ASSETS */}
+                {activeTab === 'media' && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="p-6 border border-dashed border-slate-700 bg-slate-900/30 rounded-3xl text-center relative hover:bg-slate-900/50 transition-colors group">
+                      <input 
+                        type="file" multiple accept="image/*" 
+                        onChange={e => setImages(e.target.files)}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      />
+                      <ImageIcon size={40} className="mx-auto text-slate-600 mb-3 group-hover:text-emerald-500 transition-colors" />
+                      <p className="text-sm font-bold text-white mb-1">Inject Visual Payloads</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Drag & Drop or Click (JPEG, PNG, WEBP)</p>
+                      {images.length > 0 && <p className="mt-4 text-xs font-bold text-emerald-500">{images.length} payload(s) queued for uplink</p>}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2 flex items-center gap-2"><Video size={12} /> YouTube Embedded Stream</label>
+                      <input 
+                        type="url" 
+                        value={form.youtube_url} onChange={e => setForm({...form, youtube_url: e.target.value})}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-blue-500/50 transition-all placeholder:text-slate-700" 
+                        placeholder="https://www.youtube.com/watch?v=..."
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2 flex items-center gap-2"><Box size={12} /> 3D Spatial Model URL (GLTF/GLB)</label>
+                      <input 
+                        type="url" 
+                        value={form.three_d_model_url} onChange={e => setForm({...form, three_d_model_url: e.target.value})}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-purple-500/50 transition-all placeholder:text-slate-700" 
+                        placeholder="https://models.anritvox.com/hardware.glb"
+                      />
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="text-[10px] font-black uppercase text-slate-500 ml-2">Category Registry</label>
-                  <select className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-emerald-500" value={formData.category_id} onChange={e => setFormData({...formData, category_id: e.target.value})}>
-                    <option value="">Select Category</option>
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
+                )}
+
+                {/* TAB 3: WARRANTY & LOGIC */}
+                {activeTab === 'warranty' && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="p-6 bg-slate-900/50 border border-slate-800 rounded-3xl">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4 block">Standard Warranty Horizon (Months)</label>
+                      <div className="flex items-center gap-4">
+                        <input 
+                          type="range" min="0" max="60" step="6"
+                          value={form.warranty_months} onChange={e => setForm({...form, warranty_months: e.target.value})}
+                          className="flex-1 accent-emerald-500"
+                        />
+                        <div className="w-20 py-2 bg-slate-950 border border-slate-800 rounded-xl text-center text-emerald-400 font-black text-lg">
+                          {form.warranty_months}
+                        </div>
+                      </div>
+                      <p className="text-[10px] font-bold text-slate-600 mt-4 leading-relaxed">
+                        This dictates the default validity period injected into generated RMA Serial Hashes upon purchase.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between p-6 bg-slate-900/50 border border-slate-800 rounded-3xl cursor-pointer" onClick={() => setForm({...form, is_active: !form.is_active})}>
+                      <div>
+                        <h4 className="text-sm font-black text-white uppercase tracking-tight">Deploy to Live Front-End</h4>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Make this hardware visible to retail clients</p>
+                      </div>
+                      <div className={`w-14 h-8 rounded-full p-1 transition-colors ${form.is_active ? 'bg-emerald-500' : 'bg-slate-800'}`}>
+                        <div className={`w-6 h-6 bg-white rounded-full transition-transform shadow-md ${form.is_active ? 'translate-x-6' : 'translate-x-0'}`} />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="col-span-2">
-                <label className="text-[10px] font-black uppercase text-slate-500 ml-2">System Description</label>
-                <textarea rows={4} className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-emerald-500" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}></textarea>
-              </div>
-              <div className="col-span-2 flex justify-end gap-4 mt-4">
-                <button type="button" onClick={() => setProductModal({ show: false, mode: 'create', data: null })} className="px-8 py-4 bg-slate-900 text-slate-400 rounded-2xl font-black uppercase tracking-widest text-sm">Cancel</button>
-                <button type="submit" className="px-12 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-lg shadow-emerald-900/20">{productModal.mode === 'create' ? 'Confirm Deployment' : 'Apply Configuration'}</button>
+
+              {/* Modal Footer */}
+              <div className="p-6 border-t border-slate-800 bg-slate-950/80 flex justify-end gap-4">
+                <button type="button" onClick={() => setProductModalOpen(false)} className="px-8 py-3.5 text-slate-400 font-black uppercase tracking-widest text-xs rounded-xl hover:bg-slate-900 transition-all">
+                  Abort
+                </button>
+                <button type="submit" className="px-10 py-3.5 bg-emerald-500 text-slate-950 font-black uppercase tracking-widest text-xs rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:bg-emerald-400 transition-all hover:-translate-y-0.5">
+                  Execute Deployment
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Serial Identity Generator Modal */}
-      {serialModal.show && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-[#0a0c10] border border-slate-800 rounded-[3rem] p-8 animate-in fade-in slide-in-from-bottom-4">
-            <h3 className="text-2xl font-black text-white uppercase mb-2">Identity Key Generator</h3>
-            <p className="text-slate-500 text-sm font-bold mb-8">Generate bulk serial numbers for {serialModal.product.name}</p>
-            <div className="mb-8">
-              <label className="text-[10px] font-black uppercase text-slate-500 ml-2">Key Batch Count</label>
-              <div className="flex items-center gap-4 mt-2">
-                <input type="range" min="1" max="100" className="flex-1 accent-emerald-500" value={serialModal.count} onChange={e => setSerialModal({...serialModal, count: e.target.value})} />
-                <span className="w-16 text-center bg-slate-950 border border-slate-800 rounded-xl p-3 text-emerald-400 font-black">{serialModal.count}</span>
+      {/* --- SERIAL GENERATOR MODAL --- */}
+      {isSerialModalOpen && currentProduct && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-xl">
+          <div className="bg-[#0a0c10] border border-slate-800 w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8 border-b border-slate-800 flex justify-between items-start bg-amber-500/5">
+              <div>
+                <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500 mb-4">
+                  <QrCode size={24} />
+                </div>
+                <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Generate Serials</h2>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Target: {currentProduct.name}</p>
               </div>
+              <button onClick={() => setSerialModalOpen(false)} className="text-slate-500 hover:text-white transition-colors p-2">
+                <XCircle size={24} />
+              </button>
             </div>
-            <div className="flex gap-4">
-              <button onClick={() => setSerialModal({ show: false, product: null, count: 10 })} className="flex-1 py-4 bg-slate-900 text-slate-400 rounded-2xl font-black uppercase text-xs">Abort</button>
-              <button onClick={generateSerials} className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs shadow-lg shadow-blue-900/20">Generate Keys</button>
-            </div>
-          </div>
-        </div>
-      )}
+            
+            <form onSubmit={handleGenerateSerials} className="p-8 space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Batch Count</label>
+                  <input 
+                    type="number" min="1" max="1000" required
+                    value={serialForm.count} onChange={e => setSerialForm({...serialForm, count: parseInt(e.target.value)})}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-amber-500/50 transition-all text-center text-xl" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Hash Prefix</label>
+                  <input 
+                    type="text" required maxLength="6"
+                    value={serialForm.prefix} onChange={e => setSerialForm({...serialForm, prefix: e.target.value.toUpperCase()})}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-amber-500 font-mono font-bold outline-none focus:border-amber-500/50 transition-all text-center text-xl uppercase" 
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Encryption Format</label>
+                <select 
+                  value={serialForm.format} onChange={e => setSerialForm({...serialForm, format: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-amber-500/50 transition-all appearance-none cursor-pointer"
+                >
+                  <option value="advanced">Advanced Secure (Checksum Auth)</option>
+                  <option value="legacy">Legacy / Standard</option>
+                </select>
+              </div>
 
-      {/* Delete Confirmation Modal */}
-      {deleteModal.show && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-sm">
-          <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-[3rem] p-10 text-center animate-in zoom-in-95">
-            <div className="w-20 h-20 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
-              <AlertTriangle size={40} />
-            </div>
-            <h3 className="text-2xl font-black text-white uppercase mb-2">Purge Hardware Node?</h3>
-            <p className="text-slate-500 text-sm font-bold mb-10">This action is irreversible. The node will be removed from all registries.</p>
-            <div className="flex flex-col gap-3">
-              <button onClick={handleDelete} className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black uppercase text-sm">Yes, Purge Node</button>
-              <button onClick={() => setDeleteModal({ show: false, productId: null })} className="w-full py-4 bg-slate-800 text-slate-400 rounded-2xl font-black uppercase text-sm">Cancel</button>
-            </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Override Warranty Horizon (Months)</label>
+                <input 
+                  type="number" required
+                  value={serialForm.base_warranty_months} onChange={e => setSerialForm({...serialForm, base_warranty_months: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-amber-500/50 transition-all" 
+                />
+              </div>
+
+              <button type="submit" className="w-full py-4 bg-amber-500 text-slate-950 font-black uppercase tracking-widest text-sm rounded-2xl shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:bg-amber-400 transition-all hover:-translate-y-0.5 mt-4">
+                Execute Batch Generation
+              </button>
+            </form>
           </div>
         </div>
       )}
