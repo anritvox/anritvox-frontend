@@ -137,7 +137,7 @@ export default function Home() {
             {featuredProducts.map((product) => (
               <Link 
                 key={product._id} 
-                to={`/product/${product.slug}`} 
+                to={`/product/${product.slug || product._id}`} 
                 className="group block"
               >
                 <div className="relative aspect-square overflow-hidden bg-slate-100 mb-6 border border-slate-100 group-hover:border-emerald-500/20 transition-all">
