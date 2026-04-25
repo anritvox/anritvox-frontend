@@ -12,7 +12,20 @@ import {
   cart as cartApi,
   wishlist as wishlistApi
 } from '../services/api';
-import HeroSection from '../components/HeroSection'; // Importing your advanced Hero
+import HeroSection from '../components/HeroSection';
+
+// --- Image URL Helper (Safely resolves Cloudflare R2 paths) ---
+const getImageUrl = (img) => {
+  if (!img) return 'https://www.anritvox.com/logo.webp';
+  let path = typeof img === 'object' ? (img.file_path || img.url || img.path) : img;
+  if (!path) return 'https://www.anritvox.com/logo.webp';
+  if (path.startsWith('http')) return path;
+  
+  const baseUrl = import.meta.env.VITE_R2_PUBLIC_URL || import.meta.env.VITE_IMAGE_BASE_URL || 'https://pub-22cd43cce9bc475680ad496e199706c4.r2.dev';
+  const cleanBase = baseUrl.replace(/\/$/, '');
+  const cleanPath = path.replace(/^\//, '');
+  return `${cleanBase}/${cleanPath}`;
+};
 
 // --- Animation Variants ---
 const staggerContainer = {
@@ -49,7 +62,7 @@ export default function Home() {
         const [prodRes, catRes, flashRes] = await Promise.all([
           productsApi.getAllActive({ limit: 8, featured: true }),
           categoriesApi.getAll(),
-          flashSalesApi.getActive().catch(() => ({ data: [] })) // Graceful fail if no flash sales
+          flashSalesApi.getActive().catch(() => ({ data: [] }))
         ]);
         
         setData({
@@ -70,7 +83,6 @@ export default function Home() {
     e.preventDefault();
     try {
       await cartApi.add({ productId, quantity: 1 });
-      // Here you would trigger your ToastContext to show success
       alert("Added to Cart!");
     } catch (error) {
       console.error("Cart error", error);
@@ -79,7 +91,6 @@ export default function Home() {
 
   const handleFitmentSearch = (e) => {
     e.preventDefault();
-    // Redirect to fitment engine with pre-filled query params
     navigate(`/fitment-engine?make=${fitment.make}&model=${fitment.model}&year=${fitment.year}`);
   };
 
@@ -91,7 +102,7 @@ export default function Home() {
       {/* 1. ADVANCED HERO SECTION */}
       <HeroSection />
 
-      {/* 2. TRUST STRIP (Animated) */}
+      {/* 2. TRUST STRIP */}
       <section className="py-8 border-y border-slate-800/50 bg-slate-900/50 backdrop-blur-xl relative z-20 -mt-1">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div 
@@ -160,7 +171,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 4. FLASH SALES (Conditional rendering if active) */}
+      {/* 4. FLASH SALES */}
       <AnimatePresence>
         {data.flashSales.length > 0 && (
           <motion.section 
@@ -179,7 +190,6 @@ export default function Home() {
                   <p className="text-red-400 text-sm font-bold tracking-widest uppercase">Ends Soon. Limited Stock.</p>
                 </div>
               </div>
-              {/* Add Flash Sale Product Slider/Grid here based on data.flashSales */}
             </div>
           </motion.section>
         )}
@@ -209,9 +219,11 @@ export default function Home() {
               <motion.div variants={fadeUp} key={cat.id || i} className={`group relative rounded-3xl overflow-hidden bg-slate-900 border border-slate-800/60 ${i === 0 || i === 3 ? 'aspect-[4/5] lg:aspect-square' : 'aspect-[4/5] lg:aspect-[3/4]'}`}>
                 <Link to={`/shop?category=${cat.id}`} className="absolute inset-0 z-20" />
                 <img 
-                  src={cat.image_url || 'https://www.anritvox.com/logo.webp'} 
+                  // FIXED: Now using the helper function
+                  src={getImageUrl(cat.image_url)} 
                   className="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700 ease-in-out" 
                   alt={cat.name} 
+                  onError={(e) => { e.target.src = '/logo.webp'; }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent p-8 flex flex-col justify-end z-10 pointer-events-none">
                   <h4 className="text-3xl font-black uppercase tracking-tighter mb-1 text-white group-hover:text-emerald-400 transition-colors">{cat.name}</h4>
@@ -223,7 +235,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 6. FEATURED PRODUCTS (Ultra-Modern Cards) */}
+      {/* 6. FEATURED PRODUCTS */}
       <section className="py-24 bg-slate-950 border-t border-slate-900">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div 
@@ -241,7 +253,6 @@ export default function Home() {
             {data.products.map((prod) => (
               <motion.div variants={fadeUp} key={prod.id || prod._id} className="group flex flex-col relative">
                 <div className="relative aspect-square bg-slate-900/50 rounded-[2rem] overflow-hidden border border-slate-800/50 mb-5 group-hover:border-emerald-500/30 transition-colors">
-                  {/* Action Badges */}
                   <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
                     {prod.discount_price && (
                       <span className="px-3 py-1 bg-emerald-500 text-black text-[10px] font-black uppercase tracking-wider rounded-full shadow-lg">
@@ -250,16 +261,16 @@ export default function Home() {
                     )}
                   </div>
                   
-                  {/* Image */}
                   <Link to={`/product/${prod.slug || prod.id || prod._id}`}>
                     <img 
-                      src={prod.image_url || 'https://www.anritvox.com/logo.webp'} 
+                      // FIXED: Now using the helper function and matching the ProductGrid logic
+                      src={getImageUrl(prod.images?.[0] || prod.image_url)} 
                       className="w-full h-full object-contain p-8 group-hover:scale-110 transition-transform duration-700 ease-out" 
                       alt={prod.name} 
+                      onError={(e) => { e.target.src = '/logo.webp'; }}
                     />
                   </Link>
 
-                  {/* Hover Actions */}
                   <div className="absolute bottom-4 left-0 w-full px-4 flex gap-2 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-20">
                     <button 
                       onClick={(e) => handleQuickAdd(e, prod.id || prod._id)}
@@ -273,7 +284,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Info */}
                 <div className="px-2">
                   <div className="flex justify-between items-start mb-1.5">
                     <Link to={`/product/${prod.slug || prod.id || prod._id}`}>
@@ -338,7 +348,6 @@ export default function Home() {
   );
 }
 
-// --- Premium Skeleton Loader ---
 const SkeletonHome = () => (
   <div className="min-h-screen bg-slate-950 p-6 flex flex-col gap-12 animate-pulse pt-24">
     <div className="w-full h-[60vh] bg-slate-900 rounded-[3rem]"></div>
