@@ -42,9 +42,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* --- PREMIUM HERO SECTION --- */}
       <section className="relative h-[85vh] overflow-hidden bg-black flex items-center">
-        {/* Background Visual Layer */}
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent z-10" />
           {banners[0] ? (
@@ -71,16 +69,10 @@ export default function Home() {
               Deploy industrial-grade lighting, acoustics, and performance hardware directly to your vehicle with Anritvox’s proprietary catalog.
             </p>
             <div className="flex flex-wrap gap-4">
-              <Link 
-                to="/shop" 
-                className="group flex items-center gap-3 bg-emerald-500 hover:bg-emerald-400 text-black px-8 py-4 rounded-none font-black uppercase tracking-widest transition-all hover:translate-x-1"
-              >
+              <Link to="/shop" className="group flex items-center gap-3 bg-emerald-500 hover:bg-emerald-400 text-black px-8 py-4 rounded-none font-black uppercase tracking-widest transition-all hover:translate-x-1">
                 Access Catalog <FiArrowRight />
               </Link>
-              <Link 
-                to="/about" 
-                className="flex items-center gap-3 border border-white/20 hover:border-white/50 text-white px-8 py-4 rounded-none font-bold uppercase tracking-widest transition-all"
-              >
+              <Link to="/about" className="flex items-center gap-3 border border-white/20 hover:border-white/50 text-white px-8 py-4 rounded-none font-bold uppercase tracking-widest transition-all">
                 Our DNA
               </Link>
             </div>
@@ -88,39 +80,29 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- TRUST BAR --- */}
       <div className="bg-slate-900 py-6 border-b border-white/5">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="flex items-center gap-4 text-slate-400 group">
-              <div className="w-10 h-10 flex items-center justify-center bg-white/5 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-black transition-colors">
-                <FiShield />
-              </div>
+              <div className="w-10 h-10 flex items-center justify-center bg-white/5 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-black transition-colors"><FiShield /></div>
               <div className="text-xs font-black uppercase tracking-widest">Certified Hardware</div>
             </div>
             <div className="flex items-center gap-4 text-slate-400 group">
-              <div className="w-10 h-10 flex items-center justify-center bg-white/5 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-black transition-colors">
-                <FiTruck />
-              </div>
+              <div className="w-10 h-10 flex items-center justify-center bg-white/5 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-black transition-colors"><FiTruck /></div>
               <div className="text-xs font-black uppercase tracking-widest">Rapid Logistics</div>
             </div>
             <div className="flex items-center gap-4 text-slate-400 group">
-              <div className="w-10 h-10 flex items-center justify-center bg-white/5 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-black transition-colors">
-                <FiClock />
-              </div>
+              <div className="w-10 h-10 flex items-center justify-center bg-white/5 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-black transition-colors"><FiClock /></div>
               <div className="text-xs font-black uppercase tracking-widest">24/7 Nexus</div>
             </div>
             <div className="flex items-center gap-4 text-slate-400 group">
-              <div className="w-10 h-10 flex items-center justify-center bg-white/5 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-black transition-colors">
-                <FiStar />
-              </div>
+              <div className="w-10 h-10 flex items-center justify-center bg-white/5 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-black transition-colors"><FiStar /></div>
               <div className="text-xs font-black uppercase tracking-widest">Elite Grade</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* --- FEATURED COLLECTIONS --- */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-6">
           <div className="flex items-end justify-between mb-16">
@@ -134,37 +116,41 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {featuredProducts.map((product, index) => (
-              <Link 
-                key={product._id || product.id || `home-feat-${index}`} 
-                to={`/product/${product.slug || product._id || product.id}`} 
-                className="group block"
-              >
-                <div className="relative aspect-square overflow-hidden bg-slate-100 mb-6 border border-slate-100 group-hover:border-emerald-500/20 transition-all">
-                  <img 
-                    src={product.images?.[0] || 'https://via.placeholder.com/500'} 
-                    alt={product.name} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                  {product.flash_sale_active && (
-                    <div className="absolute top-4 left-4 bg-emerald-500 text-black text-[10px] font-black px-2 py-1 uppercase">Limited Drop</div>
-                  )}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <span className="bg-white text-black px-6 py-3 font-bold uppercase text-xs tracking-widest">Inspect Gear</span>
+            {featuredProducts.map((product, index) => {
+              // Exact routing mapped to App.jsx specs
+              const prodId = product.id || product._id || `home-feat-${index}`;
+              const productLink = product.slug ? `/product/slug/${product.slug}` : `/product/${prodId}`;
+              
+              // Handle parsed JSON images if MySQL returns them stringified
+              const parsedImage = typeof product.images === 'string' ? JSON.parse(product.images) : product.images;
+
+              return (
+                <Link key={prodId} to={productLink} className="group block">
+                  <div className="relative aspect-square overflow-hidden bg-slate-100 mb-6 border border-slate-100 group-hover:border-emerald-500/20 transition-all">
+                    <img 
+                      src={parsedImage?.[0] || 'https://via.placeholder.com/500'} 
+                      alt={product.name} 
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                    {product.flash_sale_active && (
+                      <div className="absolute top-4 left-4 bg-emerald-500 text-black text-[10px] font-black px-2 py-1 uppercase">Limited Drop</div>
+                    )}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="bg-white text-black px-6 py-3 font-bold uppercase text-xs tracking-widest">Inspect Gear</span>
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{product.category_name}</div>
-                  <h4 className="text-lg font-bold text-slate-900 group-hover:text-emerald-600 transition-colors leading-tight uppercase">{product.name}</h4>
-                  <div className="text-xl font-mono text-slate-900">₹{product.price?.toLocaleString()}</div>
-                </div>
-              </Link>
-            ))}
+                  <div className="space-y-1">
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{product.category_name}</div>
+                    <h4 className="text-lg font-bold text-slate-900 group-hover:text-emerald-600 transition-colors leading-tight uppercase">{product.name}</h4>
+                    <div className="text-xl font-mono text-slate-900">₹{product.price?.toLocaleString()}</div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* --- CTA SECTION --- */}
       <section className="py-24 bg-slate-900 text-white overflow-hidden relative">
         <div className="absolute top-0 right-0 w-1/2 h-full bg-emerald-500/10 blur-[120px] rounded-full translate-x-1/2" />
         <div className="container mx-auto px-6 relative z-10 text-center">
@@ -174,10 +160,7 @@ export default function Home() {
           <p className="text-slate-400 max-w-2xl mx-auto text-lg mb-12">
             Don't settle for stock. Join the Anritvox elite and equip your vehicle with the industry's most advanced hardware.
           </p>
-          <Link 
-            to="/shop" 
-            className="inline-flex items-center gap-4 bg-white hover:bg-emerald-500 hover:text-white text-black px-12 py-5 rounded-none font-black uppercase tracking-widest transition-all"
-          >
+          <Link to="/shop" className="inline-flex items-center gap-4 bg-white hover:bg-emerald-500 hover:text-white text-black px-12 py-5 rounded-none font-black uppercase tracking-widest transition-all">
             Enter The Shop <FiArrowRight />
           </Link>
         </div>
