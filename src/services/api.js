@@ -146,6 +146,7 @@ export const analytics = {
 
 export const settings = {
   get: () => api.get("/settings"),
+  getPublic: () => api.get("/settings/public"),
   update: (data) => api.put("/settings", data),
 };
 
@@ -249,7 +250,7 @@ export const removeFromCartAPI = (productId) => cart.remove(productId);
 export const clearCartAPI = () => cart.clear();
 
 // --- MISC HELPERS ---
-export const fetchPublicSettings = () => settings.get();
+export const fetchPublicSettings = () => settings.getPublic();
 export const fetchProducts = () => products.getAllActive();
 export const fetchCategories = () => categories.getAll();
 export const submitContact = (data) => contact.submit(data);
