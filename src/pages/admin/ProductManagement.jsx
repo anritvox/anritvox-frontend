@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Package, Search, Plus, Edit3, Trash2, ExternalLink, Activity, 
-  Filter, Archive, Upload, FileText, X, Check, AlertTriangle 
+  Filter, Archive, Upload, FileText, X, Check, AlertTriangle , Image
 } from 'lucide-react';
 import { products as prodApi, categories as catApi, fitment as fitmentApi } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
