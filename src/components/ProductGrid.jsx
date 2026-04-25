@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   ShoppingBag, 
   Heart, 
   Star, 
   ArrowRight, 
-  Filter, 
   SlidersHorizontal,
   ChevronDown,
   LayoutGrid,
@@ -12,8 +11,20 @@ import {
   Eye,
   Zap
 } from 'lucide-react';
-import Card from './Card';
 import SkeletonLoader from './SkeletonLoader';
+
+// Helper function to construct absolute Cloudflare R2 URLs safely
+const getImageUrl = (img) => {
+  if (!img) return '/logo.webp';
+  let path = typeof img === 'object' ? (img.file_path || img.url || img.path) : img;
+  if (!path) return '/logo.webp';
+  if (path.startsWith('http')) return path;
+  
+  const baseUrl = import.meta.env.VITE_R2_PUBLIC_URL || import.meta.env.VITE_IMAGE_BASE_URL || 'https://pub-22cd43cce9bc475680ad496e199706c4.r2.dev';
+  const cleanBase = baseUrl.replace(/\/$/, '');
+  const cleanPath = path.replace(/^\//, '');
+  return `${cleanBase}/${cleanPath}`;
+};
 
 const ProductGrid = ({ products = [], isLoading = false }) => {
   const [viewMode, setViewMode] = useState('grid');
@@ -88,13 +99,15 @@ const ProductGrid = ({ products = [], isLoading = false }) => {
       }`}>
         {products.map((product) => (
           <div 
-            key={product.id} 
+            key={product.id || product._id} 
             className={`group transition-all duration-500 ${viewMode === 'list' ? 'flex flex-col md:flex-row gap-8 bg-slate-900/40 rounded-3xl p-6 border border-slate-800/50' : ''}`}
           >
             <div className={`${viewMode === 'list' ? 'md:w-72 shrink-0' : 'w-full'} relative aspect-square overflow-hidden rounded-2xl bg-slate-800`}>
               <img 
-                src={product.image} 
+                // Dynamically resolve image path mapping
+                src={getImageUrl(product.images?.[0] || product.image_url || product.image)} 
                 alt={product.name}
+                onError={(e) => { e.target.src = '/logo.webp'; }}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
               <div className="absolute top-4 left-4 flex flex-col gap-2">
@@ -103,9 +116,9 @@ const ProductGrid = ({ products = [], isLoading = false }) => {
                     New
                   </span>
                 )}
-                {product.discount && (
+                {product.discount_price && (
                   <span className="bg-cyan-500 text-black text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full shadow-lg">
-                    -{product.discount}%
+                    -{Math.round(((product.price - product.discount_price)/product.price)*100)}%
                   </span>
                 )}
               </div>
@@ -113,14 +126,13 @@ const ProductGrid = ({ products = [], isLoading = false }) => {
                 <Heart size={18} />
               </button>
               
-              {/* Quick Actions Overlay */}
               <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
                 <button className="w-12 h-12 rounded-full bg-emerald-500 text-black flex items-center justify-center hover:bg-white transition-colors shadow-xl transform translate-y-4 group-hover:translate-y-0 duration-300">
                   <ShoppingBag size={20} />
                 </button>
-                <button className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center hover:bg-emerald-500 transition-colors shadow-xl transform translate-y-4 group-hover:translate-y-0 duration-300 delay-75">
+                <a href={`/product/${product.slug || product.id}`} className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center hover:bg-emerald-500 transition-colors shadow-xl transform translate-y-4 group-hover:translate-y-0 duration-300 delay-75">
                   <Eye size={20} />
-                </button>
+                </a>
               </div>
             </div>
 
@@ -131,12 +143,12 @@ const ProductGrid = ({ products = [], isLoading = false }) => {
                     <Star 
                       key={i} 
                       size={14} 
-                      fill={i < Math.floor(product.rating) ? "currentColor" : "none"} 
-                      className={i < Math.floor(product.rating) ? "" : "text-slate-600"}
+                      fill={i < Math.floor(product.rating || 5) ? "currentColor" : "none"} 
+                      className={i < Math.floor(product.rating || 5) ? "" : "text-slate-600"}
                     />
                   ))}
                 </div>
-                <span className="text-slate-500 text-xs font-bold">({product.reviews})</span>
+                <span className="text-slate-500 text-xs font-bold">({product.reviews || 0})</span>
               </div>
               
               <h3 className="text-white font-bold text-lg mb-2 group-hover:text-emerald-500 transition-colors">
@@ -150,11 +162,11 @@ const ProductGrid = ({ products = [], isLoading = false }) => {
               <div className="flex items-center justify-between mt-auto">
                 <div className="flex flex-col">
                   <span className="text-emerald-500 font-black text-2xl tracking-tighter">
-                    ${product.price}
+                    ₹{product.discount_price || product.price}
                   </span>
-                  {product.oldPrice && (
+                  {product.discount_price && (
                     <span className="text-slate-500 text-sm line-through decoration-slate-600">
-                      ${product.oldPrice}
+                      ₹{product.price}
                     </span>
                   )}
                 </div>
@@ -171,7 +183,6 @@ const ProductGrid = ({ products = [], isLoading = false }) => {
         ))}
       </div>
 
-      {/* Pagination Placeholder */}
       <div className="mt-20 flex justify-center">
         <nav className="flex items-center gap-2">
           <button className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 text-white flex items-center justify-center hover:border-emerald-500 transition-colors disabled:opacity-50" disabled>
