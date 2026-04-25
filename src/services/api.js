@@ -38,15 +38,12 @@ api.interceptors.response.use(
   }
 );
 
-// ==========================================
-// --- COMPLETE API MODULE MAP (A-Z FIX) ---
-// ==========================================
-
 export const auth = {
   login: (data) => api.post('/auth/login', data),
   adminLogin: (data) => api.post('/auth/admin/login', data), 
   getAdminProfile: () => api.get('/auth/profile'),
   register: (data) => api.post('/auth/register', data),
+  verifyEmail: (data) => api.post('/auth/verify-email', data),
   getProfile: () => api.get('/auth/profile'),
   updateProfile: (data) => api.put('/auth/profile', data),
   verify2FA: (data) => api.post('/auth/2fa/verify', data),
