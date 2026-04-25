@@ -3,7 +3,6 @@ import {
   DollarSign, Package, ShoppingBag, Users, 
   TrendingUp, Activity, Box, Tag
 } from 'lucide-react';
-// 100% PROPER IMPORTS: Using the strictly mapped analytics module
 import { analytics } from '../../services/api';
 
 export default function DashboardOverview() {
@@ -18,9 +17,9 @@ export default function DashboardOverview() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      // REWRITTEN: Proper object-oriented call
       const response = await analytics.getDashboard();
-      setStats(response.data);
+      // Fix: response.data.metrics, not response.data directly
+      setStats(response.data?.metrics || response.data || {});
     } catch (err) {
       console.error("Dashboard fetch error:", err);
       setError("Failed to load dashboard data.");
@@ -58,13 +57,12 @@ export default function DashboardOverview() {
         <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Overview</h2>
         <p className="text-slate-500 font-medium mt-1">Real-time statistics for Anritvox</p>
       </div>
-
       {/* Top Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-between">
           <div>
             <p className="text-xs font-black uppercase text-slate-400 mb-1">Total Revenue</p>
-            <h3 className="text-2xl font-black text-slate-900">${stats?.totalRevenue || '0.00'}</h3>
+            <h3 className="text-2xl font-black text-slate-900">₹{stats?.revenue || stats?.totalRevenue || '0.00'}</h3>
             <p className="text-xs font-bold text-emerald-500 mt-2 flex items-center">
               <TrendingUp size={12} className="mr-1" /> +12% this month
             </p>
@@ -73,31 +71,28 @@ export default function DashboardOverview() {
             <DollarSign size={24} />
           </div>
         </div>
-
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-between">
           <div>
             <p className="text-xs font-black uppercase text-slate-400 mb-1">Total Orders</p>
-            <h3 className="text-2xl font-black text-slate-900">{stats?.totalOrders || '0'}</h3>
+            <h3 className="text-2xl font-black text-slate-900">{stats?.orders || stats?.totalOrders || '0'}</h3>
           </div>
           <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500">
             <ShoppingBag size={24} />
           </div>
         </div>
-
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-between">
           <div>
             <p className="text-xs font-black uppercase text-slate-400 mb-1">Active Products</p>
-            <h3 className="text-2xl font-black text-slate-900">{stats?.totalProducts || '0'}</h3>
+            <h3 className="text-2xl font-black text-slate-900">{stats?.products || stats?.totalProducts || '0'}</h3>
           </div>
           <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500">
             <Box size={24} />
           </div>
         </div>
-
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-between">
           <div>
             <p className="text-xs font-black uppercase text-slate-400 mb-1">Total Customers</p>
-            <h3 className="text-2xl font-black text-slate-900">{stats?.totalUsers || '0'}</h3>
+            <h3 className="text-2xl font-black text-slate-900">{stats?.users || stats?.totalUsers || '0'}</h3>
           </div>
           <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-500">
             <Users size={24} />
@@ -105,7 +100,6 @@ export default function DashboardOverview() {
         </div>
       </div>
       
-      {/* Additional layout can remain empty or contain basic charts */}
       <div className="bg-slate-50 p-8 rounded-3xl border-2 border-dashed border-slate-200 text-center">
         <Activity size={32} className="mx-auto text-slate-300 mb-3" />
         <p className="text-slate-500 font-bold text-sm uppercase tracking-wider">Advanced Analytics Module Active</p>
