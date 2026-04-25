@@ -70,7 +70,7 @@ export default function ProductManagement() {
     if (url.startsWith('http')) return url;
     
     // Fallback if backend CLOUDFRONT_BASE_URL is missing
-    return `https://pub-f81d11b228b7468199be3386ec2d26f6.r2.dev/${url}`;
+    return `https://pub-22cd43cce9bc475680ad496e199706c4.r2.dev/${url}`;
   };
 
   const handleToggleStatus = async (id, currentStatus) => {
