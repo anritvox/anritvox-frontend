@@ -27,9 +27,12 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("ms_token");
-      localStorage.removeItem("user");
+      if (!error.config.url.includes('/auth/login')) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("ms_token");
+        localStorage.removeItem("user");
+        window.dispatchEvent(new Event('auth-expired'));
+      }
     }
     return Promise.reject(error);
   }
@@ -40,17 +43,22 @@ api.interceptors.response.use(
 // ==========================================
 
 export const auth = {
-  login: (data) => apiClient.post('/auth/login', data),
-  register: (data) => apiClient.post('/auth/register', data),
-  getProfile: () => apiClient.get('/auth/profile'),
-  updateProfile: (data) => apiClient.put('/auth/profile', data),
-  
-  // NEW ADVANCED AUTH ENDPOINTS
-  verify2FA: (data) => apiClient.post('/auth/2fa/verify', data),
-  requestPasswordReset: (data) => apiClient.post('/auth/forgot-password', data),
-  verifyResetOtp: (data) => apiClient.post('/auth/verify-otp', data),
-  resetPassword: (data) => apiClient.post('/auth/reset-password', data),
-  verifySecurityQuestion: (data) => apiClient.post('/auth/security-question/verify', data),
+  login: (data) => api.post('/auth/login', data),
+  register: (data) => api.post('/auth/register', data),
+  getProfile: () => api.get('/auth/profile'),
+  updateProfile: (data) => api.put('/auth/profile', data),
+  verify2FA: (data) => api.post('/auth/2fa/verify', data),
+  requestPasswordReset: (data) => api.post('/auth/forgot-password', data),
+  verifyResetOtp: (data) => api.post('/auth/verify-otp', data),
+  resetPassword: (data) => api.post('/auth/reset-password', data),
+  verifySecurityQuestion: (data) => api.post('/auth/security-question/verify', data),
+};
+
+// FIX: Added the missing users export for the Profile component
+export const users = {
+  updateProfile: (data) => api.put('/users/profile', data),
+  changePassword: (data) => api.put('/users/change-password', data),
+  getProfile: () => api.get('/users/profile'),
 };
 
 export const products = {
@@ -61,10 +69,8 @@ export const products = {
   create: (data) => api.post("/products", data),
   update: (id, data) => api.put(`/products/${id}`, data),
   toggleStatus: (id, status) => api.patch(`/products/${id}/status`, { status }),
-  // --- NEW DIRECT UPLOAD METHODS ---
   getUploadUrl: (filename, fileType) => api.post("/products/presign", { filename, fileType }),
   saveImageKeys: (id, imageKeys) => api.post(`/products/${id}/images/save`, { imageKeys }),
-  // ---------------------------------
   deleteImage: (id, imageId) => api.delete(`/products/${id}/images`, { data: { imageId } }),
   addSerials: (id, serials) => api.post(`/serials/${id}/add`, { serials }),
   delete: (id) => api.delete(`/products/${id}`),
