@@ -145,7 +145,6 @@ export const analytics = {
 };
 
 export const settings = {
-  // CRITICAL FIX: Straight to /settings. No fallback probing.
   get: () => api.get("/settings"),
   update: (data) => api.put("/settings", data),
 };
@@ -170,7 +169,6 @@ export const inventory = {
 };
 
 export const banners = {
-  // CRITICAL FIX: Maps perfectly to router.get('/', ...) in bannerRoutes.js
   getActive: () => api.get("/banners"),
   getAllAdmin: () => api.get("/banners/admin/all"),
   create: (data) => api.post("/banners", data),
@@ -205,6 +203,14 @@ export const adminManagement = {
   getAllOrders: () => api.get("/admin/orders"),
 };
 
+// CRITICAL FIX: The Support Module natively bridges to your existing contact/support backend infrastructure.
+export const support = {
+  getAllAdmin: () => api.get("/contact"),
+  updateStatus: (id, status) => api.patch(`/contact/${id}/status`, { status }),
+  delete: (id) => api.delete(`/contact/${id}`),
+};
+
+// Global bridging exports
 export const fetchCart = () => cart.get();
 export const addToCartAPI = (productId, quantity) => cart.add({ productId, quantity });
 export const removeFromCartAPI = (productId) => cart.remove(productId);
