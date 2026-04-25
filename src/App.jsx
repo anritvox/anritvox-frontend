@@ -11,7 +11,7 @@ import { WishlistProvider } from "./context/WishlistContext.jsx";
 import { CompareProvider } from "./context/CompareContext.jsx";
 import "./index.css";
 
-// Lazy load pages - Strict extensions added to prevent deployment missing link
+// Lazy load pages
 const Home = lazy(() => import("./pages/Home.jsx"));
 const Shop = lazy(() => import("./pages/Shop.jsx"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail.jsx"));
@@ -35,74 +35,22 @@ const About = lazy(() => import("./pages/About.jsx"));
 const Legal = lazy(() => import("./pages/Legal.jsx"));
 
 const PageLoader = () => (
-  <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-    <div className="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+  <div className="min-h-screen bg-black flex items-center justify-center">
+    <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
   </div>
 );
-
-const ErrorFallback = ({ error, resetError }) => (
-  <div className="min-h-screen bg-gray-950 flex-col items-center justify-center p-8 text-center">
-    <h2 className="text-2xl font-bold text-red-400 mb-4">Something went wrong</h2>
-    <pre className="bg-gray-900 border border-gray-700 p-4 rounded-lg text-gray-300 text-sm mb-6 whitespace-pre-wrap">{error?.message}</pre>
-    <div className="flex gap-4 justify-center">
-      <button onClick={resetError} className="px-6 py-2 bg-cyan-600 text-white rounded-full hover:bg-cyan-700 transition-colors">Try Again</button>
-      <a href="/" className="px-6 py-2 bg-gray-800 text-white rounded-full hover:bg-gray-700 transition-colors">Go to Homepage</a>
-    </div>
-  </div>
-);
-
-class ErrorBoundary extends Component {
-  constructor(props) { 
-    super(props); 
-    this.state = { hasError: false, error: null }; 
-  }
-
-  static getDerivedStateFromError(error) { 
-    const isChunkLoadFailed = error.message && (
-      error.message.includes('Failed to fetch dynamically imported module') ||
-      error.message.includes('Importing a module script failed') ||
-      error.message.includes('dynamically imported module')
-    );
-
-    if (isChunkLoadFailed) {
-      const chunkReloaded = sessionStorage.getItem('chunk_reloaded');
-      if (!chunkReloaded) {
-        sessionStorage.setItem('chunk_reloaded', 'true');
-        window.location.reload();
-        return { hasError: false, error: null };
-      }
-    }
-    
-    return { hasError: true, error }; 
-  }
-
-  componentDidCatch(error, info) { 
-    console.error("ErrorBoundary caught:", error, info); 
-  }
-
-  componentDidMount() {
-    sessionStorage.removeItem('chunk_reloaded');
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return <ErrorFallback error={this.state.error} resetError={() => this.setState({ hasError: false, error: null })} />;
-    }
-    return this.props.children;
-  }
-}
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth() || { user: null, loading: false };
   if (loading) return <PageLoader />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login" />;
   return children;
 }
 
 function AdminRoute({ children }) {
   const { user, loading } = useAuth() || { user: null, loading: false };
   if (loading) return <PageLoader />;
-  if (!user || user.role !== 'admin') return <Navigate to="/admin/login" replace />;
+  if (!user || user.role !== 'admin') return <Navigate to="/admin/login" />;
   return children;
 }
 
@@ -119,39 +67,34 @@ function AppContent() {
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/product/:id" element={<ProductDetail />} />
-          <Route path="/product/slug/:slug" element={<ProductDetail />} />
-          <Route path="/ewarranty" element={<EWarranty />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/cart" element={<Cart />} />
           <Route path="/about" element={<About />} />
           <Route path="/legal" element={<Legal />} />
-          <Route path="/affiliate" element={<Affiliate />} />
-          <Route path="/compare" element={<Compare />} />
-
+          
           {/* User Feature Routes */}
+          <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
           <Route path="/order-success" element={<ProtectedRoute><OrderSuccess /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
-          <Route path="/order-tracking" element={<ProtectedRoute><OrderTracking /></ProtectedRoute>} />
+          <Route path="/order-tracking" element={<OrderTracking />} />
+          <Route path="/compare" element={<Compare />} />
           <Route path="/address-book" element={<ProtectedRoute><AddressBook /></ProtectedRoute>} />
           <Route path="/returns" element={<ProtectedRoute><Returns /></ProtectedRoute>} />
+          <Route path="/affiliate" element={<Affiliate />} />
+          <Route path="/warranty" element={<EWarranty />} />
 
           {/* Auth Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* Admin Auth Routes */}
+          {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={<Navigate to="/admin/dashboard/overview" replace />} />
-          <Route path="/admin/dashboard" element={<Navigate to="/admin/dashboard/overview" replace />} />
-
-          {/* Admin Dashboard Routes - Aliased to prevent sidebar fall-through kicks */}
-          <Route path="/admin/:tab" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/admin/dashboard/:tab" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
 
           {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Suspense>
       {!isAdminPath && <Footer />}
@@ -162,19 +105,17 @@ function AppContent() {
 function App() {
   return (
     <BrowserRouter>
-      <ErrorBoundary>
-        <AuthProvider>
+      <AuthProvider>
+        <ToastProvider>
           <CartProvider>
             <WishlistProvider>
-              <ToastProvider>
-                <CompareProvider>
-                  <AppContent />
-                </CompareProvider>
-              </ToastProvider>
+              <CompareProvider>
+                <AppContent />
+              </CompareProvider>
             </WishlistProvider>
           </CartProvider>
-        </AuthProvider>
-      </ErrorBoundary>
+        </ToastProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
