@@ -1,5 +1,4 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-// 100% PROPER 
 import { settings as settingsApi } from '../services/api';
 
 const SettingsContext = createContext();
@@ -13,11 +12,13 @@ export const SettingsProvider = ({ children }) => {
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const res = await settingsApi.get(); // REWRITTEN
+        // Use /settings/public - no auth required, safe for all users
+        const res = await settingsApi.getPublic();
         const data = res.data;
         setSettings(data.settings || data);
       } catch (error) {
-        console.error("Failed to fetch settings:", error);
+        // Silently fail - settings are optional, don't spam console with 401
+        setSettings({});
       } finally {
         setLoading(false);
       }
