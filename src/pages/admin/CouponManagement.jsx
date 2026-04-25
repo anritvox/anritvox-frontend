@@ -13,7 +13,7 @@ export default function CouponManagement() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editCoupon, setEditCoupon] = useState(null);
-  const [searchTerm, setSearchTerm] = useState(\"\\\");
+  const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState('all');
   const [copiedId, setCopiedId] = useState(null);
   const [viewMode, setViewMode] = useState('list');
