@@ -51,7 +51,7 @@ export default function ProductDetail() {
       setLoading(true);
       setNotFound(false);
       try {
-        const res = await productsApi.getById(id);
+        const isObjectId = /^[a-f\d]{24}$/i.test(id); const res = isObjectId ? await productsApi.getById(id) : await productsApi.getBySlug(id);
         setProduct(res.data?.data || res.data);
       } catch (err) {
         console.error("Product fetch error:", err);
@@ -170,7 +170,7 @@ export default function ProductDetail() {
 
           <div className="border-t border-slate-900 pt-10">
              <div className="flex space-x-8 mb-8 border-b border-slate-900 pb-4">
-                {['specs', 'details', 'shipping'].map(t => (
+                {['specs', 'details', 'shipping'].map((t) => (
                   <button 
                     key={t}
                     onClick={() => setActiveTab(t)}
@@ -186,8 +186,8 @@ export default function ProductDetail() {
                   { label: 'Category', val: product.category_name || product.category || 'Hardware' },
                   { label: 'Stock Status', val: product.quantity > 0 ? 'In Stock' : 'Depleted' },
                   { label: 'Warranty', val: product.warranty_months ? `${product.warranty_months} Months` : 'Standard' }
-                ].map((spec, i) => (
-                  <div key={i} className="flex flex-col">
+                ].map((spec) => (
+                  <div key={spec.label} className="flex flex-col">
                      <span className="text-[9px] font-black uppercase text-slate-600 tracking-widest">{spec.label}</span>
                      <span className="text-sm font-black text-white">{spec.val}</span>
                   </div>
