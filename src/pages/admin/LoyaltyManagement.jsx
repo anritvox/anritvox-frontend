@@ -1,157 +1,242 @@
-import React, { useState, useEffect } from 'react';
-import { loyalty as loyaltyApi } from '../../services/api';
-import { Gift, TrendingUp, Users, Award, Settings, Plus, Edit2, Trash2, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from "react";
+import { loyalty } from "../../services/api";
+import {
+  Award, Settings, Users, Gift, Loader2, Search, Edit3, Save, AlertCircle
+} from "lucide-react";
+import { useToast } from "../../context/ToastContext";
 
 export default function LoyaltyManagement() {
-  const [config, setConfig] = useState({ points_per_rupee: 1, min_redeem_points: 100 });
-  const [tiers, setTiers] = useState([]);
   const [members, setMembers] = useState([]);
+  const [systemConfig, setSystemConfig] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showTierForm, setShowTierForm] = useState(false);
-  const [editingTierId, setEditingTierId] = useState(null);
-  const [tierForm, setTierForm] = useState({ name: '', min_points: 0, benefits: '', discount_percent: 0 });
+  const [saving, setSaving] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const { showToast } = useToast() || {};
 
-  useEffect(() => { fetchAll(); }, []);
-
-  const fetchAll = async () => {
+  const loadLoyaltyData = useCallback(async () => {
     setLoading(true);
     try {
-      const [configRes, tiersRes, membersRes] = await Promise.all([loyaltyApi.getConfig(), loyaltyApi.getTiers(), loyaltyApi.getAllMembers()]);
-      setConfig(configRes.data?.config || configRes.data || { points_per_rupee: 1, min_redeem_points: 100 });
-      setTiers(tiersRes.data?.tiers || tiersRes.data || []);
-      setMembers(membersRes.data?.members || membersRes.data || []);
+      // Execute mapped requests concurrently
+      const [membersRes, configRes] = await Promise.all([
+        loyalty.getMembers(),
+        loyalty.getSystemConfig().catch(() => ({ data: {} })) // Safe fallback if settings are empty
+      ]);
+      
+      const usersData = membersRes.data?.data || membersRes.data;
+      setMembers(Array.isArray(usersData) ? usersData : []);
+      
+      // Default config structure if none exists in backend
+      setSystemConfig(configRes.data?.loyalty || {
+        enabled: true,
+        pointsPerDollar: 1,
+        redemptionValue: 0.01,
+        tierThresholds: { gold: 1000, platinum: 5000 }
+      });
     } catch (err) {
-      console.error(err);
+      console.error("Loyalty initialization error:", err);
+      showToast?.("Failed to synchronize loyalty matrix", "error");
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast]);
 
-  const saveConfig = async () => {
+  useEffect(() => {
+    loadLoyaltyData();
+  }, [loadLoyaltyData]);
+
+  const handleConfigUpdate = async () => {
+    setSaving(true);
     try {
-      await loyaltyApi.updateConfig(config);
-      alert('Config saved!');
+      await loyalty.updateSystemConfig({ loyalty: systemConfig });
+      showToast?.("Loyalty matrix updated securely", "success");
     } catch (err) {
-      alert('Failed: ' + err.message);
+      showToast?.("Failed to update matrix", "error");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const saveTier = async () => {
-    try {
-      if (editingTierId) {
-        await loyaltyApi.updateTier(editingTierId, tierForm);
-      } else {
-        await loyaltyApi.createTier(tierForm);
-      }
-      setShowTierForm(false);
-      setEditingTierId(null);
-      setTierForm({ name: '', min_points: 0, benefits: '', discount_percent: 0 });
-      fetchAll();
-    } catch (err) {
-      alert('Failed: ' + err.message);
-    }
-  };
+  const filteredMembers = members.filter(m => 
+    m.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    m.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const deleteTier = async (id) => {
-    if (!window.confirm('Delete tier?')) return;
-    try {
-      await loyaltyApi.deleteTier(id);
-      fetchAll();
-    } catch (err) {
-      alert('Failed: ' + err.message);
-    }
-  };
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <Loader2 className="animate-spin text-cyan-400" size={32} />
+      <span className="ml-3 text-gray-400 font-mono text-sm">Synchronizing Loyalty Matrix...</span>
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Loyalty Program Config</h2>
-          <p className="text-slate-500 font-medium mt-1">Manage rewards, tiers, and member points</p>
+          <h1 className="text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+            <Award className="text-cyan-400" size={32} /> Loyalty <span className="text-cyan-400">Matrix</span>
+          </h1>
+          <p className="text-gray-500 font-bold text-xs mt-1 uppercase tracking-widest">Rewards & Tier System Control</p>
         </div>
-        <button onClick={fetchAll} className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-bold transition">
-          <RefreshCw size={14} /> Refresh
+        <button
+          onClick={handleConfigUpdate}
+          disabled={saving}
+          className="px-6 py-3 bg-cyan-500 hover:bg-cyan-400 text-black font-black uppercase tracking-widest text-xs rounded-xl transition-all flex items-center gap-2 disabled:opacity-50"
+        >
+          {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+          Deploy Config
         </button>
       </div>
 
-      {/* Config */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
-        <h3 className="font-black text-slate-900 text-lg mb-4 flex items-center gap-2"><Settings size={20} /> Global Settings</h3>
-        <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-2xl p-6 flex items-center gap-4">
+          <Users size={32} className="text-emerald-400" />
           <div>
-            <label className="text-xs text-slate-500 mb-1 block">Points per ₹1 spent</label>
-            <input type="number" value={config.points_per_rupee} onChange={e => setConfig({...config, points_per_rupee: parseFloat(e.target.value)})} className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-          </div>
-          <div>
-            <label className="text-xs text-slate-500 mb-1 block">Min points to redeem</label>
-            <input type="number" value={config.min_redeem_points} onChange={e => setConfig({...config, min_redeem_points: parseInt(e.target.value)})} className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <div className="text-3xl font-black text-emerald-400">{members.length}</div>
+            <div className="text-xs text-gray-500 font-bold uppercase tracking-widest">Enrolled Members</div>
           </div>
         </div>
-        <button onClick={saveConfig} className="mt-4 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-sm">Save Config</button>
+        <div className="bg-cyan-500/5 border border-cyan-500/10 rounded-2xl p-6 flex items-center gap-4">
+          <Gift size={32} className="text-cyan-400" />
+          <div>
+            <div className="text-3xl font-black text-cyan-400">
+               {members.reduce((acc, curr) => acc + (curr.loyalty_points || 0), 0).toLocaleString()}
+            </div>
+            <div className="text-xs text-gray-500 font-bold uppercase tracking-widest">Total Points Circulating</div>
+          </div>
+        </div>
+        <div className="bg-purple-500/5 border border-purple-500/10 rounded-2xl p-6 flex items-center gap-4">
+          <Settings size={32} className="text-purple-400" />
+          <div className="w-full">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs text-gray-500 font-bold uppercase tracking-widest">Matrix Status</span>
+              <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${systemConfig?.enabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                {systemConfig?.enabled ? 'Active' : 'Offline'}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Tiers */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-black text-slate-900 text-lg flex items-center gap-2"><Award size={20} /> Loyalty Tiers</h3>
-          <button onClick={() => { setShowTierForm(true); setTierForm({ name: '', min_points: 0, benefits: '', discount_percent: 0 }); setEditingTierId(null); }} className="flex items-center gap-2 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-bold">
-            <Plus size={14} /> New Tier
-          </button>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div className="xl:col-span-2 bg-[#0a0c10] border border-white/10 rounded-3xl overflow-hidden">
+          <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
+            <h2 className="text-lg font-bold text-white uppercase tracking-wide">Member Roster</h2>
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+              <input
+                type="text"
+                placeholder="Search entities..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="bg-black/50 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs font-bold text-white focus:ring-1 focus:ring-cyan-500 outline-none w-48"
+              />
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-white/5 text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                  <th className="px-6 py-4">Identity</th>
+                  <th className="px-6 py-4">Current Points</th>
+                  <th className="px-6 py-4">Est. Tier</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5 text-sm">
+                {filteredMembers.map((m, i) => {
+                  const pts = m.loyalty_points || 0;
+                  const tier = pts >= (systemConfig?.tierThresholds?.platinum || 5000) ? 'Platinum' : 
+                               pts >= (systemConfig?.tierThresholds?.gold || 1000) ? 'Gold' : 'Silver';
+                  
+                  return (
+                    <tr key={m.id || i} className="hover:bg-white/[0.02] transition-colors group">
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-gray-300">{m.name}</div>
+                        <div className="text-xs text-gray-600">{m.email}</div>
+                      </td>
+                      <td className="px-6 py-4 font-mono font-bold text-cyan-400">{pts.toLocaleString()}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-1 text-[10px] font-black uppercase rounded ${
+                          tier === 'Platinum' ? 'bg-purple-500/20 text-purple-400' :
+                          tier === 'Gold' ? 'bg-amber-500/20 text-amber-400' : 'bg-gray-500/20 text-gray-400'
+                        }`}>
+                          {tier}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button className="p-2 text-gray-500 hover:text-cyan-400 bg-white/5 hover:bg-white/10 rounded-lg transition-all opacity-0 group-hover:opacity-100">
+                          <Edit3 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        {showTierForm && (
-          <div className="bg-slate-50 rounded-2xl p-4 mb-4">
-            <div className="grid grid-cols-2 gap-3">
-              <input type="text" placeholder="Tier Name" value={tierForm.name} onChange={e => setTierForm({...tierForm, name: e.target.value})} className="px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-              <input type="number" placeholder="Min Points" value={tierForm.min_points} onChange={e => setTierForm({...tierForm, min_points: parseInt(e.target.value)})} className="px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-              <input type="number" placeholder="Discount %" value={tierForm.discount_percent} onChange={e => setTierForm({...tierForm, discount_percent: parseFloat(e.target.value)})} className="px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-              <input type="text" placeholder="Benefits" value={tierForm.benefits} onChange={e => setTierForm({...tierForm, benefits: e.target.value})} className="px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        <div className="bg-[#0a0c10] border border-white/10 rounded-3xl p-6 h-fit">
+          <h2 className="text-lg font-bold text-white uppercase tracking-wide mb-6">Engine Rules</h2>
+          <div className="space-y-6">
+            <div>
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 block">Accumulation Rate</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  value={systemConfig?.pointsPerDollar || 1}
+                  onChange={e => setSystemConfig({...systemConfig, pointsPerDollar: Number(e.target.value)})}
+                  className="w-24 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white font-mono text-sm focus:outline-none focus:border-cyan-500 text-center"
+                />
+                <span className="text-xs text-gray-400 font-bold">Points per ₹1 spent</span>
+              </div>
             </div>
-            <div className="flex gap-2 mt-3">
-              <button onClick={saveTier} className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-sm">{editingTierId ? 'Update' : 'Create'}</button>
-              <button onClick={() => setShowTierForm(false)} className="px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-xl font-bold text-sm">Cancel</button>
-            </div>
-          </div>
-        )}
 
-        {loading ? <div className="text-center py-8 text-slate-400">Loading...</div> : tiers.length === 0 ? <div className="text-center py-8 text-slate-400">No tiers yet</div> : (
-          <div className="grid grid-cols-1 gap-3">
-            {tiers.map(tier => (
-              <div key={tier.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-                <div>
-                  <div className="font-black text-slate-900">{tier.name}</div>
-                  <div className="text-xs text-slate-500">Min: {tier.min_points} pts • {tier.discount_percent}% discount</div>
-                  <div className="text-xs text-slate-600 mt-1">{tier.benefits}</div>
+            <div>
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 block">Redemption Value</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  step="0.01"
+                  value={systemConfig?.redemptionValue || 0.01}
+                  onChange={e => setSystemConfig({...systemConfig, redemptionValue: Number(e.target.value)})}
+                  className="w-24 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white font-mono text-sm focus:outline-none focus:border-cyan-500 text-center"
+                />
+                <span className="text-xs text-gray-400 font-bold">Value (₹) per 1 Point</span>
+              </div>
+            </div>
+
+            <div className="pt-6 border-t border-white/10">
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 block">Tier Thresholds</label>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-amber-400 uppercase">Gold Tier</span>
+                  <input
+                    type="number"
+                    value={systemConfig?.tierThresholds?.gold || 1000}
+                    onChange={e => setSystemConfig({
+                      ...systemConfig, 
+                      tierThresholds: { ...systemConfig.tierThresholds, gold: Number(e.target.value) }
+                    })}
+                    className="w-24 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-1 text-amber-400 font-mono text-sm text-right outline-none"
+                  />
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => { setEditingTierId(tier.id); setTierForm(tier); setShowTierForm(true); }} className="p-2 hover:bg-slate-200 rounded-lg"><Edit2 size={14} className="text-blue-500" /></button>
-                  <button onClick={() => deleteTier(tier.id)} className="p-2 hover:bg-slate-200 rounded-lg"><Trash2 size={14} className="text-rose-500" /></button>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-purple-400 uppercase">Platinum Tier</span>
+                  <input
+                    type="number"
+                    value={systemConfig?.tierThresholds?.platinum || 5000}
+                    onChange={e => setSystemConfig({
+                      ...systemConfig, 
+                      tierThresholds: { ...systemConfig.tierThresholds, platinum: Number(e.target.value) }
+                    })}
+                    className="w-24 bg-purple-500/10 border border-purple-500/20 rounded-xl px-3 py-1 text-purple-400 font-mono text-sm text-right outline-none"
+                  />
                 </div>
               </div>
-            ))}
+            </div>
           </div>
-        )}
-      </div>
-
-      {/* Members */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
-        <h3 className="font-black text-slate-900 text-lg mb-4 flex items-center gap-2"><Users size={20} /> Members ({members.length})</h3>
-        {loading ? <div className="text-center py-8 text-slate-400">Loading...</div> : members.length === 0 ? <div className="text-center py-8 text-slate-400">No members yet</div> : (
-          <div className="space-y-2">
-            {members.slice(0, 10).map(m => (
-              <div key={m.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                <div>
-                  <div className="font-bold text-sm text-slate-900">{m.user_name || m.name || 'User #' + m.id}</div>
-                  <div className="text-xs text-slate-500">{m.user_email || m.email}</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-black text-emerald-600">{m.points || 0} pts</div>
-                  <div className="text-xs text-slate-400">{m.tier_name || 'Bronze'}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );
