@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   FolderTree, Plus, Edit2, Trash2, Search, RefreshCw, 
   ChevronRight, ChevronDown, Layers, Link as LinkIcon, 
-  AlertTriangle, Image as ImageIcon, CheckCircle, Component
+  AlertTriangle, Image as ImageIcon, CheckCircle, Component, XCircle
 } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
