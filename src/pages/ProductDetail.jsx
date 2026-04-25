@@ -327,9 +327,9 @@ export default function ProductDetail() {
                     <Heart size={16} /> Wishlist
                   </button>
                   <button className="flex items-center justify-center gap-3 py-4 bg-slate-900 border border-slate-800 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-800 transition-colors">
-MEGA REVAMP: ProductDetail.jsx - Full image gallery, vehicle fitment system integration, specs/details tabs, and modern UI revamp                  </button>
+                              <RefreshCw size={16} /> Compare
+                            </button>
                 </div>
-MEGA REVAMP: ProductDetail.jsx - Full image gallery, vehicle fitment system integration, specs/details tabs, and modern UI revamp
               {/* Vehicle Fitment Integrated Here */}
               <VehicleFitmentChecker productId={product.id} />
 
