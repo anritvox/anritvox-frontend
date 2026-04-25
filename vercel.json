@@ -1,7 +1,6 @@
 {
   "version": 2,
   "routes": [
-    { "handle": "filesystem" },
     {
       "src": "/assets/(.*)",
       "headers": {
@@ -9,8 +8,14 @@
       },
       "continue": true
     },
+    { "handle": "filesystem" },
     {
       "src": "/(.*)",
+      "headers": {
+        "cache-control": "no-cache, no-store, must-revalidate",
+        "pragma": "no-cache",
+        "expires": "0"
+      },
       "dest": "/index.html"
     }
   ]
