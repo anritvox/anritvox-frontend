@@ -144,6 +144,8 @@ export const analytics = {
   getDashboard: () => api.get("/analytics/dashboard"),
   getSales: () => api.get("/analytics/sales"),
   getProducts: () => api.get("/analytics/products"),
+  getKpis: () => api.get("/analytics/kpis"),
+  getRevenue: () => api.get("/analytics/revenue"),
 };
 
 export const settings = {
