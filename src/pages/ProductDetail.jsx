@@ -1,381 +1,415 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { 
-  Star, ChevronRight, Check, ShoppingCart, Heart, Shield, Plus, Minus, 
-  Zap, Box, Truck, RefreshCw, AlertTriangle, Eye, Settings 
+  Star, ShoppingBag, Heart, Shield, Truck, Zap, ChevronRight, 
+  Minus, Plus, Info, CheckCircle2, AlertCircle, Car, Play, Box
 } from 'lucide-react';
-import { products as productsApi, fitment as fitmentApi } from '../services/api';
-import { useCart } from '../context/CartContext';
-import { useToast } from '../context/ToastContext';
+import { 
+  products as productsApi, 
+  reviews as reviewsApi, 
+  fitment as fitmentApi, 
+  cart as cartApi, 
+  wishlist as wishlistApi 
+} from '../services/api';
 
-// Helper function to resolve absolute R2 URL
+// --- Safe Image URL Helper ---
 const getImageUrl = (img) => {
   if (!img) return '/logo.webp';
-  let path = typeof img === 'object' ? (img.file_path || img.url || img.path) : img;
+  let path = typeof img === 'object' ? (img.url || img.file_path || img.path) : img;
   if (!path) return '/logo.webp';
   if (path.startsWith('http')) return path;
-  
   const baseUrl = import.meta.env.VITE_R2_PUBLIC_URL || import.meta.env.VITE_IMAGE_BASE_URL || 'https://pub-22cd43cce9bc475680ad496e199706c4.r2.dev';
-  const cleanBase = baseUrl.replace(/\/$/, '');
-  const cleanPath = path.replace(/^\//, '');
-  return `${cleanBase}/${cleanPath}`;
-};
-
-const ImageGallery = ({ images, mainImage }) => {
-  const [selected, setSelected] = useState(0);
-  
-  // Clean initialization of the gallery array
-  let gallery = [];
-  if (images && images.length > 0) {
-    gallery = images.map(img => ({ url: getImageUrl(img) }));
-  } else if (mainImage) {
-    gallery = [{ url: getImageUrl(mainImage) }];
-  } else {
-    gallery = [{ url: '/logo.webp' }];
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="relative aspect-square bg-slate-900 rounded-[2.5rem] overflow-hidden border border-slate-800 group">
-        <img 
-          src={gallery[selected]?.url} 
-          onError={(e) => { e.target.src = '/logo.webp'; }}
-          className="w-full h-full object-contain hover:scale-110 transition-transform duration-500" 
-          alt="Product Display" 
-        />
-        <div className="absolute top-6 right-6 flex flex-col gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button className="p-3 bg-black/60 backdrop-blur-xl rounded-full border border-white/10 text-white hover:bg-emerald-500 hover:text-black transition-all">
-            <Eye size={18} />
-          </button>
-        </div>
-      </div>
-      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-        {gallery.map((img, i) => (
-          <button 
-            key={i}
-            onClick={() => setSelected(i)}
-            className={`w-20 h-20 rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0 ${selected === i ? 'border-emerald-500 scale-95' : 'border-slate-800 grayscale hover:grayscale-0'}`}
-          >
-            <img src={img.url} onError={(e) => { e.target.src = '/logo.webp'; }} className="w-full h-full object-cover" alt={`thumbnail-${i}`} />
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const VehicleFitmentChecker = ({ productId }) => {
-  const [makes, setMakes] = useState([]);
-  const [models, setModels] = useState([]);
-  const [selection, setSelection] = useState({ make: '', model: '', year: '' });
-  const [result, setResult] = useState(null); 
-  const [checking, setChecking] = useState(false);
-
-  useEffect(() => {
-    const fetchMakes = async () => {
-      try {
-        const res = await fitmentApi.getMakes();
-        setMakes(res.data?.data || []);
-      } catch (err) { console.error(err); }
-    };
-    fetchMakes();
-  }, []);
-
-  const handleMakeChange = async (make) => {
-    setSelection({ ...selection, make, model: '' });
-    setResult(null);
-    try {
-      const res = await fitmentApi.getModels(make);
-      setModels(res.data?.data || []);
-    } catch (err) { console.error(err); }
-  };
-
-  const checkFit = async () => {
-    if (!selection.make || !selection.model) return;
-    setChecking(true);
-    try {
-      const res = await fitmentApi.check(productId, selection.make, selection.model, selection.year);
-      setResult(res.data);
-    } catch (err) { console.error(err); }
-    setChecking(false);
-  };
-
-  return (
-    <div className="bg-slate-900/50 border border-slate-800 rounded-[2rem] p-8 mt-8">
-      <div className="flex items-center gap-4 mb-6">
-        <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-500">
-          <Shield size={24} />
-        </div>
-        <div>
-          <h3 className="text-sm font-black uppercase tracking-widest text-white">Guaranteed Fit System</h3>
-          <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Verify compatibility before checkout</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <select 
-          value={selection.make} 
-          onChange={(e) => handleMakeChange(e.target.value)}
-          className="bg-black border border-slate-800 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:ring-2 focus:ring-emerald-500"
-        >
-          <option value="">Select Make</option>
-          {makes.map(m => <option key={m} value={m}>{m}</option>)}
-        </select>
-
-        <select 
-          value={selection.model}
-          disabled={!selection.make}
-          onChange={(e) => setSelection({...selection, model: e.target.value})}
-          className="bg-black border border-slate-800 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
-        >
-          <option value="">Select Model</option>
-          {models.map(m => <option key={m.model} value={m.model}>{m.model}</option>)}
-        </select>
-
-        <button 
-          onClick={checkFit}
-          disabled={checking || !selection.model}
-          className="bg-emerald-500 text-black font-black uppercase text-[10px] tracking-widest rounded-xl py-3 hover:bg-emerald-400 transition-all disabled:opacity-50"
-        >
-          {checking ? 'Analyzing...' : 'Verify Fitment'}
-        </button>
-      </div>
-
-      {result && (
-        <div className={`mt-6 p-4 rounded-2xl border flex items-start gap-4 animate-in fade-in slide-in-from-top-4 ${result.fits ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
-          <div className="mt-1">
-            {result.fits ? <Check size={20} /> : <AlertTriangle size={20} />}
-          </div>
-          <div>
-            <p className="text-xs font-black uppercase">{result.fits ? 'Verified Match' : 'Fitment Alert'}</p>
-            <p className="text-[10px] font-bold mt-1 text-slate-300">
-              {result.fits ? 'This item is confirmed to fit your selected vehicle.' : 'We could not verify compatibility for this vehicle model.'}
-              {result.data?.[0]?.notes && <span className="block mt-2 italic text-slate-500">Note: {result.data[0].notes}</span>}
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  return `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
 };
 
 export default function ProductDetail() {
-  const { id } = useParams();
+  const { id } = useParams(); // Using ID or Slug from React Router
   const navigate = useNavigate();
-  const { addToCart } = useCart();
-  const { showToast } = useToast() || {};
-
+  
   const [product, setProduct] = useState(null);
+  const [reviewsData, setReviewsData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
-  const [activeTab, setActiveTab] = useState('specs');
+  
+  // Interactions State
+  const [activeMedia, setActiveMedia] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [activeTab, setActiveTab] = useState('details');
+  const [isAdding, setIsAdding] = useState(false);
+  
+  // Fitment Engine State
+  const [fitment, setFitment] = useState({ make: '', model: '', year: '' });
+  const [fitmentStatus, setFitmentStatus] = useState(null); // 'checking' | 'fits' | 'nofit'
+
+  // Sticky Scroll Magic
+  const { scrollY } = useScroll();
+  const showStickyBar = useTransform(scrollY, [0, 800], [0, 1]);
 
   useEffect(() => {
-    const fetchProduct = async () => {
-      if (!id || id === 'null') { setNotFound(true); setLoading(false); return; }
-      setLoading(true);
+    const fetchProductData = async () => {
       try {
-        const isNumericId = /^\d+$/.test(id); 
-        const res = isNumericId ? await productsApi.getById(id) : await productsApi.getBySlug(id);
-        setProduct(res.data?.data || res.data);
+        setLoading(true);
+        // Concurrent Fetching for Ultimate Speed
+        const [prodRes, revRes] = await Promise.all([
+          productsApi.getById(id).catch(() => productsApi.getBySlug(id)), // Fallback if route uses slug
+          reviewsApi.getByProduct(id).catch(() => ({ data: [] }))
+        ]);
+        
+        const fetchedProduct = prodRes.data?.data || prodRes.data;
+        setProduct(fetchedProduct);
+        setReviewsData(revRes.data?.data || revRes.data || []);
+        
+        // Set initial media
+        if (fetchedProduct?.images?.length > 0) {
+          setActiveMedia(fetchedProduct.images[0]);
+        }
       } catch (err) {
-        if (err.response?.status === 404) setNotFound(true);
+        console.error("Failed to load product:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchProduct();
-    window.scrollTo(0, 0);
+    fetchProductData();
   }, [id]);
 
-  if (notFound) return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-8">
-      <div className="text-center max-w-md">
-        <div className="inline-flex p-6 bg-rose-500/10 rounded-full text-rose-500 mb-8">
-          <Box size={64} />
-        </div>
-        <h1 className="text-4xl font-black text-white uppercase tracking-tighter mb-4">Node Not Found</h1>
-        <p className="text-slate-500 font-bold mb-8">The requested hardware node does not exist in the active registry.</p>
-        <button onClick={() => navigate('/shop')} className="px-12 py-5 bg-white text-black font-black uppercase rounded-full hover:bg-emerald-400 transition-all">
-          Return to Catalog
-        </button>
-      </div>
-    </div>
-  );
+  const handleAddToCart = async () => {
+    setIsAdding(true);
+    try {
+      await cartApi.add({ productId: product.id, quantity });
+      // Show advanced success toast here
+    } catch (err) {
+      console.error("Cart error:", err);
+    } finally {
+      setTimeout(() => setIsAdding(false), 800);
+    }
+  };
 
-  if (loading || !product) return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="flex flex-col items-center gap-6">
-        <div className="w-16 h-16 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
-        <span className="text-[10px] font-black uppercase tracking-[0.5em] text-emerald-500 animate-pulse">Syncing Node Data...</span>
-      </div>
-    </div>
-  );
+  const handleFitmentCheck = async (e) => {
+    e.preventDefault();
+    setFitmentStatus('checking');
+    try {
+      const res = await fitmentApi.check(product.id, fitment.make, fitment.model, fitment.year);
+      setFitmentStatus(res.data?.compatible ? 'fits' : 'nofit');
+    } catch (err) {
+      setFitmentStatus('nofit'); // Fallback logic
+    }
+  };
+
+  if (loading) return <SkeletonPDP />;
+  if (!product) return <div className="min-h-screen flex items-center justify-center text-white bg-slate-950">Product Node Offline.</div>;
+
+  const isOutOfStock = product.quantity <= 0;
+  const savings = product.discount_price ? product.price - product.discount_price : 0;
+  const savingsPercent = savings > 0 ? Math.round((savings / product.price) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-black text-white pt-24 pb-20">
-      <div className="max-w-7xl mx-auto px-6">
+    <div className="bg-slate-950 text-white min-h-screen selection:bg-emerald-500 selection:text-black pt-24 pb-32 font-sans relative">
+      
+      {/* 1. BREADCRUMBS */}
+      <div className="max-w-7xl mx-auto px-6 mb-8 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500">
+        <Link to="/" className="hover:text-emerald-500 transition-colors">Home</Link>
+        <ChevronRight size={14} />
+        <Link to={`/shop?category=${product.category_id}`} className="hover:text-emerald-500 transition-colors">{product.category_name || 'Hardware'}</Link>
+        <ChevronRight size={14} />
+        <span className="text-white truncate max-w-[200px]">{product.name}</span>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
         
-        <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-500 mb-12">
-          <Link to="/" className="hover:text-emerald-500 transition-colors">Home</Link>
-          <ChevronRight size={12} />
-          <Link to="/shop" className="hover:text-emerald-500 transition-colors">Catalog</Link>
-          <ChevronRight size={12} />
-          <span className="text-emerald-500">{product.name}</span>
+        {/* 2. ADVANCED MEDIA GALLERY (Left Column) */}
+        <div className="lg:col-span-7 flex flex-col-reverse md:flex-row gap-6 relative">
+          
+          {/* Thumbnails */}
+          <div className="flex md:flex-col gap-4 overflow-x-auto md:overflow-y-auto md:w-24 shrink-0 no-scrollbar py-1">
+            {product.images?.map((media, idx) => (
+              <button 
+                key={idx} 
+                onClick={() => setActiveMedia(media)}
+                className={`relative w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border-2 transition-all duration-300 shrink-0 ${
+                  activeMedia?.url === media.url ? 'border-emerald-500 ring-4 ring-emerald-500/20' : 'border-slate-800 hover:border-slate-600'
+                }`}
+              >
+                {media.type === 'video' ? (
+                  <div className="absolute inset-0 bg-slate-900 flex items-center justify-center"><Play size={24} className="text-emerald-500" /></div>
+                ) : (
+                  <img src={getImageUrl(media)} alt="Thumbnail" className="w-full h-full object-cover" />
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Main Viewer (Sticky) */}
+          <div className="relative w-full aspect-square md:aspect-auto md:h-[700px] bg-slate-900/50 rounded-[3rem] border border-slate-800/50 overflow-hidden flex items-center justify-center lg:sticky lg:top-32 group">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeMedia?.url}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.05 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="w-full h-full p-8"
+              >
+                {activeMedia?.type === 'video' ? (
+                  <video src={getImageUrl(activeMedia)} autoPlay loop muted controls className="w-full h-full object-contain rounded-2xl" />
+                ) : (
+                  <img src={getImageUrl(activeMedia)} alt={product.name} className="w-full h-full object-contain group-hover:scale-150 transition-transform duration-[1.5s] ease-out origin-center cursor-crosshair" />
+                )}
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Badges */}
+            <div className="absolute top-6 left-6 flex flex-col gap-3 z-10">
+              {product.is_new_arrival === 1 && <span className="bg-emerald-500 text-black px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-[0_0_20px_rgba(16,185,129,0.4)]">New Node</span>}
+              {product.is_trending === 1 && <span className="bg-cyan-500 text-black px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">Trending</span>}
+            </div>
+            
+            {/* Wishlist Floating */}
+            <button className="absolute top-6 right-6 w-14 h-14 bg-slate-950/80 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-red-500 hover:border-red-500 transition-all duration-300 z-10 hover:shadow-[0_0_30px_rgba(239,68,68,0.4)]">
+              <Heart size={22} />
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
-          <div className="lg:col-span-7">
-            <ImageGallery images={product.images} mainImage={product.image_url} />
+        {/* 3. PRODUCT DETAILS (Right Column) */}
+        <div className="lg:col-span-5 flex flex-col relative">
+          <div className="mb-8">
+            <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-[1.1] mb-4 text-white">
+              {product.name}
+            </h1>
             
-            <div className="mt-16 bg-slate-900/30 border border-slate-800/50 rounded-[3rem] p-12 overflow-hidden relative">
-              <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
-                <Settings size={200} />
-              </div>
-
-              <div className="flex gap-12 border-b border-slate-800 mb-12">
-                {['specs', 'details'].map(t => (
-                  <button 
-                    key={t}
-                    onClick={() => setActiveTab(t)}
-                    className={`pb-6 text-[11px] font-black uppercase tracking-[0.2em] transition-all relative ${activeTab === t ? 'text-emerald-500' : 'text-slate-600 hover:text-white'}`}
-                  >
-                    {t}
-                    {activeTab === t && <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500 rounded-full"></div>}
-                  </button>
-                ))}
-              </div>
-
-              <div className="animate-in fade-in slide-in-from-left-4 duration-500">
-                {activeTab === 'specs' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-                    {[
-                      { label: 'Brand', value: product.brand },
-                      { label: 'SKU', value: product.sku },
-                      { label: 'Bulb Type', value: product.bulb_type || 'LED / HID' },
-                      { label: 'Wattage', value: product.wattage || '55W' },
-                      { label: 'Color Temp', value: product.color_temp || '6000K' },
-                      { label: 'Warranty', value: `${product.warranty_period || 12} Months` }
-                    ].map(s => (
-                      <div key={s.label} className="flex justify-between items-center py-4 border-b border-slate-800/50">
-                        <span className="text-[10px] font-black uppercase text-slate-500 tracking-tighter">{s.label}</span>
-                        <span className="text-xs font-bold text-white">{s.value || 'N/A'}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {activeTab === 'details' && (
-                  <div className="prose prose-invert max-w-none">
-                    <p className="text-sm font-bold leading-relaxed text-slate-400">{product.description}</p>
-                    <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="p-6 bg-slate-800/30 rounded-3xl">
-                        <Zap size={20} className="text-emerald-500 mb-4" />
-                        <h4 className="text-[10px] font-black uppercase mb-2">High Intensity</h4>
-                        <p className="text-[9px] font-bold text-slate-500">Optimized for maximum light output.</p>
-                      </div>
-                      <div className="p-6 bg-slate-800/30 rounded-3xl">
-                        <RefreshCw size={20} className="text-blue-500 mb-4" />
-                        <h4 className="text-[10px] font-black uppercase mb-2">Canbus Ready</h4>
-                        <p className="text-[9px] font-bold text-slate-500">Error-free installation in 99% of cars.</p>
-                      </div>
-                      <div className="p-6 bg-slate-800/30 rounded-3xl">
-                        <Shield size={20} className="text-purple-500 mb-4" />
-                        <h4 className="text-[10px] font-black uppercase mb-2">IP68 Rated</h4>
-                        <p className="text-[9px] font-bold text-slate-500">Fully dust and waterproof design.</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:col-span-5">
-            <div className="sticky top-32">
-              
-              <div className="flex items-center gap-3 mb-6">
-                <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-full text-[9px] font-black uppercase tracking-widest">
-                  {product.quantity > 0 ? 'In Stock' : 'Out of Stock'}
+            <div className="flex items-center gap-6 mb-6">
+              <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl">
+                <div className="flex text-emerald-500">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={16} fill={i < Math.floor(product.rating || 5) ? "currentColor" : "none"} className={i < Math.floor(product.rating || 5) ? "" : "text-slate-700"} />
+                  ))}
+                </div>
+                <span className="text-sm font-black text-white">{product.rating || '5.0'}</span>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest border-l border-slate-700 pl-2 ml-1">
+                  {product.review_count || 0} Reviews
                 </span>
-                <div className="flex items-center gap-1 text-amber-500">
-                  <Star size={12} fill="currentColor" />
-                  <span className="text-xs font-black">{product.rating || '5.0'}</span>
-                </div>
               </div>
+              <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                SKU: <span className="text-emerald-500">{product.sku || 'N/A'}</span>
+              </div>
+            </div>
 
-              <h1 className="text-5xl font-black uppercase tracking-tighter leading-none mb-6">
-                {product.name}
-              </h1>
-
-              <div className="flex items-end gap-6 mb-12">
-                <div className="text-4xl font-black text-white">₹{product.discount_price || product.price}</div>
+            <div className="flex flex-col gap-1 mb-8">
+              <div className="flex items-end gap-4">
+                <span className="text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">
+                  ₹{product.discount_price || product.price}
+                </span>
                 {product.discount_price && (
-                  <div className="text-xl font-bold text-slate-600 line-through mb-1">₹{product.price}</div>
-                )}
-                {product.discount_price && (
-                  <div className="mb-2 px-3 py-1 bg-rose-500/10 text-rose-500 rounded-lg text-[10px] font-black uppercase">
-                    -{Math.round(((product.price - product.discount_price)/product.price)*100)}% OFF
-                  </div>
+                  <span className="text-2xl font-bold text-slate-600 line-through mb-1">₹{product.price}</span>
                 )}
               </div>
+              {savings > 0 && (
+                <span className="text-emerald-500 text-sm font-black uppercase tracking-widest">
+                  You Save ₹{savings} ({savingsPercent}% Off)
+                </span>
+              )}
+            </div>
 
-              <div className="flex flex-col gap-6">
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center bg-slate-900 rounded-full p-2 border border-slate-800">
-                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-12 h-12 flex items-center justify-center hover:bg-slate-800 rounded-full transition-colors">
-                      <Minus size={16} />
-                    </button>
-                    <span className="w-12 text-center font-black text-xl">{quantity}</span>
-                    <button onClick={() => setQuantity(quantity + 1)} className="w-12 h-12 flex items-center justify-center hover:bg-slate-800 rounded-full transition-colors">
-                      <Plus size={16} />
-                    </button>
-                  </div>
-                  <button 
-                    onClick={() => {
-                      addToCart(product, quantity);
-                      showToast?.('Added to Cart', 'success');
-                    }}
-                    className="flex-1 bg-white text-black py-6 rounded-[2rem] font-black uppercase tracking-widest text-lg hover:bg-emerald-400 transition-all flex items-center justify-center gap-4 group"
-                  >
-                    Add to Cart
-                    <ShoppingCart size={24} className="group-hover:translate-x-1 transition-transform" />
-                  </button>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <button className="flex items-center justify-center gap-3 py-4 bg-slate-900 border border-slate-800 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-800 transition-colors">
-                    <Heart size={16} /> Wishlist
-                  </button>
-                  <button className="flex items-center justify-center gap-3 py-4 bg-slate-900 border border-slate-800 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-800 transition-colors">
-                    <RefreshCw size={16} /> Compare
-                  </button>
-                </div>
+            <p className="text-slate-400 text-lg leading-relaxed mb-8 font-medium">
+              {product.description?.substring(0, 150)}...
+            </p>
+          </div>
+
+          {/* 4. THE FITMENT ENGINE WIDGET */}
+          <div className="bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-6 mb-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none"><Car size={150} /></div>
+            <h3 className="text-sm font-black uppercase tracking-widest text-emerald-500 mb-4 flex items-center gap-2">
+              <Zap size={16} /> Fitment Verification Engine
+            </h3>
+            <form onSubmit={handleFitmentCheck} className="grid grid-cols-3 gap-3 mb-4 relative z-10">
+              <input type="text" placeholder="Make" required onChange={(e) => setFitment({...fitment, make: e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-emerald-500 outline-none w-full" />
+              <input type="text" placeholder="Model" required onChange={(e) => setFitment({...fitment, model: e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-emerald-500 outline-none w-full" />
+              <button type="submit" className="bg-slate-800 hover:bg-emerald-500 text-white hover:text-black font-black text-xs uppercase tracking-widest rounded-xl transition-all">Check</button>
+            </form>
+            
+            <AnimatePresence>
+              {fitmentStatus && (
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className={`p-4 rounded-xl flex items-center gap-3 border ${
+                  fitmentStatus === 'fits' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
+                  fitmentStatus === 'nofit' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
+                  'bg-blue-500/10 border-blue-500/20 text-blue-500 animate-pulse'
+                }`}>
+                  {fitmentStatus === 'fits' && <><CheckCircle2 size={20} /> <span className="text-sm font-black uppercase tracking-widest">Confirmed Fitment for your vehicle.</span></>}
+                  {fitmentStatus === 'nofit' && <><AlertCircle size={20} /> <span className="text-sm font-black uppercase tracking-widest">May require modification.</span></>}
+                  {fitmentStatus === 'checking' && <span className="text-sm font-black uppercase tracking-widest">Running diagnostic...</span>}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* 5. ACTION AREA */}
+          <div className="bg-slate-900 border border-slate-800 rounded-[2rem] p-6 mb-8">
+            <div className="flex items-center gap-4 mb-6">
+              <span className={`flex items-center gap-2 text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-lg ${isOutOfStock ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+                <div className={`w-2 h-2 rounded-full ${isOutOfStock ? 'bg-red-500' : 'bg-emerald-500 animate-pulse'}`}></div>
+                {isOutOfStock ? 'Out of Stock' : 'In Stock & Ready'}
+              </span>
+            </div>
+
+            <div className="flex gap-4">
+              {/* Quantity Selector */}
+              <div className="flex items-center justify-between bg-slate-950 border border-slate-800 rounded-2xl w-32 p-1">
+                <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-white rounded-xl hover:bg-slate-900 transition-colors">
+                  <Minus size={18} />
+                </button>
+                <span className="font-black text-xl w-8 text-center">{quantity}</span>
+                <button onClick={() => setQuantity(q => q + 1)} className="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-white rounded-xl hover:bg-slate-900 transition-colors">
+                  <Plus size={18} />
+                </button>
               </div>
 
-              <VehicleFitmentChecker productId={product.id || product._id} />
-
-              <div className="mt-12 grid grid-cols-1 gap-4">
-                <div className="flex items-center gap-6 p-6 bg-slate-900/30 border border-slate-800/50 rounded-3xl">
-                  <div className="p-4 bg-blue-500/10 rounded-2xl text-blue-500"><Truck size={24} /></div>
-                  <div>
-                    <h5 className="text-[10px] font-black uppercase tracking-widest">Free Priority Shipping</h5>
-                    <p className="text-[9px] font-bold text-slate-500 mt-1">Estimated arrival: 2-3 Business Days</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-6 p-6 bg-slate-900/30 border border-slate-800/50 rounded-3xl">
-                  <div className="p-4 bg-amber-500/10 rounded-2xl text-amber-500"><Shield size={24} /></div>
-                  <div>
-                    <h5 className="text-[10px] font-black uppercase tracking-widest">Official Warranty</h5>
-                    <p className="text-[9px] font-bold text-slate-500 mt-1">{product.warranty_period || 12} Months comprehensive coverage</p>
-                  </div>
-                </div>
-              </div>
-
+              {/* Add to Cart CTA */}
+              <button 
+                onClick={handleAddToCart} 
+                disabled={isOutOfStock || isAdding}
+                className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase tracking-[0.2em] text-sm rounded-2xl transition-all shadow-[0_0_30px_rgba(16,185,129,0.2)] hover:shadow-[0_0_40px_rgba(16,185,129,0.4)] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
+              >
+                <span className={`flex items-center gap-2 transition-transform duration-300 ${isAdding ? '-translate-y-12' : ''}`}>
+                  <ShoppingBag size={20} /> Add To Arsenal
+                </span>
+                <span className={`absolute inset-0 flex items-center justify-center gap-2 bg-emerald-400 transition-transform duration-300 ${isAdding ? 'translate-y-0' : 'translate-y-12'}`}>
+                  <CheckCircle2 size={20} /> Node Secured
+                </span>
+              </button>
             </div>
           </div>
+
+          {/* Trust Guarantees */}
+          <div className="grid grid-cols-2 gap-4">
+            {[
+              { icon: <Shield />, title: "Premium E-Warranty", sub: product.warranty_period || "2 Years Coverage" },
+              { icon: <Truck />, title: "Express Dispatch", sub: "Ships within 24hrs" }
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-3 p-4 bg-slate-900/50 rounded-2xl border border-slate-800/50">
+                <div className="text-emerald-500">{item.icon}</div>
+                <div>
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-white">{item.title}</h4>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase">{item.sub}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
         </div>
       </div>
+
+      {/* 6. TABBED INTERFACE (Framer Motion Magic) */}
+      <div className="max-w-7xl mx-auto px-6 mt-32">
+        <div className="flex border-b border-slate-800 mb-12 relative overflow-x-auto no-scrollbar">
+          {['details', 'specifications', 'reviews'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`pb-6 px-8 text-sm font-black uppercase tracking-[0.2em] transition-colors whitespace-nowrap relative ${
+                activeTab === tab ? 'text-emerald-500' : 'text-slate-500 hover:text-white'
+              }`}
+            >
+              {tab}
+              {activeTab === tab && (
+                <motion.div layoutId="activeTabIndicator" className="absolute bottom-0 left-0 w-full h-1 bg-emerald-500" />
+              )}
+            </button>
+          ))}
+        </div>
+
+        <div className="min-h-[400px]">
+          <AnimatePresence mode="wait">
+            {activeTab === 'details' && (
+              <motion.div key="details" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="text-slate-400 leading-loose text-lg max-w-4xl font-medium">
+                {product.description}
+              </motion.div>
+            )}
+            
+            {activeTab === 'specifications' && (
+              <motion.div key="specs" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
+                {[
+                  { label: 'Brand', value: product.brand },
+                  { label: 'SKU', value: product.sku },
+                  { label: 'Warranty', value: product.warranty_period },
+                  { label: 'Tags', value: product.tags },
+                  { label: '3D Model Support', value: product.model_3d_url ? 'Enabled' : 'N/A' },
+                ].map((spec, i) => (
+                  <div key={i} className="flex justify-between py-4 border-b border-slate-800">
+                    <span className="text-slate-500 font-bold uppercase tracking-widest text-xs">{spec.label}</span>
+                    <span className="text-white font-black">{spec.value || 'N/A'}</span>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+
+            {activeTab === 'reviews' && (
+              <motion.div key="reviews" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="max-w-4xl">
+                {reviewsData.length > 0 ? (
+                  reviewsData.map((review, i) => (
+                    <div key={i} className="p-8 bg-slate-900 border border-slate-800 rounded-[2rem] mb-6">
+                      <div className="flex items-center gap-2 text-emerald-500 mb-4">
+                        {[...Array(5)].map((_, idx) => <Star key={idx} size={16} fill={idx < review.rating ? "currentColor" : "none"} />)}
+                      </div>
+                      <h4 className="text-xl font-black text-white mb-2">{review.title}</h4>
+                      <p className="text-slate-400 font-medium mb-4">{review.comment}</p>
+                      <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">{review.user_name} • Verified Buyer</div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-20 bg-slate-900/50 rounded-[2rem] border border-slate-800 border-dashed">
+                    <h3 className="text-xl font-black text-slate-500 uppercase tracking-widest">No Field Reports Yet</h3>
+                    <p className="text-slate-600 mt-2">Be the first to test this hardware.</p>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* 7. STICKY MOBILE/DESKTOP ADD TO CART BAR */}
+      <motion.div 
+        style={{ opacity: showStickyBar, y: useTransform(showStickyBar, [0, 1], [50, 0]) }}
+        className="fixed bottom-0 left-0 w-full z-50 p-4 pointer-events-none"
+      >
+        <div className="max-w-4xl mx-auto bg-slate-900/90 backdrop-blur-2xl border border-slate-800 p-4 rounded-3xl shadow-2xl flex items-center justify-between pointer-events-auto">
+          <div className="hidden md:flex items-center gap-4">
+            <img src={getImageUrl(activeMedia)} className="w-12 h-12 rounded-xl object-cover" alt="sticky" />
+            <div>
+              <h4 className="text-sm font-black uppercase tracking-tighter text-white line-clamp-1">{product.name}</h4>
+              <p className="text-emerald-500 font-black tracking-widest">₹{product.discount_price || product.price}</p>
+            </div>
+          </div>
+          <button 
+            onClick={handleAddToCart}
+            className="w-full md:w-auto px-12 py-4 bg-emerald-500 text-black font-black uppercase tracking-widest text-xs rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:bg-white transition-colors"
+          >
+            Add To Arsenal
+          </button>
+        </div>
+      </motion.div>
+
     </div>
   );
 }
+
+// --- High-End Skeleton Loader ---
+const SkeletonPDP = () => (
+  <div className="bg-slate-950 min-h-screen pt-24 pb-32 px-6">
+    <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 animate-pulse">
+      <div className="lg:col-span-7 flex flex-col md:flex-row gap-6">
+        <div className="flex md:flex-col gap-4 w-full md:w-24">
+          {[1,2,3,4].map(i => <div key={i} className="w-20 h-20 md:w-24 md:h-24 bg-slate-900 rounded-2xl shrink-0"></div>)}
+        </div>
+        <div className="w-full h-[500px] md:h-[700px] bg-slate-900 rounded-[3rem]"></div>
+      </div>
+      <div className="lg:col-span-5 flex flex-col gap-8 pt-8">
+        <div className="h-16 bg-slate-900 rounded-2xl w-3/4"></div>
+        <div className="h-8 bg-slate-900 rounded-xl w-1/3"></div>
+        <div className="h-24 bg-slate-900 rounded-2xl w-1/2"></div>
+        <div className="h-40 bg-slate-900 rounded-3xl w-full"></div>
+        <div className="h-32 bg-slate-900 rounded-[2rem] w-full"></div>
+      </div>
+    </div>
+  </div>
+);
