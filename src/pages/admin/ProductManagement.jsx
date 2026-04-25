@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Search, Plus, Edit3, Trash2, ExternalLink, Activity, Filter, Archive } from 'lucide-react';
-// 100% STRICT IMPORT
-import { products as prodApi, categories as catApi } from '../../services/api';
+import { 
+  Package, Search, Plus, Edit3, Trash2, ExternalLink, Activity, 
+  Filter, Archive, Upload, FileText, X, Check, AlertTriangle 
+} from 'lucide-react';
+import { products as prodApi, categories as catApi, fitment as fitmentApi } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
 export default function ProductManagement() {
@@ -10,6 +12,11 @@ export default function ProductManagement() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const { showToast } = useToast() || {};
+
+  // Fitment Modal State
+  const [fitmentModal, setFitmentModal] = useState({ show: false, product: null });
+  const [excelFile, setExcelFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -31,137 +38,174 @@ export default function ProductManagement() {
     fetchData();
   }, []);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Confirm product de-registration?')) return;
+  const handleExcelUpload = async () => {
+    if (!excelFile || !fitmentModal.product) return;
+    setUploading(true);
     try {
-      await prodApi.delete(id);
-      showToast?.('Product purged from database', 'success');
-      fetchData();
-    } catch (error) {
-      showToast?.('De-registration failed', 'error');
+      const formData = new FormData();
+      formData.append('file', excelFile);
+      formData.append('productId', fitmentModal.product.id);
+      
+      const res = await fitmentApi.uploadExcel(fitmentModal.product.id, formData);
+      showToast?.(res.data.message || 'Fitment data imported successfully', 'success');
+      setFitmentModal({ show: false, product: null });
+      setExcelFile(null);
+    } catch (err) {
+      showToast?.(err.response?.data?.message || 'Excel upload failed', 'error');
+    } finally {
+      setUploading(false);
     }
   };
 
-  const filteredProducts = productsList.filter(p => 
-    p.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  if (loading) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-    </div>
+  const filtered = productsList.filter(p => 
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    p.sku?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="p-10 space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-2">
-          <h2 className="text-4xl font-black uppercase tracking-tighter flex items-center gap-4">
-            <Package className="text-emerald-500" /> Product Audit
-          </h2>
-          <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em]">Inventory Lifecycle & Taxonomy Control</p>
+    <div className="p-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
+        <div>
+          <h2 className="text-3xl font-black uppercase tracking-tighter text-white">Product Registry</h2>
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-2">Manage active hardware inventory and fitment nodes</p>
         </div>
-        <div className="flex gap-4">
-          <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-hover:text-emerald-500 transition-colors" size={18} />
-            <input 
-              placeholder="Search catalog..." 
-              className="bg-slate-900/50 border border-slate-800 px-12 py-4 rounded-2xl outline-none focus:border-emerald-500/50 transition-all w-full md:w-64 text-sm font-bold"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <button className="bg-emerald-500 text-slate-950 px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center gap-2 hover:scale-105 transition-all">
-            <Plus size={16} /> New Asset
+        <button className="flex items-center gap-3 px-8 py-4 bg-emerald-500 text-black font-black uppercase text-xs tracking-widest rounded-2xl hover:bg-emerald-400 transition-all shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+          <Plus size={18} /> Deploy New Product
+        </button>
+      </div>
+
+      {/* Toolbar */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-8">
+        <div className="lg:col-span-8 relative">
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
+          <input 
+            type="text" 
+            placeholder="Search Registry by Name or SKU..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-slate-900 border border-slate-800 rounded-2xl pl-16 pr-6 py-5 text-sm font-bold text-white outline-none focus:border-emerald-500/50 transition-all"
+          />
+        </div>
+        <div className="lg:col-span-4 flex gap-4">
+          <select className="flex-1 bg-slate-900 border border-slate-800 rounded-2xl px-6 text-[10px] font-black uppercase text-slate-400 outline-none">
+            <option>All Sectors</option>
+            {categories.map(c => <option key={c.id}>{c.name}</option>)}
+          </select>
+          <button className="p-5 bg-slate-900 border border-slate-800 rounded-2xl text-slate-500 hover:text-white transition-all">
+            <Filter size={20} />
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="bg-slate-900/50 border border-slate-800 p-8 rounded-[2rem] space-y-2">
-          <div className="text-white font-black text-3xl">{productsList.length}</div>
-          <div className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Total SKU Count</div>
-        </div>
-        <div className="bg-emerald-500/5 border border-emerald-500/10 p-8 rounded-[2rem] space-y-2">
-          <div className="text-emerald-500 font-black text-3xl">{productsList.filter(p => p.stock_status === 'in_stock').length}</div>
-          <div className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Available Assets</div>
-        </div>
-        <div className="bg-rose-500/5 border border-rose-500/10 p-8 rounded-[2rem] space-y-2">
-          <div className="text-rose-500 font-black text-3xl">{productsList.filter(p => p.quantity < 10).length}</div>
-          <div className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Critical Stock Level</div>
-        </div>
-        <div className="bg-blue-500/5 border border-blue-500/10 p-8 rounded-[2rem] space-y-2">
-          <div className="text-blue-500 font-black text-3xl">{categories.length}</div>
-          <div className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Active Taxonomies</div>
-        </div>
+      {/* Table */}
+      <div className="bg-slate-950 border border-slate-900 rounded-[2.5rem] overflow-hidden">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-slate-900 bg-slate-900/20">
+              <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-500 tracking-widest">Hardware Node</th>
+              <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-500 tracking-widest">Pricing</th>
+              <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-500 tracking-widest">Inventory</th>
+              <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-500 tracking-widest">Fitment</th>
+              <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-500 tracking-widest text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-900/50">
+            {loading ? (
+              <tr><td colSpan="5" className="p-20 text-center text-[10px] font-black uppercase text-slate-600 animate-pulse">Accessing Encrypted Data...</td></tr>
+            ) : filtered.map((prod) => (
+              <tr key={prod.id} className="group hover:bg-slate-900/20 transition-colors">
+                <td className="px-8 py-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-slate-900 rounded-xl overflow-hidden border border-slate-800 flex-shrink-0">
+                      <img src={prod.image_url || '/logo.webp'} className="w-full h-full object-contain p-2" alt="" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-black uppercase text-white group-hover:text-emerald-500 transition-colors">{prod.name}</div>
+                      <div className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-tighter">{prod.sku} | {prod.brand}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-8 py-6">
+                  <div className="text-sm font-black text-white">₹{prod.discount_price || prod.price}</div>
+                  {prod.discount_price && <div className="text-[10px] font-bold text-slate-600 line-through mt-0.5">₹{prod.price}</div>}
+                </td>
+                <td className="px-8 py-6">
+                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-[9px] font-black uppercase ${prod.quantity > 10 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                    <Archive size={10} /> {prod.quantity} Units
+                  </div>
+                </td>
+                <td className="px-8 py-6">
+                  <button 
+                    onClick={() => setFitmentModal({ show: true, product: prod })}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-[9px] font-black uppercase text-slate-400 hover:text-white hover:border-emerald-500 transition-all"
+                  >
+                    <Upload size={12} /> Fitment Map
+                  </button>
+                </td>
+                <td className="px-8 py-6">
+                  <div className="flex items-center justify-end gap-2">
+                    <button className="p-3 bg-slate-900 text-slate-500 hover:text-blue-500 rounded-xl transition-all"><Edit3 size={16} /></button>
+                    <button className="p-3 bg-slate-900 text-slate-500 hover:text-rose-500 rounded-xl transition-all"><Trash2 size={16} /></button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      <div className="bg-slate-900/30 border border-slate-900 rounded-[2.5rem] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-800 bg-slate-900/50">
-                <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Product Entity</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Registry ID</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Valuation</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Status</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Operations</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/50">
-              {filteredProducts.map((p) => (
-                <tr key={p.id} className="hover:bg-slate-800/20 transition-colors group">
-                  <td className="px-8 py-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden group-hover:scale-110 transition-transform">
-                        <img src={p.image} alt="" className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
-                      </div>
-                      <div>
-                        <div className="font-black text-white uppercase text-sm tracking-tight">{p.name}</div>
-                        <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">{p.category_name}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6 text-xs font-mono text-slate-500">#{p.id?.toString().slice(-8)}</td>
-                  <td className="px-8 py-6">
-                    <div className="font-black text-emerald-400">₹{p.price}</div>
-                    <div className="text-[10px] text-slate-600 font-bold uppercase mt-0.5">Retail Price</div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter ${
-                      p.quantity > 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                    }`}>
-                      {p.quantity > 0 ? 'Functional' : 'Depleted'} ({p.quantity})
-                    </div>
-                  </td>
-                  <td className="px-8 py-6 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button className="p-3 hover:bg-slate-800 rounded-xl text-slate-500 hover:text-white transition-all active:scale-90">
-                        <Edit3 size={18} />
-                      </button>
-                      <button className="p-3 hover:bg-slate-800 rounded-xl text-slate-500 hover:text-white transition-all active:scale-90">
-                        <ExternalLink size={18} />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(p.id)}
-                        className="p-3 hover:bg-rose-500/10 rounded-xl text-slate-500 hover:text-rose-400 transition-all active:scale-90"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {filteredProducts.length === 0 && (
-          <div className="p-20 text-center space-y-4">
-            <Archive className="mx-auto text-slate-800" size={64} />
-            <div className="text-slate-600 font-black uppercase tracking-[0.3em]">No Catalog Data Synchronized</div>
+      {/* FITMENT EXCEL UPLOAD MODAL */}
+      {fitmentModal.show && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-2xl bg-black/60">
+          <div className="w-full max-w-xl bg-slate-950 border border-slate-800 rounded-[3rem] p-12 relative overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none"><FileText size={200} /></div>
+            
+            <button 
+              onClick={() => setFitmentModal({ show: false, product: null })}
+              className="absolute top-8 right-8 p-3 bg-slate-900 text-slate-500 hover:text-white rounded-full transition-all"
+            ><X size={20} /></button>
+
+            <h3 className="text-2xl font-black uppercase tracking-tighter text-white mb-2">Vehicle Fitment Node</h3>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-12">Product: <span className="text-emerald-500">{fitmentModal.product?.name}</span></p>
+
+            <div className="space-y-8 relative z-10">
+              <div className="bg-slate-900 border-2 border-dashed border-slate-800 rounded-[2rem] p-12 text-center group hover:border-emerald-500/50 transition-all relative">
+                <input 
+                  type="file" 
+                  accept=".xlsx,.xls" 
+                  onChange={(e) => setExcelFile(e.target.files[0])}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                />
+                <div className="flex flex-col items-center gap-4">
+                  <div className="p-5 bg-slate-800 rounded-3xl text-slate-400 group-hover:bg-emerald-500 group-hover:text-black transition-all">
+                    <Upload size={32} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black uppercase text-white">{excelFile ? excelFile.name : 'Select Excel Sheet'}</p>
+                    <p className="text-[9px] font-bold text-slate-500 uppercase mt-1">Columns: Make, Model, YearStart, YearEnd, BulbType, Notes</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-6 bg-blue-500/5 border border-blue-500/10 rounded-2xl">
+                <Activity size={20} className="text-blue-500 mt-1 flex-shrink-0" />
+                <p className="text-[9px] font-bold text-slate-400 leading-relaxed uppercase">
+                  Uploading a new map will <span className="text-blue-500">overwrite</span> existing fitment data for this product node in the production registry.
+                </p>
+              </div>
+
+              <button 
+                onClick={handleExcelUpload}
+                disabled={!excelFile || uploading}
+                className="w-full py-6 bg-emerald-500 text-black font-black uppercase tracking-widest rounded-3xl hover:bg-emerald-400 transition-all disabled:opacity-30 flex items-center justify-center gap-4"
+              >
+                {uploading ? 'Injecting Map...' : 'Commit Fitment Data'}
+                <Check size={20} />
+              </button>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
