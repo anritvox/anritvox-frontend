@@ -82,8 +82,9 @@ export default function Shop() {
   const handleAddToCart = (e, product) => {
     e.preventDefault();
     addToCart(product, 1);
-    setAddedToCart(prev => ({ ...prev, [product._id]: true }));
-    setTimeout(() => setAddedToCart(prev => ({ ...prev, [product._id]: false })), 2000);
+    const prodId = product._id || product.id; // Corrected Identifier
+    setAddedToCart(prev => ({ ...prev, [prodId]: true }));
+    setTimeout(() => setAddedToCart(prev => ({ ...prev, [prodId]: false })), 2000);
   };
 
   if (loading) {
@@ -207,55 +208,58 @@ export default function Shop() {
             {/* Grid */}
             {filteredProducts.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
-                {filteredProducts.map((product) => (
-                  <motion.div 
-                    layout
-                    key={product._id}
-                    className="group border border-slate-100 hover:border-emerald-500/30 transition-all p-4 bg-white"
-                  >
-                    <Link to={`/product/${product.slug}`} className="block relative aspect-square overflow-hidden bg-slate-50 mb-4">
-                      <img 
-                        src={product.images?.[0] || FALLBACK_IMG} 
-                        alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      />
-                      {product.flash_sale_active && (
-                        <div className="absolute top-3 left-3 bg-emerald-500 text-black text-[10px] font-black px-2 py-1 uppercase tracking-tighter">
-                          Limited Stock
+                {filteredProducts.map((product, index) => {
+                  const prodId = product._id || product.id || `shop-prod-${index}`;
+                  return (
+                    <motion.div 
+                      layout
+                      key={prodId}
+                      className="group border border-slate-100 hover:border-emerald-500/30 transition-all p-4 bg-white"
+                    >
+                      <Link to={`/product/${product.slug || product._id || product.id}`} className="block relative aspect-square overflow-hidden bg-slate-50 mb-4">
+                        <img 
+                          src={product.images?.[0] || FALLBACK_IMG} 
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                        {product.flash_sale_active && (
+                          <div className="absolute top-3 left-3 bg-emerald-500 text-black text-[10px] font-black px-2 py-1 uppercase tracking-tighter">
+                            Limited Stock
+                          </div>
+                        )}
+                        
+                        {/* Hover Actions */}
+                        <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform bg-gradient-to-t from-black/80 to-transparent flex gap-2">
+                          <button 
+                            onClick={(e) => { e.preventDefault(); setQuickViewProduct(product); }}
+                            className="flex-1 bg-white text-black py-2 text-xs font-black uppercase tracking-widest hover:bg-emerald-500 transition-colors"
+                          >
+                            Scan
+                          </button>
+                          <button 
+                            onClick={(e) => handleAddToCart(e, product)}
+                            className={`flex-1 py-2 text-xs font-black uppercase tracking-widest transition-all ${addedToCart[prodId] ? 'bg-emerald-500 text-black' : 'bg-black text-white hover:bg-slate-800'}`}
+                          >
+                            {addedToCart[prodId] ? <FiCheck className="mx-auto" /> : 'Deploy'}
+                          </button>
                         </div>
-                      )}
-                      
-                      {/* Hover Actions */}
-                      <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform bg-gradient-to-t from-black/80 to-transparent flex gap-2">
-                        <button 
-                          onClick={(e) => { e.preventDefault(); setQuickViewProduct(product); }}
-                          className="flex-1 bg-white text-black py-2 text-xs font-black uppercase tracking-widest hover:bg-emerald-500 transition-colors"
-                        >
-                          Scan
-                        </button>
-                        <button 
-                          onClick={(e) => handleAddToCart(e, product)}
-                          className={`flex-1 py-2 text-xs font-black uppercase tracking-widest transition-all ${addedToCart[product._id] ? 'bg-emerald-500 text-black' : 'bg-black text-white hover:bg-slate-800'}`}
-                        >
-                          {addedToCart[product._id] ? <FiCheck className="mx-auto" /> : 'Deploy'}
-                        </button>
-                      </div>
-                    </Link>
+                      </Link>
 
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{product.brand}</span>
-                        <div className="flex items-center gap-1 text-[10px] font-bold text-amber-500">
-                          <FiStar className="fill-current" /> {product.rating || "4.8"}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{product.brand}</span>
+                          <div className="flex items-center gap-1 text-[10px] font-bold text-amber-500">
+                            <FiStar className="fill-current" /> {product.rating || "4.8"}
+                          </div>
                         </div>
+                        <h4 className="font-bold text-slate-900 group-hover:text-emerald-600 transition-colors uppercase leading-tight truncate">
+                          {product.name}
+                        </h4>
+                        <div className="text-lg font-mono text-slate-900">₹{product.price?.toLocaleString()}</div>
                       </div>
-                      <h4 className="font-bold text-slate-900 group-hover:text-emerald-600 transition-colors uppercase leading-tight truncate">
-                        {product.name}
-                      </h4>
-                      <div className="text-lg font-mono text-slate-900">₹{product.price?.toLocaleString()}</div>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-20 border-2 border-dashed border-slate-100">
