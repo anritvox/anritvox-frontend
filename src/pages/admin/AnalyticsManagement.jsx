@@ -1,189 +1,296 @@
-import React, { useState, useEffect } from 'react';
-import { analytics } from '../../services/api';
-import {
-  TrendingUp, TrendingDown, Activity, Users, ShoppingCart,
-  DollarSign, Package, Calendar, RefreshCw, ArrowUpRight,
-  BarChart3, ShieldCheck, Zap
-} from 'lucide-react';
-import {
-  LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, AreaChart, Area, BarChart as RechartsBarChart, Bar
+import React, { useState, useEffect, useMemo } from 'react';
+import * as XLSX from 'xlsx';
+import { 
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
-
-const FALLBACK = {
-  revenue: 0,
-  orders: 0,
-  users: 0,
-  conversion: 0,
-  salesData: [
-    { name: 'Week 1', total: 0 },
-    { name: 'Week 2', total: 0 },
-    { name: 'Week 3', total: 0 },
-    { name: 'Week 4', total: 0 },
-  ],
-};
+import { 
+  Activity, DollarSign, ShoppingCart, TrendingUp, TrendingDown, 
+  Download, Calendar, BrainCircuit, Target, Package, Zap
+} from 'lucide-react';
+import api from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 
 export default function AnalyticsManagement() {
-  const [stats, setStats] = useState(FALLBACK);
+  const [orders, setOrders] = useState([]);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState('30');
-  const [error, setError] = useState('');
+  const [timeframe, setTimeframe] = useState('30'); // '7', '30', '90', '365'
+  const { showToast } = useToast() || {};
 
   useEffect(() => {
-    fetchAnalytics();
-  }, [period]);
+    const fetchTelemetry = async () => {
+      setLoading(true);
+      try {
+        const [orderRes, prodRes] = await Promise.all([
+          api.get('/orders').catch(() => api.get('/admin/orders')),
+          api.get('/products')
+        ]);
+        setOrders(orderRes.data?.orders || orderRes.data?.data || orderRes.data || []);
+        setProducts(prodRes.data?.products || prodRes.data?.data || prodRes.data || []);
+      } catch (err) {
+        showToast?.('Data Science pipeline synchronization failed.', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTelemetry();
+  }, []);
 
-  const fetchAnalytics = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await analytics.getKpis(period);
-      const d = res.data || {};
-      setStats({
-        revenue: d.revenue ?? d.totalRevenue ?? d.grossRevenue ?? 0,
-        orders: d.orders ?? d.totalOrders ?? 0,
-        users: d.users ?? d.totalUsers ?? d.activeUsers ?? 0,
-        conversion: d.conversion ?? d.conversionRate ?? 0,
-        salesData: Array.isArray(d.salesData) ? d.salesData
-          : Array.isArray(d.dailyRevenue) ? d.dailyRevenue.map(x => ({ name: x.date || x.name, total: x.revenue || x.total || 0 }))
-          : FALLBACK.salesData,
-      });
-    } catch (err) {
-      console.error('Analytics fetch error:', err);
-      setError('Could not load analytics data. Showing cached data.');
-      // Keep existing stats on error
-    } finally {
-      setLoading(false);
+  // --- DATA SCIENCE ENGINE (IN-BROWSER CRUNCHING) ---
+  const analyticsData = useMemo(() => {
+    const now = new Date();
+    const cutoffDate = new Date();
+    cutoffDate.setDate(now.getDate() - parseInt(timeframe));
+
+    // 1. Filter active temporal window
+    const validOrders = orders.filter(o => 
+      o.status !== 'cancelled' && 
+      o.status !== 'returned' && 
+      new Date(o.created_at) >= cutoffDate
+    );
+
+    // Previous window for velocity comparison
+    const previousCutoff = new Date(cutoffDate);
+    previousCutoff.setDate(cutoffDate.getDate() - parseInt(timeframe));
+    const previousOrders = orders.filter(o => 
+      o.status !== 'cancelled' && 
+      new Date(o.created_at) >= previousCutoff && 
+      new Date(o.created_at) < cutoffDate
+    );
+
+    // 2. Core KPIs
+    const totalRevenue = validOrders.reduce((sum, o) => sum + parseFloat(o.total_amount || o.total || 0), 0);
+    const prevRevenue = previousOrders.reduce((sum, o) => sum + parseFloat(o.total_amount || o.total || 0), 0);
+    const revenueVelocity = prevRevenue ? ((totalRevenue - prevRevenue) / prevRevenue) * 100 : 0;
+
+    const totalOrders = validOrders.length;
+    const prevOrdersCount = previousOrders.length;
+    const orderVelocity = prevOrdersCount ? ((totalOrders - prevOrdersCount) / prevOrdersCount) * 100 : 0;
+
+    const aov = totalOrders ? totalRevenue / totalOrders : 0;
+    const prevAov = prevOrdersCount ? prevRevenue / prevOrdersCount : 0;
+    const aovVelocity = prevAov ? ((aov - prevAov) / prevAov) * 100 : 0;
+
+    // 3. Time-Series Generation (Area Chart)
+    const timeSeriesMap = {};
+    validOrders.forEach(o => {
+      const dateStr = new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      if (!timeSeriesMap[dateStr]) timeSeriesMap[dateStr] = { date: dateStr, revenue: 0, orders: 0 };
+      timeSeriesMap[dateStr].revenue += parseFloat(o.total_amount || o.total || 0);
+      timeSeriesMap[dateStr].orders += 1;
+    });
+    const timeSeriesData = Object.values(timeSeriesMap);
+
+    // 4. Product Matrix Analysis (Bar Chart & Top Sellers)
+    const productFrequency = {};
+    validOrders.forEach(o => {
+      if (o.items && Array.isArray(o.items)) {
+        o.items.forEach(item => {
+          const name = item.name || item.product?.name || 'Unknown Node';
+          if (!productFrequency[name]) productFrequency[name] = { name, revenue: 0, units: 0 };
+          productFrequency[name].revenue += parseFloat(item.price * item.quantity);
+          productFrequency[name].units += parseInt(item.quantity);
+        });
+      }
+    });
+    
+    const topProducts = Object.values(productFrequency)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
+
+    // 5. Algorithmic Insights Generator
+    const insights = [];
+    if (revenueVelocity > 15) insights.push({ type: 'positive', text: `Revenue velocity is up ${revenueVelocity.toFixed(1)}%. Current marketing vectors are highly effective.` });
+    else if (revenueVelocity < -10) insights.push({ type: 'negative', text: `Revenue contraction of ${Math.abs(revenueVelocity).toFixed(1)}% detected. Analyze recent traffic sources.` });
+    
+    if (aovVelocity > 5) insights.push({ type: 'positive', text: `Average Order Value climbed ${aovVelocity.toFixed(1)}%. Cross-selling strategies are yielding results.` });
+    
+    if (topProducts.length > 0) {
+      insights.push({ type: 'neutral', text: `Hardware node '${topProducts[0].name}' accounts for the highest revenue density in this temporal window.` });
     }
+
+    // Identify slow movers from full product list
+    const activeProductNames = Object.keys(productFrequency);
+    const slowMovers = products.filter(p => !activeProductNames.includes(p.name)).length;
+    if (slowMovers > 0) {
+      insights.push({ type: 'warning', text: `${slowMovers} hardware nodes generated zero volume in this timeframe. Consider flash sales or taxonomy repositioning.` });
+    }
+
+    return { totalRevenue, revenueVelocity, totalOrders, orderVelocity, aov, aovVelocity, timeSeriesData, topProducts, insights };
+  }, [orders, products, timeframe]);
+
+  // --- EXPORT PROTOCOL ---
+  const exportAnalytics = () => {
+    const ws1 = XLSX.utils.json_to_sheet([{ 
+      'Timeframe (Days)': timeframe, 
+      'Total Revenue (₹)': analyticsData.totalRevenue, 
+      'Total Volume': analyticsData.totalOrders, 
+      'AOV (₹)': analyticsData.aov.toFixed(2),
+      'Revenue Velocity (%)': analyticsData.revenueVelocity.toFixed(2)
+    }]);
+    
+    const ws2 = XLSX.utils.json_to_sheet(analyticsData.timeSeriesData);
+    const ws3 = XLSX.utils.json_to_sheet(analyticsData.topProducts);
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, ws1, "Macro Overview");
+    XLSX.utils.book_append_sheet(workbook, ws2, "Time-Series Data");
+    XLSX.utils.book_append_sheet(workbook, ws3, "Node Performance");
+    
+    XLSX.writeFile(workbook, `Anritvox_DataScience_Report_${timeframe}D_${new Date().toISOString().split('T')[0]}.xlsx`);
+    showToast?.('Data Science Ledger Extracted', 'success');
   };
 
-  const fmt = (n) => {
-    const num = Number(n) || 0;
-    if (num >= 100000) return '\u20b9' + (num / 100000).toFixed(1) + 'L';
-    if (num >= 1000) return '\u20b9' + (num / 1000).toFixed(1) + 'K';
-    return '\u20b9' + num.toFixed(2);
-  };
+  const MetricCard = ({ title, value, velocity, icon: Icon, color, prefix = '' }) => (
+    <div className="bg-slate-900/40 border border-slate-800/80 p-6 rounded-[2rem] relative overflow-hidden group">
+      <div className={`absolute top-0 right-0 w-32 h-32 bg-${color}-500/5 blur-3xl -mr-10 -mt-10 group-hover:bg-${color}-500/10 transition-all`}></div>
+      <div className="flex justify-between items-start relative z-10">
+        <div>
+          <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{title}</p>
+          <h4 className="text-3xl font-black text-white tracking-tighter mt-2">{prefix}{value}</h4>
+          <div className="flex items-center gap-2 mt-3">
+            <span className={`flex items-center gap-1 text-[10px] font-black ${velocity >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              {velocity >= 0 ? <TrendingUp size={12}/> : <TrendingDown size={12}/>}
+              {Math.abs(velocity).toFixed(1)}%
+            </span>
+            <span className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">vs previous {timeframe}d</span>
+          </div>
+        </div>
+        <div className={`p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-${color}-500`}>
+          <Icon size={20} />
+        </div>
+      </div>
+    </div>
+  );
 
-  const fmtNum = (n) => {
-    const num = Number(n) || 0;
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-    return String(num);
-  };
-
-  const kpis = [
-    { label: 'Gross Revenue', value: fmt(stats.revenue), icon: DollarSign, color: 'emerald', sub: `Last ${period} days` },
-    { label: 'Total Orders', value: fmtNum(stats.orders), icon: ShoppingCart, color: 'blue', sub: `Last ${period} days` },
-    { label: 'Active Users', value: fmtNum(stats.users), icon: Users, color: 'purple', sub: `Last ${period} days` },
-    { label: 'Conv. Rate', value: (Number(stats.conversion) || 0).toFixed(1) + '%', icon: TrendingUp, color: 'amber', sub: 'Orders / Visits' },
-  ];
-
-  const colorMap = {
-    emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-100' },
-    blue: { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-100' },
-    purple: { bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-100' },
-    amber: { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-100' },
-  };
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+        <div className="relative">
+          <div className="w-20 h-20 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
+          <BrainCircuit className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-purple-500 animate-pulse" size={24} />
+        </div>
+        <p className="text-slate-500 font-black uppercase text-[10px] tracking-[0.3em] animate-pulse">Compiling Neural Analytics...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-8 space-y-6 bg-[#020617] min-h-screen text-slate-300 font-sans animate-in fade-in duration-500">
+      
+      {/* COMMAND HEADER */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-800/80">
         <div>
-          <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Data Science</h2>
-          <p className="text-slate-500 font-medium mt-1">Analytics & KPI Intelligence Command</p>
+          <h1 className="text-3xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+            Data <span className="text-purple-500">Science</span>
+          </h1>
+          <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest mt-1 flex items-center gap-2">
+            <Activity size={12} className="text-purple-500" /> Advanced Telemetry & Prediction Engine
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <select
-            value={period}
-            onChange={e => setPeriod(e.target.value)}
-            className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          >
-            <option value="7">Last 7 days</option>
-            <option value="30">Last 30 days</option>
-            <option value="90">Last 90 days</option>
-            <option value="365">Last 365 days</option>
-          </select>
-          <button
-            onClick={fetchAnalytics}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-bold text-slate-700 transition"
-          >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex bg-slate-900 border border-slate-800 p-1 rounded-xl">
+            {[{v:'7', l:'7D'}, {v:'30', l:'30D'}, {v:'90', l:'3M'}, {v:'365', l:'1Y'}].map(t => (
+              <button 
+                key={t.v} onClick={() => setTimeframe(t.v)}
+                className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${timeframe === t.v ? 'bg-purple-500/10 text-purple-400 shadow-lg' : 'text-slate-500 hover:text-white'}`}
+              >
+                {t.l}
+              </button>
+            ))}
+          </div>
+          <button onClick={exportAnalytics} className="flex items-center gap-2 px-5 py-3 bg-slate-900 border border-slate-800 text-white font-black uppercase text-[10px] tracking-widest rounded-xl hover:bg-purple-500/10 hover:border-purple-500/50 hover:text-purple-400 transition-all">
+            <Download size={14} /> Extract Ledger
           </button>
         </div>
       </div>
 
-      {error && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-amber-700 text-sm font-medium">{error}</div>
-      )}
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {kpis.map(({ label, value, icon: Icon, color, sub }) => {
-          const c = colorMap[color];
-          return (
-            <div key={label} className={`bg-white p-6 rounded-3xl shadow-sm border ${c.border} flex items-center justify-between`}>
-              <div>
-                <p className="text-xs font-black uppercase text-slate-400 mb-1">{label}</p>
-                <h3 className="text-2xl font-black text-slate-900">{loading ? '...' : value}</h3>
-                <p className="text-xs font-bold text-slate-400 mt-2">{sub}</p>
-              </div>
-              <div className={`w-12 h-12 ${c.bg} rounded-2xl flex items-center justify-center ${c.text}`}>
-                <Icon size={24} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Revenue Chart */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
-        <h3 className="font-black text-slate-900 text-lg mb-6 uppercase tracking-tight">Revenue Trend</h3>
-        {loading ? (
-          <div className="flex items-center justify-center h-48">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500"></div>
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={stats.salesData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <defs>
-                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} />
-              <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={v => '\u20b9' + (v >= 1000 ? (v/1000).toFixed(0) + 'K' : v)} />
-              <Tooltip formatter={(v) => ['\u20b9' + Number(v).toLocaleString('en-IN'), 'Revenue']} />
-              <Area type="monotone" dataKey="total" stroke="#10b981" strokeWidth={2} fill="url(#colorRevenue)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        )}
-      </div>
-
-      {/* Summary */}
+      {/* MACRO KPI METRICS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 col-span-1 md:col-span-3">
-          <h3 className="font-black text-slate-900 text-lg mb-4 uppercase tracking-tight">Performance Summary</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-slate-50 rounded-2xl">
-              <div className="text-xl font-black text-slate-900">{loading ? '...' : fmt(stats.revenue)}</div>
-              <div className="text-xs text-slate-400 font-bold mt-1 uppercase">Total Revenue</div>
-            </div>
-            <div className="text-center p-4 bg-slate-50 rounded-2xl">
-              <div className="text-xl font-black text-slate-900">{loading ? '...' : fmtNum(stats.orders)}</div>
-              <div className="text-xs text-slate-400 font-bold mt-1 uppercase">Total Orders</div>
-            </div>
-            <div className="text-center p-4 bg-slate-50 rounded-2xl">
-              <div className="text-xl font-black text-slate-900">{loading ? '...' : fmtNum(stats.users)}</div>
-              <div className="text-xs text-slate-400 font-bold mt-1 uppercase">Active Users</div>
-            </div>
-            <div className="text-center p-4 bg-slate-50 rounded-2xl">
-              <div className="text-xl font-black text-slate-900">{loading ? '...' : (Number(stats.conversion) || 0).toFixed(1) + '%'}</div>
-              <div className="text-xs text-slate-400 font-bold mt-1 uppercase">Conversion</div>
-            </div>
+        <MetricCard title="Gross Revenue Volume" value={analyticsData.totalRevenue.toLocaleString()} velocity={analyticsData.revenueVelocity} icon={DollarSign} color="emerald" prefix="₹" />
+        <MetricCard title="Transaction Volume" value={analyticsData.totalOrders.toLocaleString()} velocity={analyticsData.orderVelocity} icon={ShoppingCart} color="blue" />
+        <MetricCard title="Average Node Value (AOV)" value={analyticsData.aov.toFixed(0).toLocaleString()} velocity={analyticsData.aovVelocity} icon={Target} color="purple" prefix="₹" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* TIME SERIES VISUALIZATION */}
+        <div className="lg:col-span-2 bg-slate-900/30 border border-slate-800/80 rounded-[2.5rem] p-6 shadow-2xl">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+              <TrendingUp size={14} className="text-purple-500" /> Revenue Trajectory
+            </h3>
+          </div>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={analyticsData.timeSeriesData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#a855f7" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                <XAxis dataKey="date" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} dy={10} />
+                <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `₹${val}`} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#020617', border: '1px solid #1e293b', borderRadius: '16px', fontSize: '12px', fontWeight: 'bold' }}
+                  itemStyle={{ color: '#a855f7' }}
+                />
+                <Area type="monotone" dataKey="revenue" stroke="#a855f7" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
+
+        {/* ALGORITHMIC INSIGHTS */}
+        <div className="bg-slate-900/30 border border-slate-800/80 rounded-[2.5rem] p-6 shadow-2xl flex flex-col">
+          <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 mb-6 flex items-center gap-2">
+            <BrainCircuit size={14} className="text-blue-500" /> Algorithmic Insights
+          </h3>
+          <div className="flex-1 space-y-4 overflow-y-auto custom-scrollbar pr-2">
+            {analyticsData.insights.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-slate-500 font-bold text-xs uppercase tracking-widest">Awaiting Data Vectors</div>
+            ) : analyticsData.insights.map((insight, i) => {
+              let config = { bg: 'bg-slate-900', border: 'border-slate-800', text: 'text-slate-300', icon: Activity };
+              if (insight.type === 'positive') config = { bg: 'bg-emerald-500/5', border: 'border-emerald-500/20', text: 'text-emerald-400', icon: TrendingUp };
+              if (insight.type === 'negative') config = { bg: 'bg-rose-500/5', border: 'border-rose-500/20', text: 'text-rose-400', icon: TrendingDown };
+              if (insight.type === 'warning') config = { bg: 'bg-amber-500/5', border: 'border-amber-500/20', text: 'text-amber-400', icon: Zap };
+              
+              const Icon = config.icon;
+              return (
+                <div key={i} className={`p-4 rounded-2xl border ${config.bg} ${config.border} flex items-start gap-3`}>
+                  <Icon size={16} className={`mt-0.5 ${config.text} shrink-0`} />
+                  <p className="text-xs font-bold leading-relaxed text-slate-300">{insight.text}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
       </div>
+
+      {/* HARDWARE PERFORMANCE MATRIX */}
+      <div className="bg-slate-900/30 border border-slate-800/80 rounded-[2.5rem] p-6 shadow-2xl">
+        <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 mb-8 flex items-center gap-2">
+          <Package size={14} className="text-emerald-500" /> Node Performance Matrix (Top 5)
+        </h3>
+        <div className="h-[250px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={analyticsData.topProducts} layout="vertical" margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" horizontal={false} />
+              <XAxis type="number" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `₹${val}`} />
+              <YAxis dataKey="name" type="category" stroke="#94a3b8" fontSize={10} width={150} tickLine={false} axisLine={false} />
+              <Tooltip 
+                cursor={{ fill: '#0f172a' }}
+                contentStyle={{ backgroundColor: '#020617', border: '1px solid #1e293b', borderRadius: '16px', fontSize: '12px', fontWeight: 'bold' }}
+              />
+              <Bar dataKey="revenue" fill="#10b981" radius={[0, 4, 4, 0]} barSize={24} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
     </div>
   );
 }
