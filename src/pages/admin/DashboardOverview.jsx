@@ -12,7 +12,7 @@ import {
 import { analytics } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
-// --- MOCK DATA FOR CHARTS (Ensures the dashboard looks stunning even if API lacks historical data) ---
+// --- MOCK DATA FOR CHARTS ---
 const revenueData = [
   { name: '1st', revenue: 4500, orders: 32 }, { name: '5th', revenue: 5200, orders: 41 },
   { name: '10th', revenue: 3800, orders: 28 }, { name: '15th', revenue: 7900, orders: 65 },
@@ -56,12 +56,12 @@ export default function DashboardOverview() {
     }
   };
 
-  // Safe navigation wrapper to prevent app freezing if a route is missing
   const handleNavigate = (path, moduleName) => {
     try {
       navigate(path);
+      window.scrollTo(0, 0);
     } catch (e) {
-      showToast?.(`Module ${moduleName} is currently offline or unreachable.`, 'error');
+      showToast?.(`Module ${moduleName} is currently offline.`, 'error');
     }
   };
 
@@ -77,23 +77,31 @@ export default function DashboardOverview() {
     );
   }
 
+  // FIXED ROUTES: Added /dashboard/ to all paths so they render inside the Admin Layout
   const topKPIs = [
-    { label: 'Gross Revenue', value: `₹${stats?.revenue || stats?.totalRevenue || '0.00'}`, icon: DollarSign, route: '/admin/analytics', color: 'emerald', trend: '+12.5%' },
-    { label: 'Total Orders', value: stats?.orders || stats?.totalOrders || '0', icon: ShoppingBag, route: '/admin/orders', color: 'blue', trend: '+4.2%' },
-    { label: 'Client Registry', value: stats?.users || stats?.totalUsers || '0', icon: Users, route: '/admin/users', color: 'purple', trend: '+8.1%' },
-    { label: 'Hardware Nodes', value: stats?.products || stats?.totalProducts || '0', icon: Box, route: '/admin/products', color: 'amber', trend: 'Stable' },
+    { label: 'Gross Revenue', value: `₹${stats?.revenue || stats?.totalRevenue || '0.00'}`, icon: DollarSign, route: '/admin/dashboard/analytics', color: 'emerald', trend: '+12.5%' },
+    { label: 'Total Orders', value: stats?.orders || stats?.totalOrders || '0', icon: ShoppingBag, route: '/admin/dashboard/orders', color: 'blue', trend: '+4.2%' },
+    { label: 'Client Registry', value: stats?.users || stats?.totalUsers || '0', icon: Users, route: '/admin/dashboard/users', color: 'purple', trend: '+8.1%' },
+    { label: 'Hardware Nodes', value: stats?.products || stats?.totalProducts || '0', icon: Box, route: '/admin/dashboard/products', color: 'amber', trend: 'Stable' },
+  ];
+
+  const secondaryKPIs = [
+    { label: 'Active Support Matrix', value: stats?.activeTickets || '0', icon: LifeBuoy, route: '/admin/dashboard/support', color: 'cyan' },
+    { label: 'Pending Logistics (RMA)', value: stats?.pendingReturns || '0', icon: RotateCcw, route: '/admin/dashboard/returns', color: 'rose' },
+    { label: 'Active Flash Sequences', value: stats?.activeFlashSales || '0', icon: Zap, route: '/admin/dashboard/flash-sales', color: 'amber' },
+    { label: 'Active Incentives', value: stats?.activeCoupons || '0', icon: Ticket, route: '/admin/dashboard/coupons', color: 'emerald' },
   ];
 
   const adminModules = [
-    { title: 'Product Registry', desc: 'Deploy & manage hardware nodes', icon: Box, route: '/admin/products', color: 'emerald' },
-    { title: 'Order Pipeline', desc: 'Monitor global fulfillments', icon: ShoppingBag, route: '/admin/orders', color: 'blue' },
-    { title: 'Client Accounts', desc: 'User & permission auditing', icon: ShieldCheck, route: '/admin/users', color: 'purple' },
-    { title: 'Flash Scheduler', desc: 'Temporal pricing & drops', icon: Zap, route: '/admin/flash-sales', color: 'amber' },
-    { title: 'Incentive Engine', desc: 'Coupons & discount logic', icon: Ticket, route: '/admin/coupons', color: 'cyan' },
-    { title: 'Reverse Logistics', desc: 'RMA & refund processing', icon: RotateCcw, route: '/admin/returns', color: 'rose' },
-    { title: 'Support Resolution', desc: 'Client communication hub', icon: LifeBuoy, route: '/admin/support', color: 'sky' },
-    { title: 'Taxonomy Engine', desc: 'Category & hierarchy sync', icon: Layers, route: '/admin/categories', color: 'indigo' },
-    { title: 'System Settings', desc: 'Core platform configuration', icon: Settings, route: '/admin/settings', color: 'slate' },
+    { title: 'Product Registry', desc: 'Deploy & manage hardware nodes', icon: Box, route: '/admin/dashboard/products', color: 'emerald' },
+    { title: 'Order Pipeline', desc: 'Monitor global fulfillments', icon: ShoppingBag, route: '/admin/dashboard/orders', color: 'blue' },
+    { title: 'Client Accounts', desc: 'User & permission auditing', icon: ShieldCheck, route: '/admin/dashboard/users', color: 'purple' },
+    { title: 'Flash Scheduler', desc: 'Temporal pricing & drops', icon: Zap, route: '/admin/dashboard/flash-sales', color: 'amber' },
+    { title: 'Incentive Engine', desc: 'Coupons & discount logic', icon: Ticket, route: '/admin/dashboard/coupons', color: 'cyan' },
+    { title: 'Reverse Logistics', desc: 'RMA & refund processing', icon: RotateCcw, route: '/admin/dashboard/returns', color: 'rose' },
+    { title: 'Support Resolution', desc: 'Client communication hub', icon: LifeBuoy, route: '/admin/dashboard/support', color: 'sky' },
+    { title: 'Taxonomy Engine', desc: 'Category & hierarchy sync', icon: Layers, route: '/admin/dashboard/categories', color: 'indigo' },
+    { title: 'System Settings', desc: 'Core platform configuration', icon: Settings, route: '/admin/dashboard/settings', color: 'slate' },
   ];
 
   return (
@@ -148,6 +156,25 @@ export default function DashboardOverview() {
                 <ArrowRight size={14} className={`opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-${stat.color}-500`} />
               </p>
             </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Secondary Action Indicators */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {secondaryKPIs.map((stat, i) => (
+          <div 
+            key={i}
+            onClick={() => handleNavigate(stat.route, stat.label)}
+            className="flex items-center justify-between p-4 bg-slate-950 border border-slate-800 rounded-2xl cursor-pointer hover:border-slate-600 group transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <stat.icon size={18} className={`text-${stat.color}-500`} />
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider group-hover:text-white transition-colors">{stat.label}</span>
+            </div>
+            <span className={`text-lg font-black text-${stat.color}-400 bg-${stat.color}-500/10 px-3 py-1 rounded-xl group-hover:scale-110 transition-transform`}>
+              {stat.value}
+            </span>
           </div>
         ))}
       </div>
