@@ -125,11 +125,55 @@ export const coupons = {
   delete: (id) => api.delete(`/coupons/${id}`),
 };
 
+// --- NEWLY MAPPED MODULES TO PREVENT ANY FUTURE VERCEL FAILURES ---
+
+export const flashSales = {
+  getActive: () => api.get("/flash-sales").catch(() => ({ data: [] })),
+  getAllAdmin: () => api.get("/flash-sales/admin").catch(() => ({ data: [] })),
+  create: (data) => api.post("/flash-sales", data),
+  update: (id, data) => api.put(`/flash-sales/${id}`, data),
+  delete: (id) => api.delete(`/flash-sales/${id}`),
+  toggleStatus: (id, status) => api.patch(`/flash-sales/${id}/status`, { status }),
+};
+
+export const affiliate = {
+  getDashboard: () => api.get("/affiliate/dashboard").catch(() => ({ data: {} })),
+  getLinks: () => api.get("/affiliate/links").catch(() => ({ data: [] })),
+  generateLink: (data) => api.post("/affiliate/links", data),
+};
+
+export const fitment = {
+  check: (data) => api.post("/fitment/check", data),
+  getModels: (year, make) => api.get(`/fitment/models?year=${year}&make=${make}`),
+};
+
 export const reviews = {
   getByProduct: (productId) => api.get(`/reviews/product/${productId}`),
+  getAllAdmin: () => api.get("/reviews").catch(() => ({ data: [] })),
   submit: (data) => api.post("/reviews", data),
+  updateStatus: (id, status) => api.patch(`/reviews/${id}/status`, { status }),
   delete: (id) => api.delete(`/reviews/${id}`),
 };
+
+export const returns = {
+  getMyReturns: () => api.get("/returns/my"),
+  submit: (data) => api.post("/returns", data),
+  getAllAdmin: () => api.get("/returns").catch(() => ({ data: [] })),
+  updateStatus: (id, status) => api.patch(`/returns/${id}/status`, { status }),
+};
+
+export const inventory = {
+  get: () => api.get("/inventory").catch(() => ({ data: [] })),
+  updateStock: (productId, quantity) => api.patch(`/inventory/${productId}`, { quantity }),
+};
+
+export const support = {
+  getAllAdmin: () => api.get("/contact").catch(() => ({ data: [] })),
+  updateStatus: (id, status) => api.patch(`/contact/${id}/status`, { status }),
+  delete: (id) => api.delete(`/contact/${id}`),
+};
+
+// -------------------------------------------------------------------
 
 export const notifications = {
   get: () => api.get("/notifications"),
@@ -156,18 +200,6 @@ export const shipping = {
   delete: (id) => api.delete(`/shipping/${id}`),
 };
 
-export const returns = {
-  getMyReturns: () => api.get("/returns/my"),
-  submit: (data) => api.post("/returns", data),
-  getAllAdmin: () => api.get("/returns"),
-  updateStatus: (id, status) => api.patch(`/returns/${id}/status`, { status }),
-};
-
-export const inventory = {
-  get: () => api.get("/inventory"),
-  updateStock: (productId, quantity) => api.patch(`/inventory/${productId}`, { quantity }),
-};
-
 export const banners = {
   getActive: () => api.get("/banners"),
   getAllAdmin: () => api.get("/banners/admin/all"),
@@ -179,7 +211,7 @@ export const banners = {
 export const warranty = {
   register: (data) => api.post("/warranty/register", data),
   getMyWarranties: () => api.get("/warranty/my"),
-  getAllAdmin: () => api.get("/warranty"),
+  getAllAdmin: () => api.get("/warranty").catch(() => ({ data: [] })),
   updateStatus: (id, status) => api.patch(`/warranty/${id}/status`, { status }),
 };
 
@@ -203,14 +235,7 @@ export const adminManagement = {
   getAllOrders: () => api.get("/admin/orders"),
 };
 
-// CRITICAL FIX: The Support Module natively bridges to your existing contact/support backend infrastructure.
-export const support = {
-  getAllAdmin: () => api.get("/contact"),
-  updateStatus: (id, status) => api.patch(`/contact/${id}/status`, { status }),
-  delete: (id) => api.delete(`/contact/${id}`),
-};
-
-// Global bridging exports
+// Global bridging exports for legacy compatibility
 export const fetchCart = () => cart.get();
 export const addToCartAPI = (productId, quantity) => cart.add({ productId, quantity });
 export const removeFromCartAPI = (productId) => cart.remove(productId);
