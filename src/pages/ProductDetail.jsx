@@ -1,26 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
-  Star, ChevronRight, Check, ShoppingCart, Heart, Share2, Shield, Plus, Minus, 
-  Zap, Tag, Box, Truck, RefreshCw, Lock, CreditCard, Award, Info, MapPin, 
-  Youtube, Play, RotateCcw, Eye, Settings, Terminal, Cpu, Clock, AlertTriangle, Search, Mic, Camera 
+  Star, ChevronRight, Check, ShoppingCart, Heart, Shield, Plus, Minus, 
+  Zap, Box, Truck, RefreshCw, AlertTriangle, Eye, Settings 
 } from 'lucide-react';
 import { products as productsApi, fitment as fitmentApi } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 
-// --- NEW COMPONENT: Image Gallery ---
+// Helper function to resolve absolute R2 URL
+const getImageUrl = (img) => {
+  if (!img) return '/logo.webp';
+  let path = typeof img === 'object' ? (img.file_path || img.url || img.path) : img;
+  if (!path) return '/logo.webp';
+  if (path.startsWith('http')) return path;
+  
+  const baseUrl = import.meta.env.VITE_R2_PUBLIC_URL || import.meta.env.VITE_IMAGE_BASE_URL || 'https://pub-22cd43cce9bc475680ad496e199706c4.r2.dev';
+  const cleanBase = baseUrl.replace(/\/$/, '');
+  const cleanPath = path.replace(/^\//, '');
+  return `${cleanBase}/${cleanPath}`;
+};
+
 const ImageGallery = ({ images, mainImage }) => {
   const [selected, setSelected] = useState(0);
-  const gallery = images && images.length > 0 ? images : [{ url: mainImage || '/logo.webp' }];
+  
+  // Clean initialization of the gallery array
+  let gallery = [];
+  if (images && images.length > 0) {
+    gallery = images.map(img => ({ url: getImageUrl(img) }));
+  } else if (mainImage) {
+    gallery = [{ url: getImageUrl(mainImage) }];
+  } else {
+    gallery = [{ url: '/logo.webp' }];
+  }
 
   return (
     <div className="flex flex-col gap-4">
       <div className="relative aspect-square bg-slate-900 rounded-[2.5rem] overflow-hidden border border-slate-800 group">
         <img 
           src={gallery[selected]?.url} 
+          onError={(e) => { e.target.src = '/logo.webp'; }}
           className="w-full h-full object-contain hover:scale-110 transition-transform duration-500" 
-          alt="Product" 
+          alt="Product Display" 
         />
         <div className="absolute top-6 right-6 flex flex-col gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
           <button className="p-3 bg-black/60 backdrop-blur-xl rounded-full border border-white/10 text-white hover:bg-emerald-500 hover:text-black transition-all">
@@ -35,7 +56,7 @@ const ImageGallery = ({ images, mainImage }) => {
             onClick={() => setSelected(i)}
             className={`w-20 h-20 rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0 ${selected === i ? 'border-emerald-500 scale-95' : 'border-slate-800 grayscale hover:grayscale-0'}`}
           >
-            <img src={img.url} className="w-full h-full object-cover" alt="thumbnail" />
+            <img src={img.url} onError={(e) => { e.target.src = '/logo.webp'; }} className="w-full h-full object-cover" alt={`thumbnail-${i}`} />
           </button>
         ))}
       </div>
@@ -43,12 +64,11 @@ const ImageGallery = ({ images, mainImage }) => {
   );
 };
 
-// --- NEW COMPONENT: Vehicle Fitment Selector ---
 const VehicleFitmentChecker = ({ productId }) => {
   const [makes, setMakes] = useState([]);
   const [models, setModels] = useState([]);
   const [selection, setSelection] = useState({ make: '', model: '', year: '' });
-  const [result, setResult] = useState(null); // { fits: boolean, notes: string }
+  const [result, setResult] = useState(null); 
   const [checking, setChecking] = useState(false);
 
   useEffect(() => {
@@ -156,8 +176,8 @@ export default function ProductDetail() {
       if (!id || id === 'null') { setNotFound(true); setLoading(false); return; }
       setLoading(true);
       try {
-        const isNumericId = /^\d+$/.test(id); // Check if purely numeric (product IDs)        const res = isObjectId ? await productsApi.getById(id) : await productsApi.getBySlug(id);
-                const res = isNumericId ? await productsApi.getById(id) : await productsApi.getBySlug(id);
+        const isNumericId = /^\d+$/.test(id); 
+        const res = isNumericId ? await productsApi.getById(id) : await productsApi.getBySlug(id);
         setProduct(res.data?.data || res.data);
       } catch (err) {
         if (err.response?.status === 404) setNotFound(true);
@@ -197,7 +217,6 @@ export default function ProductDetail() {
     <div className="min-h-screen bg-black text-white pt-24 pb-20">
       <div className="max-w-7xl mx-auto px-6">
         
-        {/* Breadcrumbs */}
         <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-500 mb-12">
           <Link to="/" className="hover:text-emerald-500 transition-colors">Home</Link>
           <ChevronRight size={12} />
@@ -207,19 +226,16 @@ export default function ProductDetail() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
-          
-          {/* LEFT: VISUALS */}
           <div className="lg:col-span-7">
             <ImageGallery images={product.images} mainImage={product.image_url} />
             
-            {/* Expanded Details Section */}
             <div className="mt-16 bg-slate-900/30 border border-slate-800/50 rounded-[3rem] p-12 overflow-hidden relative">
               <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
                 <Settings size={200} />
               </div>
 
               <div className="flex gap-12 border-b border-slate-800 mb-12">
-                {['specs', 'details', 'shipping'].map(t => (
+                {['specs', 'details'].map(t => (
                   <button 
                     key={t}
                     onClick={() => setActiveTab(t)}
@@ -240,7 +256,7 @@ export default function ProductDetail() {
                       { label: 'Bulb Type', value: product.bulb_type || 'LED / HID' },
                       { label: 'Wattage', value: product.wattage || '55W' },
                       { label: 'Color Temp', value: product.color_temp || '6000K' },
-                      { label: 'Warranty', value: product.warranty_period || '12 Months' }
+                      { label: 'Warranty', value: `${product.warranty_period || 12} Months` }
                     ].map(s => (
                       <div key={s.label} className="flex justify-between items-center py-4 border-b border-slate-800/50">
                         <span className="text-[10px] font-black uppercase text-slate-500 tracking-tighter">{s.label}</span>
@@ -275,15 +291,16 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          {/* RIGHT: DATA & ACTIONS */}
           <div className="lg:col-span-5">
             <div className="sticky top-32">
               
               <div className="flex items-center gap-3 mb-6">
-                <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-full text-[9px] font-black uppercase tracking-widest">In Stock</span>
+                <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-full text-[9px] font-black uppercase tracking-widest">
+                  {product.quantity > 0 ? 'In Stock' : 'Out of Stock'}
+                </span>
                 <div className="flex items-center gap-1 text-amber-500">
                   <Star size={12} fill="currentColor" />
-                  <span className="text-xs font-black">{product.rating || '4.8'}</span>
+                  <span className="text-xs font-black">{product.rating || '5.0'}</span>
                 </div>
               </div>
 
@@ -296,12 +313,13 @@ export default function ProductDetail() {
                 {product.discount_price && (
                   <div className="text-xl font-bold text-slate-600 line-through mb-1">₹{product.price}</div>
                 )}
-                <div className="mb-2 px-3 py-1 bg-rose-500/10 text-rose-500 rounded-lg text-[10px] font-black uppercase">
-                  -{Math.round(((product.price - product.discount_price)/product.price)*100)}% OFF
-                </div>
+                {product.discount_price && (
+                  <div className="mb-2 px-3 py-1 bg-rose-500/10 text-rose-500 rounded-lg text-[10px] font-black uppercase">
+                    -{Math.round(((product.price - product.discount_price)/product.price)*100)}% OFF
+                  </div>
+                )}
               </div>
 
-              {/* Quantity & Add */}
               <div className="flex flex-col gap-6">
                 <div className="flex items-center gap-6">
                   <div className="flex items-center bg-slate-900 rounded-full p-2 border border-slate-800">
@@ -314,7 +332,10 @@ export default function ProductDetail() {
                     </button>
                   </div>
                   <button 
-                    onClick={() => addToCart(product, quantity)}
+                    onClick={() => {
+                      addToCart(product, quantity);
+                      showToast?.('Added to Cart', 'success');
+                    }}
                     className="flex-1 bg-white text-black py-6 rounded-[2rem] font-black uppercase tracking-widest text-lg hover:bg-emerald-400 transition-all flex items-center justify-center gap-4 group"
                   >
                     Add to Cart
@@ -327,11 +348,12 @@ export default function ProductDetail() {
                     <Heart size={16} /> Wishlist
                   </button>
                   <button className="flex items-center justify-center gap-3 py-4 bg-slate-900 border border-slate-800 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-800 transition-colors">
-                              <RefreshCw size={16} /> Compare
-                            </button>
+                    <RefreshCw size={16} /> Compare
+                  </button>
                 </div>
-              {/* Vehicle Fitment Integrated Here */}
-              <VehicleFitmentChecker productId={product.id} />
+              </div>
+
+              <VehicleFitmentChecker productId={product.id || product._id} />
 
               <div className="mt-12 grid grid-cols-1 gap-4">
                 <div className="flex items-center gap-6 p-6 bg-slate-900/30 border border-slate-800/50 rounded-3xl">
@@ -342,21 +364,18 @@ export default function ProductDetail() {
                   </div>
                 </div>
                 <div className="flex items-center gap-6 p-6 bg-slate-900/30 border border-slate-800/50 rounded-3xl">
-                  <div className="p-4 bg-amber-500/10 rounded-2xl text-amber-500"><Award size={24} /></div>
+                  <div className="p-4 bg-amber-500/10 rounded-2xl text-amber-500"><Shield size={24} /></div>
                   <div>
                     <h5 className="text-[10px] font-black uppercase tracking-widest">Official Warranty</h5>
-                    <p className="text-[9px] font-bold text-slate-500 mt-1">1 Year comprehensive replacement coverage</p>
+                    <p className="text-[9px] font-bold text-slate-500 mt-1">{product.warranty_period || 12} Months comprehensive coverage</p>
                   </div>
                 </div>
               </div>
 
             </div>
           </div>
-
         </div>
-
       </div>
     </div>
-  </div>
   );
 }
