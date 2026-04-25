@@ -131,76 +131,76 @@ export default function CouponManagement() {
   }, [coupons, searchTerm, activeTab]);
 
   if (loading && coupons.length === 0) return (
-    <div className=\"flex flex-col items-center justify-center h-[60vh] gap-4\">
-      <div className=\"w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin\"></div>
-      <p className=\"text-slate-500 font-mono text-[10px] uppercase tracking-widest\">Deciphering Coupon Matrix...</p>
+    <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+      <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
+      <p className="text-slate-500 font-mono text-[10px] uppercase tracking-widest">Deciphering Coupon Matrix...</p>
     </div>
   );
 
   return (
-    <div className=\"p-8 space-y-8 bg-[#030712] min-h-screen text-slate-300\">
-      <div className=\"flex flex-col lg:flex-row lg:items-center justify-between gap-6\">
+    <div className="p-8 space-y-8 bg-[#030712] min-h-screen text-slate-300">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div>
-          <div className=\"flex items-center gap-3 mb-2\">
-            <div className=\"p-3 bg-cyan-500/10 rounded-2xl border border-cyan-500/20\">
-              <Ticket className=\"text-cyan-400\" size={28} />
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-3 bg-cyan-500/10 rounded-2xl border border-cyan-500/20">
+              <Ticket className="text-cyan-400" size={28} />
             </div>
             <div>
-              <h1 className=\"text-4xl font-black text-white uppercase tracking-tighter italic\">
-                Incentive <span className=\"text-cyan-400\">Engine</span>
+              <h1 className="text-4xl font-black text-white uppercase tracking-tighter italic">
+                Incentive <span className="text-cyan-400">Engine</span>
               </h1>
-              <p className=\"text-slate-500 font-bold text-[10px] uppercase tracking-[0.2em] flex items-center gap-2\">
-                <ShieldCheck size={12} className=\"text-emerald-500\" /> Revenue Growth & Retention Hub
+              <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.2em] flex items-center gap-2">
+                <ShieldCheck size={12} className="text-emerald-500" /> Revenue Growth & Retention Hub
               </p>
             </div>
           </div>
         </div>
 
-        <div className=\"flex items-center gap-3\">
+        <div className="flex items-center gap-3">
           <button 
             onClick={() => { resetForm(); setEditCoupon(null); setShowForm(true); }}
-            className=\"flex items-center gap-2 px-6 py-3 bg-cyan-500 text-black font-black uppercase text-xs tracking-widest rounded-xl hover:bg-cyan-400 transition-all shadow-[0_0_20px_rgba(6,182,212,0.3)]\"
+            className="flex items-center gap-2 px-6 py-3 bg-cyan-500 text-black font-black uppercase text-xs tracking-widest rounded-xl hover:bg-cyan-400 transition-all shadow-[0_0_20px_rgba(6,182,212,0.3)]"
           >
             <Plus size={16} /> Create Voucher
           </button>
-          <button onClick={fetchCoupons} className=\"p-3 bg-slate-900 border border-slate-800 text-slate-400 rounded-xl hover:bg-slate-800 transition-all\">
+          <button onClick={fetchCoupons} className="p-3 bg-slate-900 border border-slate-800 text-slate-400 rounded-xl hover:bg-slate-800 transition-all">
             <RefreshCw size={20} />
           </button>
         </div>
       </div>
 
-      <div className=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6\">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { label: 'Registry Size', value: stats.total, icon: Ticket, color: 'blue' },
           { label: 'Active Streams', value: stats.active, icon: Zap, color: 'amber' },
           { label: 'Total Redemptions', value: stats.redeemed, icon: Users, color: 'emerald' },
           { label: 'Revenue Retained', value: `₹${stats.savings.toLocaleString()}`, icon: DollarSign, color: 'rose' }
         ].map((stat, i) => (
-          <div key={i} className=\"bg-slate-900/50 border border-slate-800 p-6 rounded-3xl group hover:border-slate-700 transition-all\">
-            <div className=\"flex justify-between items-start mb-4\">
+          <div key={i} className={`bg-slate-900/50 border border-slate-800 p-6 rounded-3xl group hover:border-slate-700 transition-all`}>
+            <div className="flex justify-between items-start mb-4">
               <div className={`p-3 rounded-2xl bg-${stat.color}-500/10 text-${stat.color}-400 group-hover:scale-110 transition-transform`}>
                 <stat.icon size={20} />
               </div>
-              <TrendingUp size={16} className=\"text-slate-700\" />
+              <TrendingUp size={16} className="text-slate-700" />
             </div>
-            <p className=\"text-slate-500 font-black uppercase text-[10px] tracking-widest mb-1\">{stat.label}</p>
-            <p className=\"text-3xl font-black text-white tracking-tighter\">{stat.value}</p>
+            <p className="text-slate-500 font-black uppercase text-[10px] tracking-widest mb-1">{stat.label}</p>
+            <p className="text-3xl font-black text-white tracking-tighter">{stat.value}</p>
           </div>
         ))}
       </div>
 
-      <div className=\"flex flex-col md:flex-row gap-4\">
-        <div className=\"relative flex-1\">
-          <Search size={20} className=\"absolute left-4 top-1/2 -translate-y-1/2 text-slate-600\" />
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" />
           <input 
-            type=\"text\" 
-            placeholder=\"Search by voucher code or fingerprint...\"
+            type="text" 
+            placeholder="Search by voucher code or fingerprint..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className=\"w-full bg-slate-900/50 border border-slate-800 rounded-2xl pl-12 pr-6 py-4 outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-bold text-sm\"
+            className="w-full bg-slate-900/50 border border-slate-800 rounded-2xl pl-12 pr-6 py-4 outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-bold text-sm"
           />
         </div>
-        <div className=\"flex bg-slate-900/50 p-1.5 border border-slate-800 rounded-2xl\">
+        <div className="flex bg-slate-900/50 p-1.5 border border-slate-800 rounded-2xl">
           {['all', 'active', 'inactive'].map(tab => (
             <button
               key={tab}
@@ -216,58 +216,58 @@ export default function CouponManagement() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className=\"flex flex-col items-center justify-center py-24 bg-slate-900/20 border border-dashed border-slate-800 rounded-[3rem]\">
-          <BarChart3 size={64} className=\"text-slate-800 mb-4\" />
-          <p className=\"text-slate-600 font-black uppercase tracking-[0.3em] text-sm\">No Voucher Signals Found</p>
+        <div className="flex flex-col items-center justify-center py-24 bg-slate-900/20 border border-dashed border-slate-800 rounded-[3rem]">
+          <BarChart3 size={64} className="text-slate-800 mb-4" />
+          <p className="text-slate-600 font-black uppercase tracking-[0.3em] text-sm">No Voucher Signals Found</p>
         </div>
       ) : (
-        <div className=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6\">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((coupon) => (
             <div key={coupon._id || coupon.id} className={`bg-slate-900/50 border border-slate-800 rounded-[2rem] p-6 hover:border-cyan-500/30 transition-all group relative overflow-hidden ${!coupon.isActive && 'opacity-60 grayscale'}`}>
-              <div className=\"absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-3xl -mr-16 -mt-16 group-hover:bg-cyan-500/10 transition-colors\"></div>
-              <div className=\"flex justify-between items-start mb-6\">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-3xl -mr-16 -mt-16 group-hover:bg-cyan-500/10 transition-colors"></div>
+              <div className="flex justify-between items-start mb-6">
                 <div>
-                  <div className=\"flex items-center gap-2 mb-1\">
-                    <span className=\"text-2xl font-black text-white tracking-tighter font-mono\">{coupon.code}</span>
-                    <button onClick={() => handleCopy(coupon.code)} className=\"text-slate-600 hover:text-cyan-400 transition-colors\">
-                      {copiedId === coupon.code ? <Check size={16} className=\"text-emerald-500\" /> : <Copy size={16} />}
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-2xl font-black text-white tracking-tighter font-mono">{coupon.code}</span>
+                    <button onClick={() => handleCopy(coupon.code)} className="text-slate-600 hover:text-cyan-400 transition-colors">
+                      {copiedId === coupon.code ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
                     </button>
                   </div>
-                  <p className=\"text-[10px] font-bold text-slate-500 uppercase tracking-widest\">{coupon.description || 'Global Campaign Voucher'}</p>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{coupon.description || 'Global Campaign Voucher'}</p>
                 </div>
                 <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${coupon.isActive ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
                   {coupon.isActive ? 'Active' : 'Offline'}
                 </div>
               </div>
-              <div className=\"grid grid-cols-2 gap-4 mb-6\">
-                <div className=\"bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50\">
-                  <p className=\"text-[8px] font-black text-slate-600 uppercase tracking-[0.2em] mb-1 text-center\">Value</p>
-                  <p className=\"text-xl font-black text-cyan-400 text-center\">
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
+                  <p className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em] mb-1 text-center">Value</p>
+                  <p className="text-xl font-black text-cyan-400 text-center">
                     {coupon.discountType === 'percentage' ? `${coupon.discountValue}%` : `₹${coupon.discountValue}`}
                   </p>
                 </div>
-                <div className=\"bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50\">
-                  <p className=\"text-[8px] font-black text-slate-600 uppercase tracking-[0.2em] mb-1 text-center\">Threshold</p>
-                  <p className=\"text-xl font-black text-white text-center\">
+                <div className="bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
+                  <p className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em] mb-1 text-center">Threshold</p>
+                  <p className="text-xl font-black text-white text-center">
                     {coupon.minOrderAmount ? `₹${coupon.minOrderAmount}` : 'MIN_0'}
                   </p>
                 </div>
               </div>
-              <div className=\"space-y-3 mb-6\">
-                <div className=\"flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase\">
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase">
                   <span>Usage Matrix</span>
                   <span>{coupon.usedCount || 0} / {coupon.maxUses || '∞'}</span>
                 </div>
-                <div className=\"w-full h-1.5 bg-slate-800 rounded-full overflow-hidden\">
-                  <div className=\"h-full bg-cyan-500\" style={{ width: `${coupon.maxUses ? (coupon.usedCount / coupon.maxUses) * 100 : 0}%` }}></div>
+                <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-cyan-500" style={{ width: `${coupon.maxUses ? (coupon.usedCount / coupon.maxUses) * 100 : 0}%` }}></div>
                 </div>
-                <div className=\"flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest\">
+                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                   <Calendar size={12} /> Expires: {coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString() : 'NEVER_EXPIRES'}
                 </div>
               </div>
-              <div className=\"flex gap-2 pt-4 border-t border-slate-800/50\">
-                <button onClick={() => startEdit(coupon)} className=\"flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all\">Configure</button>
-                <button onClick={() => deleteCoupon(coupon._id || coupon.id)} className=\"p-3 bg-rose-500/10 text-rose-500 hover:bg-rose-500 rounded-xl transition-all border border-rose-500/20 hover:text-white\"><Trash2 size={16} /></button>
+              <div className="flex gap-2 pt-4 border-t border-slate-800/50">
+                <button onClick={() => startEdit(coupon)} className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all">Configure</button>
+                <button onClick={() => deleteCoupon(coupon._id || coupon.id)} className="p-3 bg-rose-500/10 text-rose-500 hover:bg-rose-500 rounded-xl transition-all border border-rose-500/20 hover:text-white"><Trash2 size={16} /></button>
               </div>
             </div>
           ))}
@@ -275,56 +275,56 @@ export default function CouponManagement() {
       )}
 
       {showForm && (
-        <div className=\"fixed inset-0 bg-[#030712]/90 backdrop-blur-xl flex items-center justify-center z-50 p-6 overflow-y-auto\">
-          <div className=\"bg-slate-900 border border-slate-800 rounded-[3rem] w-full max-w-2xl shadow-2xl relative overflow-hidden p-10\">
-            <button onClick={() => setShowForm(false)} className=\"absolute top-8 right-8 text-slate-500 hover:text-white transition-colors bg-slate-800/50 p-2.5 rounded-full\">
+        <div className="fixed inset-0 bg-[#030712]/90 backdrop-blur-xl flex items-center justify-center z-50 p-6 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-[3rem] w-full max-w-2xl shadow-2xl relative overflow-hidden p-10">
+            <button onClick={() => setShowForm(false)} className="absolute top-8 right-8 text-slate-500 hover:text-white transition-colors bg-slate-800/50 p-2.5 rounded-full">
               <XCircle size={24} />
             </button>
-            <h2 className=\"text-2xl font-black text-white uppercase tracking-tight italic mb-8\">{editCoupon ? 'Modify Descriptor' : 'Initialize New Node'}</h2>
-            <form onSubmit={handleSubmit} className=\"space-y-6\">
-              <div className=\"grid grid-cols-1 md:grid-cols-2 gap-6\">
-                <div className=\"space-y-2\">
-                  <label className=\"text-[10px] font-black text-slate-500 uppercase tracking-widest\">Voucher Code</label>
-                  <div className=\"relative\">
-                    <input value={form.code} onChange={e => setForm({...form, code: e.target.value.toUpperCase()})} required className=\"w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-sm font-mono font-bold text-cyan-400\" />
-                    <button type=\"button\" onClick={generateCode} className=\"absolute right-3 top-1/2 -translate-y-1/2 p-2 text-slate-600 hover:text-cyan-400\"><RefreshCw size={18} /></button>
+            <h2 className="text-2xl font-black text-white uppercase tracking-tight italic mb-8">{editCoupon ? 'Modify Descriptor' : 'Initialize New Node'}</h2>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Voucher Code</label>
+                  <div className="relative">
+                    <input value={form.code} onChange={e => setForm({...form, code: e.target.value.toUpperCase()})} required className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-sm font-mono font-bold text-cyan-400" />
+                    <button type="button" onClick={generateCode} className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-slate-600 hover:text-cyan-400"><RefreshCw size={18} /></button>
                   </div>
                 </div>
-                <div className=\"space-y-2\">
-                  <label className=\"text-[10px] font-black text-slate-500 uppercase tracking-widest\">Discount Type</label>
-                  <select value={form.discountType} onChange={e => setForm({...form, discountType: e.target.value})} className=\"w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-sm font-bold text-white\">
-                    <option value=\"percentage\">Percentage (%)</option>
-                    <option value=\"fixed\">Flat Amount</option>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Discount Type</label>
+                  <select value={form.discountType} onChange={e => setForm({...form, discountType: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-sm font-bold text-white">
+                    <option value="percentage">Percentage (%)</option>
+                    <option value="fixed">Flat Amount</option>
                   </select>
                 </div>
-                <div className=\"space-y-2\">
-                  <label className=\"text-[10px] font-black text-slate-500 uppercase tracking-widest\">Quantum Value</label>
-                  <input type=\"number\" value={form.discountValue} onChange={e => setForm({...form, discountValue: e.target.value})} required className=\"w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-sm font-bold\" />
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Quantum Value</label>
+                  <input type="number" value={form.discountValue} onChange={e => setForm({...form, discountValue: e.target.value})} required className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-sm font-bold" />
                 </div>
-                <div className=\"space-y-2\">
-                  <label className=\"text-[10px] font-black text-slate-500 uppercase tracking-widest\">Min Threshold</label>
-                  <input type=\"number\" value={form.minOrderAmount} onChange={e => setForm({...form, minOrderAmount: e.target.value})} className=\"w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-sm font-bold\" />
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Min Threshold</label>
+                  <input type="number" value={form.minOrderAmount} onChange={e => setForm({...form, minOrderAmount: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-sm font-bold" />
                 </div>
-                <div className=\"space-y-2\">
-                  <label className=\"text-[10px] font-black text-slate-500 uppercase tracking-widest\">Usage Limit</label>
-                  <input type=\"number\" value={form.maxUses} onChange={e => setForm({...form, maxUses: e.target.value})} className=\"w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-sm font-bold\" />
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Usage Limit</label>
+                  <input type="number" value={form.maxUses} onChange={e => setForm({...form, maxUses: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-sm font-bold" />
                 </div>
-                <div className=\"space-y-2\">
-                  <label className=\"text-[10px] font-black text-slate-500 uppercase tracking-widest\">Expiry Horizon</label>
-                  <input type=\"date\" value={form.expiresAt} onChange={e => setForm({...form, expiresAt: e.target.value})} className=\"w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-sm font-bold text-white\" />
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Expiry Horizon</label>
+                  <input type="date" value={form.expiresAt} onChange={e => setForm({...form, expiresAt: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-sm font-bold text-white" />
                 </div>
               </div>
-              <div className=\"space-y-2\">
-                <label className=\"text-[10px] font-black text-slate-500 uppercase tracking-widest\">Node Descriptor</label>
-                <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} className=\"w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-sm font-bold h-24\" />
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Node Descriptor</label>
+                <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-sm font-bold h-24" />
               </div>
-              <div className=\"flex items-center gap-3 p-4 bg-slate-950 rounded-2xl border border-slate-800\">
-                <input type=\"checkbox\" id=\"isActive\" checked={form.isActive} onChange={e => setForm({...form, isActive: e.target.checked})} className=\"w-5 h-5 accent-cyan-500\" />
-                <label htmlFor=\"isActive\" className=\"text-xs font-black uppercase text-slate-400 tracking-widest\">Deploy Node (Active Status)</label>
+              <div className="flex items-center gap-3 p-4 bg-slate-950 rounded-2xl border border-slate-800">
+                <input type="checkbox" id="isActive" checked={form.isActive} onChange={e => setForm({...form, isActive: e.target.checked})} className="w-5 h-5 accent-cyan-500" />
+                <label htmlFor="isActive" className="text-xs font-black uppercase text-slate-400 tracking-widest">Deploy Node (Active Status)</label>
               </div>
-              <div className=\"flex gap-4\">
-                <button type=\"submit\" className=\"flex-1 py-5 bg-cyan-500 text-black font-black uppercase text-xs rounded-2xl\">Deploy Incentive</button>
-                <button type=\"button\" onClick={() => setShowForm(false)} className=\"px-10 py-5 bg-slate-800 text-slate-300 font-black uppercase text-xs rounded-2xl\">Abort</button>
+              <div className="flex gap-4">
+                <button type="submit" className="flex-1 py-5 bg-cyan-500 text-black font-black uppercase text-xs rounded-2xl">Deploy Incentive</button>
+                <button type="button" onClick={() => setShowForm(false)} className="px-10 py-5 bg-slate-800 text-slate-300 font-black uppercase text-xs rounded-2xl">Abort</button>
               </div>
             </form>
           </div>
