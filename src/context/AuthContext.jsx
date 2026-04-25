@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }) => {
     
     initAuth();
 
-  
+    // Listen for global 401 expulsions from api.js
     const handleAuthExpired = () => logout();
     window.addEventListener('auth-expired', handleAuthExpired);
     return () => window.removeEventListener('auth-expired', handleAuthExpired);
@@ -60,7 +60,6 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await authApi.login(credentials);
       
-      // Handle 2FA Intercept
       if (res.status === 202 || res.data?.requires2FA) {
         throw new Error("MFA Verification Required");
       }
@@ -77,7 +76,6 @@ export const AuthProvider = ({ children }) => {
       return finalUser;
     } catch (error) {
       if (error.message === "MFA Verification Required") throw error;
-      
       const status = error.response?.status;
       if (status === 429) throw new Error("Security throttle active. Too many attempts. Try again in 60s.");
       if (status === 401) throw new Error("Invalid credentials. Access denied.");
@@ -85,7 +83,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // THIS WAS THE MISSING FUNCTION CAUSING YOUR ERROR
   const adminLogin = async (credentials) => {
     try {
       const res = await authApi.adminLogin(credentials);
@@ -106,10 +103,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
- const register = async (data) => {
+  const register = async (data) => {
     try {
       const res = await authApi.register(data);
-      return res.data; 
+      return res.data; // Just returns success to move to the OTP screen in Register.jsx
     } catch (error) {
       const status = error.response?.status;
       if (status === 409) throw new Error("A node with this email already exists in the matrix.");
@@ -142,15 +139,14 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setUser(null);
     
-
     if (window.location.pathname.includes('/profile') || window.location.pathname.includes('/admin')) {
       window.location.href = '/login';
     }
   };
 
   return (
-  
-<AuthContext.Provider value={{ user, token, isAuthenticated: !!token, loading, login, adminLogin, register, verifyEmail, logout }}>
+    // CRITICAL FIX: verifyEmail is exported right here!
+    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, loading, login, adminLogin, register, verifyEmail, logout }}>
       {!loading && children}
     </AuthContext.Provider>
   );
