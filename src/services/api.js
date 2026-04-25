@@ -40,15 +40,6 @@ api.interceptors.response.use(
 // ==========================================
 
 export const auth = {
-  register: (data) => api.post("/auth/register", data),
-  login: (data) => api.post("/auth/login", data),
-  adminLogin: (data) => api.post("/auth/admin/login", data),
-  getAdminProfile: () => api.get("/auth/me"),
-  updateAdminProfile: (data) => api.put("/auth/me", data),
-  changeAdminPassword: (data) => api.post("/auth/change-password", data),
-};
-
-export const auth = {
   login: (data) => apiClient.post('/auth/login', data),
   register: (data) => apiClient.post('/auth/register', data),
   getProfile: () => apiClient.get('/auth/profile'),
