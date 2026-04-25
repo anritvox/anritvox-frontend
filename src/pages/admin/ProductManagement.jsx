@@ -13,22 +13,20 @@ export default function ProductManagement() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(8);
 
-  // Modals State
   const [isProductModalOpen, setProductModalOpen] = useState(false);
   const [isSerialModalOpen, setSerialModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('basic'); // 'basic', 'media', 'warranty'
-  const [serialTab, setSerialTab] = useState('generate'); // 'generate', 'view'
+  const [activeTab, setActiveTab] = useState('basic'); 
+  const [serialTab, setSerialTab] = useState('generate');
   
   const [currentProduct, setCurrentProduct] = useState(null);
   const [productSerials, setProductSerials] = useState([]);
   const [loadingSerials, setLoadingSerials] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const { showToast } = useToast() || {};
 
-  // Form States
   const [form, setForm] = useState({
     name: '', description: '', price: '', quantity: '', category_id: '', 
     video_urls: '', model_3d_url: '', warranty_period: 12, status: 'active'
@@ -59,7 +57,6 @@ export default function ProductManagement() {
     }
   };
 
-  // Safe Image Resolver
   const getImageUrl = (img) => {
     if (!img) return '/logo.webp';
     let url = typeof img === 'object' ? img.url || img.path : img;
@@ -68,10 +65,8 @@ export default function ProductManagement() {
     return `${BASE_URL.replace(/\/api$/, '')}${url.startsWith('/') ? '' : '/'}${url}`;
   };
 
-  // Handlers
   const handleToggleStatus = async (id, currentStatus) => {
     try {
-      // FIX 1: Send string "active" or "inactive" to prevent 400 Bad Request
       const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
       await productsApi.toggleStatus(id, newStatus);
       showToast?.(`Node ${newStatus} successfully`, 'success');
@@ -132,13 +127,13 @@ export default function ProductManagement() {
 
   const handleSaveProduct = async (e) => {
     e.preventDefault();
+    setIsUploading(true);
     try {
       const payload = { ...form };
-      
       let savedProduct;
+      
       if (currentProduct) {
         const res = await productsApi.update(currentProduct._id || currentProduct.id, payload);
-        // FIX 2: Safely extract ID from standard backend response shape
         savedProduct = res.data?.data || res.data?.product || res.data;
         showToast?.('Node configuration updated.', 'success');
       } else {
@@ -147,19 +142,40 @@ export default function ProductManagement() {
         showToast?.('New node deployed to registry.', 'success');
       }
 
-      // Handle Image Upload to the correct product ID
       const finalId = savedProduct?.id || savedProduct?._id;
+
+      // DIRECT TO CLOUDFLARE UPLOAD LOGIC
       if (images.length > 0 && finalId) {
-        const formData = new FormData();
-        Array.from(images).forEach(img => formData.append('images', img));
-        await productsApi.uploadImages(finalId, formData);
+        showToast?.('Uploading visual payloads securely...', 'info');
+        const imageKeys = [];
+
+        for (const file of Array.from(images)) {
+          // 1. Get secure presigned URL from backend
+          const urlRes = await productsApi.getUploadUrl(file.name, file.type);
+          const { uploadUrl, key } = urlRes.data;
+
+          // 2. Upload directly to Cloudflare
+          await fetch(uploadUrl, {
+            method: 'PUT',
+            body: file,
+            headers: { 'Content-Type': file.type }
+          });
+
+          imageKeys.push(key);
+        }
+
+        // 3. Save keys to database
+        await productsApi.saveImageKeys(finalId, imageKeys);
         showToast?.('Visual payloads successfully attached', 'success');
       }
 
       setProductModalOpen(false);
       fetchData();
     } catch (err) {
-      showToast?.(err.response?.data?.message || 'Error processing hardware node', 'error');
+      console.error(err);
+      showToast?.('Error processing hardware node', 'error');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -203,13 +219,12 @@ export default function ProductManagement() {
       };
       const res = await serialsApi.generate(payload);
       showToast?.(`Generated ${res.data?.count || serialForm.count} serial hashes successfully.`, 'success');
-      setSerialTab('view'); // Switch to view tab to see new serials
+      setSerialTab('view'); 
     } catch (err) {
       showToast?.('Serial generation protocol failed.', 'error');
     }
   };
 
-  // Pagination & Filtering Logic
   const filteredProducts = useMemo(() => {
     return products.filter(p => 
       p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -238,7 +253,6 @@ export default function ProductManagement() {
   return (
     <div className="p-4 md:p-8 space-y-8 bg-[#020617] min-h-screen text-slate-300 font-sans animate-in fade-in duration-500">
       
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-800/80">
         <div>
           <h1 className="text-4xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
@@ -261,7 +275,6 @@ export default function ProductManagement() {
         </div>
       </div>
 
-      {/* Overview Analytics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { label: 'Total Nodes', val: products.length, icon: Box, color: 'emerald' },
@@ -282,7 +295,6 @@ export default function ProductManagement() {
         ))}
       </div>
 
-      {/* Toolbar */}
       <div className="flex flex-col md:flex-row gap-4 bg-slate-900/40 border border-slate-800/80 p-4 rounded-[2rem] shadow-lg">
         <div className="relative flex-1 group">
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-500 transition-colors" size={18} />
@@ -296,7 +308,6 @@ export default function ProductManagement() {
         </div>
       </div>
 
-      {/* Products Registry Grid */}
       <div className="bg-slate-900/30 border border-slate-800/80 rounded-[2.5rem] overflow-hidden shadow-2xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -394,7 +405,6 @@ export default function ProductManagement() {
           </table>
         </div>
         
-        {/* Pagination Controls */}
         {totalPages > 1 && (
           <div className="p-4 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between">
             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-4">
@@ -435,11 +445,9 @@ export default function ProductManagement() {
         )}
       </div>
 
-      {/* --- ADD / EDIT PRODUCT MODAL --- */}
       {isProductModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-xl overflow-y-auto custom-scrollbar">
           <div className="bg-[#0a0c10] border border-slate-800 w-full max-w-4xl rounded-[3rem] shadow-2xl overflow-hidden my-auto animate-in zoom-in-95 duration-300">
-            {/* Modal Header */}
             <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500">
@@ -452,7 +460,7 @@ export default function ProductManagement() {
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Configure registry specifications and media payloads</p>
                 </div>
               </div>
-              <button onClick={() => setProductModalOpen(false)} className="p-3 bg-slate-950 hover:bg-rose-500/10 text-slate-500 hover:text-rose-500 rounded-2xl transition-all">
+              <button disabled={isUploading} onClick={() => setProductModalOpen(false)} className="p-3 bg-slate-950 hover:bg-rose-500/10 text-slate-500 hover:text-rose-500 rounded-2xl transition-all disabled:opacity-50">
                 <XCircle size={24} />
               </button>
             </div>
@@ -478,7 +486,6 @@ export default function ProductManagement() {
               </div>
 
               <div className="p-8 min-h-[350px]">
-                {/* TAB 1: BASIC INFO */}
                 {activeTab === 'basic' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
                     <div className="col-span-2 space-y-2">
@@ -530,10 +537,8 @@ export default function ProductManagement() {
                   </div>
                 )}
 
-                {/* TAB 2: MEDIA ASSETS */}
                 {activeTab === 'media' && (
                   <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                    {/* Visual Uploads */}
                     <div className="p-6 border border-dashed border-slate-700 bg-slate-900/30 rounded-3xl text-center relative hover:bg-slate-900/50 transition-colors group">
                       <input 
                         type="file" multiple accept="image/*" 
@@ -578,7 +583,6 @@ export default function ProductManagement() {
                   </div>
                 )}
 
-                {/* TAB 3: WARRANTY & LOGIC */}
                 {activeTab === 'warranty' && (
                   <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                     <div className="p-6 bg-slate-900/50 border border-slate-800 rounded-3xl">
@@ -611,13 +615,13 @@ export default function ProductManagement() {
                 )}
               </div>
 
-              {/* Modal Footer */}
               <div className="p-6 border-t border-slate-800 bg-slate-950/80 flex justify-end gap-4">
-                <button type="button" onClick={() => setProductModalOpen(false)} className="px-8 py-3.5 text-slate-400 font-black uppercase tracking-widest text-xs rounded-xl hover:bg-slate-900 transition-all">
+                <button disabled={isUploading} type="button" onClick={() => setProductModalOpen(false)} className="px-8 py-3.5 text-slate-400 font-black uppercase tracking-widest text-xs rounded-xl hover:bg-slate-900 transition-all disabled:opacity-50">
                   Abort
                 </button>
-                <button type="submit" className="px-10 py-3.5 bg-emerald-500 text-slate-950 font-black uppercase tracking-widest text-xs rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:bg-emerald-400 transition-all hover:-translate-y-0.5">
-                  Execute Deployment
+                <button disabled={isUploading} type="submit" className="px-10 py-3.5 bg-emerald-500 text-slate-950 font-black uppercase tracking-widest text-xs rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:bg-emerald-400 transition-all hover:-translate-y-0.5 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  {isUploading && <RefreshCw size={14} className="animate-spin" />}
+                  {isUploading ? 'Executing Uplink...' : 'Execute Deployment'}
                 </button>
               </div>
             </form>
@@ -625,7 +629,6 @@ export default function ProductManagement() {
         </div>
       )}
 
-      {/* --- SERIAL GENERATOR / REGISTRY MODAL --- */}
       {isSerialModalOpen && currentProduct && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-xl">
           <div className="bg-[#0a0c10] border border-slate-800 w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
@@ -663,7 +666,6 @@ export default function ProductManagement() {
               </button>
             </div>
 
-            {/* Generate Tab */}
             {serialTab === 'generate' && (
               <form onSubmit={handleGenerateSerials} className="p-8 space-y-6">
                 <div className="grid grid-cols-2 gap-6">
@@ -711,7 +713,6 @@ export default function ProductManagement() {
               </form>
             )}
 
-            {/* View Registry Tab */}
             {serialTab === 'view' && (
               <div className="p-8 h-[400px] overflow-y-auto custom-scrollbar">
                 {loadingSerials ? (
