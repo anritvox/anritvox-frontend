@@ -48,10 +48,18 @@ export const auth = {
   changeAdminPassword: (data) => api.post("/auth/change-password", data),
 };
 
-export const users = {
-  getProfile: () => api.get("/users/profile"),
-  updateProfile: (data) => api.put("/users/profile", data),
-  changePassword: (data) => api.post("/users/change-password", data),
+export const auth = {
+  login: (data) => apiClient.post('/auth/login', data),
+  register: (data) => apiClient.post('/auth/register', data),
+  getProfile: () => apiClient.get('/auth/profile'),
+  updateProfile: (data) => apiClient.put('/auth/profile', data),
+  
+  // NEW ADVANCED AUTH ENDPOINTS
+  verify2FA: (data) => apiClient.post('/auth/2fa/verify', data),
+  requestPasswordReset: (data) => apiClient.post('/auth/forgot-password', data),
+  verifyResetOtp: (data) => apiClient.post('/auth/verify-otp', data),
+  resetPassword: (data) => apiClient.post('/auth/reset-password', data),
+  verifySecurityQuestion: (data) => apiClient.post('/auth/security-question/verify', data),
 };
 
 export const products = {
