@@ -156,8 +156,8 @@ export default function ProductDetail() {
       if (!id || id === 'null') { setNotFound(true); setLoading(false); return; }
       setLoading(true);
       try {
-        const isObjectId = /^[a-f\d]{24}$/i.test(id);
-        const res = isObjectId ? await productsApi.getById(id) : await productsApi.getBySlug(id);
+        const isNumericId = /^\d+$/.test(id); // Check if purely numeric (product IDs)        const res = isObjectId ? await productsApi.getById(id) : await productsApi.getBySlug(id);
+                const res = isNumericId ? await productsApi.getById(id) : await productsApi.getBySlug(id);
         setProduct(res.data?.data || res.data);
       } catch (err) {
         if (err.response?.status === 404) setNotFound(true);
