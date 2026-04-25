@@ -6,8 +6,7 @@ import {
   Key, Fingerprint, RefreshCw, CheckCircle2, Eye, EyeOff, ShieldAlert
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-// Note: You will need to add these endpoints to your api.js and backend
-// import { auth as authApi } from '../services/api'; 
+import { auth as authApi } from '../services/api'; // IMPORTING THE REAL API
 
 // --- Animation Variants ---
 const viewVariants = {
@@ -23,7 +22,6 @@ export default function Login() {
   const from = location.state?.from?.pathname || '/';
 
   // --- STATE MACHINE ---
-  // Views: 'LOGIN' | '2FA' | 'RECOVER_EMAIL' | 'RECOVER_OTP' | 'RECOVER_NEW_PWD' | 'SEC_QUESTION'
   const [view, setView] = useState('LOGIN'); 
   
   // --- FORM STATE ---
@@ -39,15 +37,15 @@ export default function Login() {
   const [successMsg, setSuccessMsg] = useState('');
   const [isRateLimited, setIsRateLimited] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [securityBypass, setSecurityBypass] = useState(false);
 
-  // --- TELEMETRY (For Premium Enterprise Feel) ---
+  // --- TELEMETRY ---
   const [telemetry, setTelemetry] = useState('Initializing Secure Handshake...');
   useEffect(() => {
     setTimeout(() => setTelemetry('256-bit SSL Encrypted'), 1000);
     setTimeout(() => setTelemetry('Node Connection Established'), 2500);
   }, []);
 
-  // --- HANDLERS ---
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError('');
@@ -60,7 +58,6 @@ export default function Login() {
     setOtp(newOtp);
     setError('');
 
-    // Auto-advance focus
     if (value !== '' && index < 5) otpRefs.current[index + 1].focus();
   };
 
@@ -77,33 +74,35 @@ export default function Login() {
     if (/[A-Z]/.test(pwd)) score++;
     if (/[0-9]/.test(pwd)) score++;
     if (/[^A-Za-z0-9]/.test(pwd)) score++;
-    return score; // 0 to 4
+    return score; 
   };
   const strength = getPasswordStrength(formData.newPassword);
   const strengthColors = ['bg-slate-800', 'bg-red-500', 'bg-amber-500', 'bg-blue-500', 'bg-emerald-500'];
   const strengthLabels = ['Awaiting Input', 'Weak', 'Moderate', 'Strong', 'Military Grade'];
 
-  // --- SUBMIT SEQUENCES ---
+  // --- REAL API SUBMIT SEQUENCES ---
+  
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     if (isRateLimited) return;
     setLoading(true); setError('');
     try {
-      // Step 1: Standard Auth
-      // await login(formData); // Uncomment for real logic
-      
-      // Simulating a backend response that requires 2FA:
-      setTimeout(() => {
-        setLoading(false);
-        setView('2FA'); // Move to 2FA state instead of logging in directly
-        setTelemetry('Awaiting Biometric/MFA Verification');
-      }, 1000);
+      // The login context function handles the standard API call
+      await login({ email: formData.email, password: formData.password });
+      navigate(from, { replace: true });
     } catch (err) {
-      setError(err.message);
-      if (err.message.includes("Too many attempts")) {
-        setIsRateLimited(true);
-        setTimeout(() => setIsRateLimited(false), 60000); 
+      // Check if backend flagged this for 2FA
+      if (err.message.includes("MFA Verification Required")) {
+        setView('2FA');
+        setTelemetry('Awaiting Biometric/MFA Verification');
+      } else {
+        setError(err.message);
+        if (err.message.includes("Too many attempts")) {
+          setIsRateLimited(true);
+          setTimeout(() => setIsRateLimited(false), 60000); 
+        }
       }
+    } finally {
       setLoading(false);
     }
   };
@@ -112,30 +111,29 @@ export default function Login() {
     e.preventDefault();
     const otpString = otp.join('');
     if (otpString.length < 6) return setError("Complete the 6-digit sequence.");
+    
     setLoading(true); setError('');
     try {
-      // await authApi.verify2FA({ email: formData.email, otp: otpString });
-      setTimeout(() => {
-        navigate(from, { replace: true });
-      }, 1000);
+      const res = await authApi.verify2FA({ email: formData.email, otp: otpString });
+      localStorage.setItem('anritvox_token', res.data.token);
+      window.location.href = from; // Hard redirect to establish context
     } catch (err) {
-      setError("Invalid 2FA Token. Access Denied.");
+      setError(err.response?.data?.message || "Invalid 2FA Token. Access Denied.");
       setLoading(false);
     }
   };
 
+  // THIS SENDS THE EMAIL
   const handleRecoverInit = async (e) => {
     e.preventDefault();
     setLoading(true); setError('');
     try {
-      // await authApi.requestPasswordReset({ email: formData.email });
-      setTimeout(() => {
-        setLoading(false);
-        setView('RECOVER_OTP');
-        setSuccessMsg(`Recovery token dispatched to ${formData.email}`);
-      }, 1000);
+      await authApi.requestPasswordReset({ email: formData.email });
+      setView('RECOVER_OTP');
+      setSuccessMsg(`Recovery token dispatched to ${formData.email}`);
     } catch (err) {
-      setError("Email not found in node registry.");
+      setError(err.response?.data?.message || "Email not found in node registry.");
+    } finally {
       setLoading(false);
     }
   };
@@ -144,15 +142,33 @@ export default function Login() {
     e.preventDefault();
     const otpString = otp.join('');
     if (otpString.length < 6) return setError("Complete the 6-digit sequence.");
+    
     setLoading(true); setError(''); setSuccessMsg('');
     try {
-      // await authApi.verifyResetOtp({ email: formData.email, otp: otpString });
-      setTimeout(() => {
-        setLoading(false);
-        setView('RECOVER_NEW_PWD');
-      }, 1000);
+      await authApi.verifyResetOtp({ email: formData.email, otp: otpString });
+      setView('RECOVER_NEW_PWD');
+      setSecurityBypass(false);
     } catch (err) {
-      setError("Token expired or invalid.");
+      setError(err.response?.data?.message || "Token expired or invalid.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSecurityQuestionVerify = async (e) => {
+    e.preventDefault();
+    if (!formData.secAnswer) return setError("Answer required.");
+    
+    setLoading(true); setError('');
+    try {
+      const res = await authApi.verifySecurityQuestion({ email: formData.email, answer: formData.secAnswer });
+      if (res.data.success) {
+        setSecurityBypass(true);
+        setView('RECOVER_NEW_PWD');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Identity verification failed.");
+    } finally {
       setLoading(false);
     }
   };
@@ -160,18 +176,23 @@ export default function Login() {
   const handleNewPasswordSubmit = async (e) => {
     e.preventDefault();
     if (strength < 3) return setError("Password does not meet security protocols.");
+    
     setLoading(true); setError('');
     try {
-      // await authApi.resetPassword({ email: formData.email, otp: otp.join(''), newPassword: formData.newPassword });
-      setTimeout(() => {
-        setLoading(false);
-        setView('LOGIN');
-        setFormData({ ...formData, password: '', newPassword: '' });
-        setOtp(['', '', '', '', '', '']);
-        setSuccessMsg("Security key updated. You may now authenticate.");
-      }, 1500);
+      await authApi.resetPassword({ 
+        email: formData.email, 
+        otp: otp.join(''), 
+        newPassword: formData.newPassword,
+        securityBypass: securityBypass
+      });
+      
+      setView('LOGIN');
+      setFormData({ email: '', password: '', newPassword: '', secAnswer: '' });
+      setOtp(['', '', '', '', '', '']);
+      setSuccessMsg("Security key updated. You may now authenticate.");
     } catch (err) {
-      setError("Failed to update security key.");
+      setError(err.response?.data?.message || "Failed to update security key.");
+    } finally {
       setLoading(false);
     }
   };
@@ -179,14 +200,12 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 relative overflow-hidden selection:bg-emerald-500 selection:text-black pt-24">
       
-      {/* Background Matrix Effects */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-[20%] left-[20%] w-[500px] h-[500px] bg-emerald-900/10 rounded-full blur-[120px] animate-pulse"></div>
         <div className="absolute bottom-[20%] right-[20%] w-[400px] h-[400px] bg-cyan-900/10 rounded-full blur-[100px]"></div>
         <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay"></div>
       </div>
 
-      {/* Top Telemetry Bar */}
       <div className="absolute top-24 right-6 text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/70 flex flex-col items-end gap-1">
         <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></div> {telemetry}</span>
         <span className="text-slate-600">IP: {Math.floor(Math.random() * 255)}.{Math.floor(Math.random() * 255)}.X.X</span>
@@ -199,9 +218,7 @@ export default function Login() {
 
           <AnimatePresence mode="wait">
             
-            {/* ================================================================= */}
-            {/* VIEW: LOGIN                                                       */}
-            {/* ================================================================= */}
+            {/* LOGIN */}
             {view === 'LOGIN' && (
               <motion.div key="LOGIN" variants={viewVariants} initial="initial" animate="animate" exit="exit">
                 <div className="text-center mb-8">
@@ -241,9 +258,7 @@ export default function Login() {
               </motion.div>
             )}
 
-            {/* ================================================================= */}
-            {/* VIEW: TWO FACTOR AUTHENTICATION (2FA)                             */}
-            {/* ================================================================= */}
+            {/* 2FA */}
             {view === '2FA' && (
               <motion.div key="2FA" variants={viewVariants} initial="initial" animate="animate" exit="exit" className="text-center">
                 <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-500 shadow-[0_0_40px_rgba(16,185,129,0.2)]">
@@ -266,9 +281,7 @@ export default function Login() {
               </motion.div>
             )}
 
-            {/* ================================================================= */}
-            {/* VIEW: FORGOT PASSWORD - INITIALIZE EMAIL                          */}
-            {/* ================================================================= */}
+            {/* RECOVER INIT */}
             {view === 'RECOVER_INIT' && (
               <motion.div key="RECOVER_INIT" variants={viewVariants} initial="initial" animate="animate" exit="exit">
                 <div className="mb-8">
@@ -284,7 +297,11 @@ export default function Login() {
                   <SubmitButton loading={loading} text="Dispatch Token" icon={<RefreshCw size={18}/>} />
                   
                   <div className="pt-4 border-t border-slate-800 text-center">
-                    <button type="button" onClick={() => setView('SEC_QUESTION')} className="text-xs font-bold text-cyan-500 hover:text-cyan-400 uppercase tracking-widest transition-colors flex items-center justify-center gap-2 w-full">
+                    <button type="button" onClick={() => {
+                      if(!formData.email) return setError("Enter your email designation first.");
+                      setError('');
+                      setView('SEC_QUESTION');
+                    }} className="text-xs font-bold text-cyan-500 hover:text-cyan-400 uppercase tracking-widest transition-colors flex items-center justify-center gap-2 w-full">
                       <ShieldAlert size={14} /> Use Security Questions Instead
                     </button>
                   </div>
@@ -292,9 +309,7 @@ export default function Login() {
               </motion.div>
             )}
 
-            {/* ================================================================= */}
-            {/* VIEW: FORGOT PASSWORD - ENTER OTP                                 */}
-            {/* ================================================================= */}
+            {/* RECOVER OTP */}
             {view === 'RECOVER_OTP' && (
               <motion.div key="RECOVER_OTP" variants={viewVariants} initial="initial" animate="animate" exit="exit" className="text-center">
                 <div className="w-16 h-16 bg-blue-500/10 border border-blue-500/30 rounded-2xl flex items-center justify-center mx-auto mb-6 text-blue-500">
@@ -315,19 +330,39 @@ export default function Login() {
                   <button type="submit" disabled={loading} className="w-full bg-blue-500 hover:bg-blue-400 text-black font-black uppercase tracking-[0.2em] text-sm py-4 rounded-2xl transition-all flex items-center justify-center gap-3">
                     {loading ? 'Verifying...' : 'Validate Token'}
                   </button>
-                  <button type="button" onClick={() => setView('RECOVER_INIT')} className="mt-6 text-xs font-bold text-slate-500 uppercase tracking-widest hover:text-white transition-colors">Resend Token</button>
+                  <button type="button" onClick={handleRecoverInit} className="mt-6 text-xs font-bold text-slate-500 uppercase tracking-widest hover:text-white transition-colors">Resend Token</button>
                 </form>
               </motion.div>
             )}
 
-            {/* ================================================================= */}
-            {/* VIEW: FORGOT PASSWORD - NEW PASSWORD                              */}
-            {/* ================================================================= */}
+            {/* SECURITY QUESTION FALLBACK */}
+            {view === 'SEC_QUESTION' && (
+              <motion.div key="SEC_QUESTION" variants={viewVariants} initial="initial" animate="animate" exit="exit">
+                 <div className="mb-8">
+                  <button onClick={() => setView('RECOVER_INIT')} className="text-slate-500 hover:text-emerald-500 mb-6 flex items-center gap-2 text-xs font-bold uppercase tracking-widest transition-colors"><ArrowRight size={14} className="rotate-180"/> Back</button>
+                  <h1 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Fallback Identity Verification</h1>
+                  <p className="text-slate-400 text-sm font-medium">Answer your primary security node question for {formData.email}.</p>
+                </div>
+
+                {error && <AlertBox type="error" msg={error} />}
+
+                <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl mb-6">
+                  <p className="text-emerald-500 font-bold text-sm">"What was the designation of your first hardware build?"</p>
+                </div>
+
+                <form onSubmit={handleSecurityQuestionVerify} className="space-y-6">
+                  <InputField icon={<Key size={18}/>} type="text" name="secAnswer" value={formData.secAnswer} onChange={handleInputChange} placeholder="Your Answer" disabled={loading} />
+                  <SubmitButton loading={loading} text="Verify Answer" icon={<Shield size={18}/>} />
+                </form>
+              </motion.div>
+            )}
+
+            {/* RECOVER NEW PWD */}
             {view === 'RECOVER_NEW_PWD' && (
               <motion.div key="RECOVER_NEW_PWD" variants={viewVariants} initial="initial" animate="animate" exit="exit">
                 <div className="mb-8">
                   <h1 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Forge New Key</h1>
-                  <p className="text-slate-400 text-sm font-medium">Authentication token verified. Generate a new master password.</p>
+                  <p className="text-slate-400 text-sm font-medium">Identity verified. Generate a new master password.</p>
                 </div>
 
                 {error && <AlertBox type="error" msg={error} />}
@@ -341,7 +376,6 @@ export default function Login() {
                       </button>
                     </div>
                     
-                    {/* Security Strength Engine */}
                     <div className="mt-4">
                       <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-1.5">
                         <span className="text-slate-500">Key Integrity</span>
@@ -356,28 +390,6 @@ export default function Login() {
                   </div>
 
                   <SubmitButton loading={loading} text="Commit New Key" icon={<CheckCircle2 size={18}/>} disabled={strength < 3} />
-                </form>
-              </motion.div>
-            )}
-
-            {/* ================================================================= */}
-            {/* VIEW: SECURITY QUESTIONS FALLBACK                                 */}
-            {/* ================================================================= */}
-            {view === 'SEC_QUESTION' && (
-              <motion.div key="SEC_QUESTION" variants={viewVariants} initial="initial" animate="animate" exit="exit">
-                 <div className="mb-8">
-                  <button onClick={() => setView('RECOVER_INIT')} className="text-slate-500 hover:text-emerald-500 mb-6 flex items-center gap-2 text-xs font-bold uppercase tracking-widest transition-colors"><ArrowRight size={14} className="rotate-180"/> Back</button>
-                  <h1 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Fallback Identity Verification</h1>
-                  <p className="text-slate-400 text-sm font-medium">Answer your primary security node question.</p>
-                </div>
-
-                <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl mb-6">
-                  <p className="text-emerald-500 font-bold text-sm">"What was the designation of your first hardware build?"</p>
-                </div>
-
-                <form onSubmit={(e) => { e.preventDefault(); setView('RECOVER_NEW_PWD'); }} className="space-y-6">
-                  <InputField icon={<Key size={18}/>} type="text" name="secAnswer" value={formData.secAnswer} onChange={handleInputChange} placeholder="Your Answer" disabled={loading} />
-                  <SubmitButton loading={loading} text="Verify Answer" icon={<Shield size={18}/>} />
                 </form>
               </motion.div>
             )}
