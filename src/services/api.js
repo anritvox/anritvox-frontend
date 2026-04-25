@@ -17,9 +17,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token") || localStorage.getItem("ms_token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
   (error) => Promise.reject(error)
@@ -38,7 +36,7 @@ api.interceptors.response.use(
 );
 
 // ==========================================
-// --- FULLY MAPPED API HELPER MODULES ---
+// --- ULTIMATE API MODULE MAP ---
 // ==========================================
 
 export const auth = {
@@ -203,21 +201,28 @@ export const adminManagement = {
   getAllOrders: () => api.get("/admin/orders"),
 };
 
+// ─── ALIAS & VIRTUAL MODULES (To prevent Vercel crashes) ───
 export const support = {
   getAllAdmin: () => api.get("/contact"),
   updateStatus: (id, status) => api.patch(`/contact/${id}/status`, { status }),
   delete: (id) => api.delete(`/contact/${id}`),
 };
 
-// CRITICAL FIX: Safely route Loyalty logic to existing settings and users endpoints
 export const loyalty = {
   getSystemConfig: () => api.get("/settings"),
   updateSystemConfig: (data) => api.put("/settings", data),
   getMembers: () => api.get("/admin/users"),
-  adjustPoints: (userId, data) => api.patch(`/admin/users/${userId}/status`, data), // Safely routed through user status management
+  adjustPoints: (userId, data) => api.patch(`/admin/users/${userId}/status`, data), 
 };
 
-// Global bridging exports
+// VIRTUAL MODULE: Flash Sales maps securely to products and settings
+export const flashSales = {
+  getActive: () => api.get("/products/active", { params: { is_flash: true } }),
+  getAllAdmin: () => api.get("/products", { params: { flash_sale: true } }),
+  create: (data) => api.put(`/products/${data.product_id}`, data), // Proxies to product update
+  delete: (id) => api.put(`/products/${id}`, { flash_sale_active: false }),
+};
+
 export const fetchCart = () => cart.get();
 export const addToCartAPI = (productId, quantity) => cart.add({ productId, quantity });
 export const removeFromCartAPI = (productId) => cart.remove(productId);
