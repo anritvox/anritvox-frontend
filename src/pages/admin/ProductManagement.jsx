@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import axios from 'axios'; // Using clean axios to prevent token attachment to Cloudflare
 import { 
   Box, Plus, Edit2, Trash2, Search, Filter, RefreshCw, AlertTriangle, 
   CheckCircle, XCircle, ChevronLeft, ChevronRight, Image as ImageIcon, 
@@ -24,7 +25,12 @@ export default function ProductManagement() {
   const [currentProduct, setCurrentProduct] = useState(null);
   const [productSerials, setProductSerials] = useState([]);
   const [loadingSerials, setLoadingSerials] = useState(false);
+  
+  // --- NEW UPLOAD PROGRESS STATES ---
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadingFileName, setUploadingFileName] = useState('');
+  
   const { showToast } = useToast() || {};
 
   const [form, setForm] = useState({
@@ -62,7 +68,9 @@ export default function ProductManagement() {
     let url = typeof img === 'object' ? img.url || img.path : img;
     if (!url) return '/logo.webp';
     if (url.startsWith('http')) return url;
-    return `${BASE_URL.replace(/\/api$/, '')}${url.startsWith('/') ? '' : '/'}${url}`;
+    
+    // Fallback if backend CLOUDFRONT_BASE_URL is missing
+    return `https://pub-f81d11b228b7468199be3386ec2d26f6.r2.dev/${url}`;
   };
 
   const handleToggleStatus = async (id, currentStatus) => {
@@ -125,9 +133,13 @@ export default function ProductManagement() {
     setProductModalOpen(true);
   };
 
+  // --- THE FIXED UPLOAD LOGIC WITH PROGRESS BAR ---
   const handleSaveProduct = async (e) => {
     e.preventDefault();
     setIsUploading(true);
+    setUploadProgress(0);
+    setUploadingFileName('Initializing deployment...');
+    
     try {
       const payload = { ...form };
       let savedProduct;
@@ -135,47 +147,53 @@ export default function ProductManagement() {
       if (currentProduct) {
         const res = await productsApi.update(currentProduct._id || currentProduct.id, payload);
         savedProduct = res.data?.data || res.data?.product || res.data;
-        showToast?.('Node configuration updated.', 'success');
       } else {
         const res = await productsApi.create(payload);
         savedProduct = res.data?.data || res.data?.product || res.data;
-        showToast?.('New node deployed to registry.', 'success');
       }
 
       const finalId = savedProduct?.id || savedProduct?._id;
 
-      // DIRECT TO CLOUDFLARE UPLOAD LOGIC
       if (images.length > 0 && finalId) {
-        showToast?.('Uploading visual payloads securely...', 'info');
         const imageKeys = [];
+        const filesArray = Array.from(images);
 
-        for (const file of Array.from(images)) {
-          // 1. Get secure presigned URL from backend
+        for (let i = 0; i < filesArray.length; i++) {
+          const file = filesArray[i];
+          setUploadingFileName(`Uploading ${file.name} (${i + 1}/${filesArray.length})...`);
+          setUploadProgress(0);
+
+          // 1. Get secure URL from backend
           const urlRes = await productsApi.getUploadUrl(file.name, file.type);
           const { uploadUrl, key } = urlRes.data;
 
-          // 2. Upload directly to Cloudflare
-          await fetch(uploadUrl, {
-            method: 'PUT',
-            body: file,
-            headers: { 'Content-Type': file.type }
+          // 2. Upload using CLEAN Axios (no interceptors) to track progress
+          await axios.put(uploadUrl, file, {
+            headers: { 'Content-Type': file.type },
+            onUploadProgress: (progressEvent) => {
+              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              setUploadProgress(percentCompleted);
+            }
           });
 
           imageKeys.push(key);
         }
 
-        // 3. Save keys to database
+        setUploadingFileName('Linking visual payloads to registry...');
         await productsApi.saveImageKeys(finalId, imageKeys);
         showToast?.('Visual payloads successfully attached', 'success');
+      } else {
+        showToast?.('Node configuration saved successfully.', 'success');
       }
 
       setProductModalOpen(false);
       fetchData();
     } catch (err) {
-      console.error(err);
-      showToast?.('Error processing hardware node', 'error');
+      console.error('Deployment Error:', err);
+      showToast?.('Error processing deployment. Check network constraints.', 'error');
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -447,7 +465,25 @@ export default function ProductManagement() {
 
       {isProductModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-xl overflow-y-auto custom-scrollbar">
-          <div className="bg-[#0a0c10] border border-slate-800 w-full max-w-4xl rounded-[3rem] shadow-2xl overflow-hidden my-auto animate-in zoom-in-95 duration-300">
+          <div className="bg-[#0a0c10] border border-slate-800 w-full max-w-4xl rounded-[3rem] shadow-2xl overflow-hidden my-auto animate-in zoom-in-95 duration-300 relative">
+            
+            {/* PROGRESS BAR OVERLAY */}
+            {isUploading && (
+              <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-8 rounded-[3rem]">
+                <Activity className="w-16 h-16 text-emerald-500 animate-bounce mb-6" />
+                <h3 className="text-xl font-black text-white uppercase tracking-widest text-center">{uploadingFileName}</h3>
+                <div className="w-full max-w-md bg-slate-900 rounded-full h-6 mt-8 border border-slate-800 overflow-hidden relative shadow-inner">
+                  <div 
+                    className="bg-emerald-500 h-full rounded-full transition-all duration-300 ease-out flex items-center justify-end pr-3 shadow-[0_0_20px_rgba(16,185,129,0.5)]"
+                    style={{ width: `${uploadProgress}%` }}
+                  >
+                    <span className="text-[10px] font-black text-slate-950">{uploadProgress}%</span>
+                  </div>
+                </div>
+                <p className="text-xs font-bold text-slate-500 mt-6 uppercase tracking-widest animate-pulse">Do not close this window</p>
+              </div>
+            )}
+
             <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500">
@@ -539,7 +575,7 @@ export default function ProductManagement() {
 
                 {activeTab === 'media' && (
                   <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                    <div className="p-6 border border-dashed border-slate-700 bg-slate-900/30 rounded-3xl text-center relative hover:bg-slate-900/50 transition-colors group">
+                    <div className="p-6 border border-dashed border-slate-700 bg-slate-900/30 rounded-3xl text-center relative hover:bg-slate-900/50 transition-colors group cursor-pointer">
                       <input 
                         type="file" multiple accept="image/*" 
                         onChange={e => setImages(e.target.files)}
@@ -548,7 +584,11 @@ export default function ProductManagement() {
                       <ImageIcon size={40} className="mx-auto text-slate-600 mb-3 group-hover:text-emerald-500 transition-colors" />
                       <p className="text-sm font-bold text-white mb-1">Inject Visual Payloads</p>
                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Drag & Drop or Click (JPEG, PNG, WEBP)</p>
-                      {images.length > 0 && <p className="mt-4 text-xs font-bold text-emerald-500">{images.length} payload(s) queued for uplink</p>}
+                      {images.length > 0 && (
+                        <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl inline-block">
+                          <p className="text-xs font-black text-emerald-500 uppercase tracking-widest">{images.length} payload(s) queued for uplink</p>
+                        </div>
+                      )}
                     </div>
 
                     {currentProduct && (
@@ -620,8 +660,7 @@ export default function ProductManagement() {
                   Abort
                 </button>
                 <button disabled={isUploading} type="submit" className="px-10 py-3.5 bg-emerald-500 text-slate-950 font-black uppercase tracking-widest text-xs rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:bg-emerald-400 transition-all hover:-translate-y-0.5 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                  {isUploading && <RefreshCw size={14} className="animate-spin" />}
-                  {isUploading ? 'Executing Uplink...' : 'Execute Deployment'}
+                  Execute Deployment
                 </button>
               </div>
             </form>
@@ -629,6 +668,7 @@ export default function ProductManagement() {
         </div>
       )}
 
+      {/* --- SERIAL GENERATOR / REGISTRY MODAL --- */}
       {isSerialModalOpen && currentProduct && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-xl">
           <div className="bg-[#0a0c10] border border-slate-800 w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
@@ -756,7 +796,6 @@ export default function ProductManagement() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
