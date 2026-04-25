@@ -281,7 +281,7 @@ export default function ProductDetail() {
                     className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase tracking-[0.2em] text-sm rounded-2xl transition-all shadow-[0_0_30px_rgba(16,185,129,0.2)] hover:shadow-[0_0_40px_rgba(16,185,129,0.4)] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
                   >
                     <span className={`flex items-center gap-2 transition-transform duration-300 ${isAdding ? '-translate-y-12' : ''}`}>
-                      <ShoppingBag size={20} /> Add To Arsenal
+                      <ShoppingBag size={20} /> Add To Cart
                     </span>
                     <span className={`absolute inset-0 flex items-center justify-center gap-2 bg-emerald-400 transition-transform duration-300 ${isAdding ? 'translate-y-0' : 'translate-y-12'}`}>
                       <CheckCircle2 size={20} /> Node Secured
@@ -395,7 +395,7 @@ export default function ProductDetail() {
                 disabled={isOutOfStock}
                 className="w-full md:w-auto px-12 py-4 bg-emerald-500 text-black font-black uppercase tracking-widest text-xs rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:bg-white transition-colors disabled:opacity-50"
               >
-                Add To Arsenal
+                Add To Cart
               </button>
             </div>
           </motion.div>
