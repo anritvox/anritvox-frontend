@@ -62,10 +62,11 @@ export const products = {
   create: (data) => api.post("/products", data),
   update: (id, data) => api.put(`/products/${id}`, data),
   toggleStatus: (id, status) => api.patch(`/products/${id}/status`, { status }),
-  // FIX: Removed explicit multipart header to allow Axios to generate the payload boundary natively
-  uploadImages: (id, formData) => api.post(`/products/${id}/images`, formData),
+  // --- NEW DIRECT UPLOAD METHODS ---
+  getUploadUrl: (filename, fileType) => api.post("/products/presign", { filename, fileType }),
+  saveImageKeys: (id, imageKeys) => api.post(`/products/${id}/images/save`, { imageKeys }),
+  // ---------------------------------
   deleteImage: (id, imageId) => api.delete(`/products/${id}/images`, { data: { imageId } }),
-  // FIX: Mapped to correct backend serial attachment route
   addSerials: (id, serials) => api.post(`/serials/${id}/add`, { serials }),
   delete: (id) => api.delete(`/products/${id}`),
 };
@@ -188,7 +189,6 @@ export const warranty = {
   updateStatus: (id, status) => api.patch(`/warranty/${id}/status`, { status }),
 };
 
-// FIX: Completely aligned with backend serialRoutes.js
 export const serials = {
   validate: (serial) => api.post("/serials/validate", { serial }),
   getAllAdmin: () => api.get("/serials/admin/all"),
@@ -281,6 +281,6 @@ export const fitment = {
     addManual: (data) => api.post('/fitment/manual', data),
     delete: (id) => api.delete(`/fitment/${id}`),
     clearAll: (productId) => api.delete(`/fitment/product/${productId}/all`),
-  };
+};
 
 export default api;
