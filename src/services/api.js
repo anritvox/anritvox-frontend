@@ -56,11 +56,14 @@ export const auth = {
   verifySecurityQuestion: (data) => api.post('/auth/security-question/verify', data),
 };
 
-// FIX: Added the missing users export for the Profile component
 export const users = {
   updateProfile: (data) => api.put('/users/profile', data),
   changePassword: (data) => api.put('/users/change-password', data),
   getProfile: () => api.get('/users/profile'),
+  updateSecurityQuestion: (data) => api.put('/users/security-question', data),
+  generate2FA: () => api.post('/users/2fa/generate'),
+  verifyAndEnable2FA: (data) => api.post('/users/2fa/enable', data),
+  disable2FA: (data) => api.post('/users/2fa/disable', data),
 };
 
 export const products = {
