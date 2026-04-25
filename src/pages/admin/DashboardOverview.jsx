@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   DollarSign, Package, ShoppingBag, Users, TrendingUp, Activity, Box, 
   Tag, LifeBuoy, Zap, RotateCcw, ShieldCheck, Ticket, Layers, 
-  Settings, Clock, ArrowRight, Server, Database, CheckCircle
+  Settings, Clock, ArrowRight, Server, Database, CheckCircle, AlertTriangle 
 } from 'lucide-react';
 import { analytics } from '../../services/api';
 
