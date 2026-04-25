@@ -1,373 +1,382 @@
-import React, { useState, useEffect } from "react";
-// 100% STRICT IMPORT: Using the mapped objects
-import { categories as catApi, subcategories as subCatApi } from "../../services/api";
-import {
-  Plus,
-  Edit3,
-  Trash2,
-  Folder,
-  FolderPlus,
-  Save,
-  X,
-  AlertCircle,
-  Loader2,
-  Grid3x3,
-  Layers,
-  ChevronRight,
-  Sparkles,
-  Zap
-} from "lucide-react";
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  FolderTree, Plus, Edit2, Trash2, Search, RefreshCw, 
+  ChevronRight, ChevronDown, Layers, Link as LinkIcon, 
+  AlertTriangle, Image as ImageIcon, CheckCircle, Component
+} from 'lucide-react';
+import api from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 
-export default function CategoryManagement({ token }) {
+export default function CategoryManagement() {
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
-  const [name, setName] = useState("");
-  const [parentId, setParentId] = useState("");
-  const [editCatId, setEditCatId] = useState(null);
-  const [editSubId, setEditSubId] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [formLoading, setFormLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Tree-View State
+  const [expandedRows, setExpandedRows] = useState({});
 
-  const loadData = async () => {
+  // Modal States
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState('category'); // 'category' or 'subcategory'
+  const [editingItem, setEditingItem] = useState(null);
+  
+  const [form, setForm] = useState({ name: '', slug: '', description: '', category_id: '' });
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const { showToast } = useToast() || {};
+
+  useEffect(() => { fetchTaxonomy(); }, []);
+
+  const fetchTaxonomy = async () => {
     setLoading(true);
-    setError(null);
     try {
-      const [cats, subs] = await Promise.all([
-        catApi.getAll(),
-        subCatApi.getAll(),
+      // Fetch both clusters concurrently
+      const [catRes, subRes] = await Promise.all([
+        api.get('/categories'),
+        api.get('/subcategories').catch(() => ({ data: { data: [] } })) // Fallback if subcategories are empty
       ]);
-      setCategories(Array.isArray(cats.data) ? cats.data : (cats.data?.data || cats || []));
-      setSubcategories(Array.isArray(subs.data) ? subs.data : (subs.data?.data || subs || []));
+      
+      setCategories(catRes.data?.categories || catRes.data?.data || catRes.data || []);
+      setSubcategories(subRes.data?.subcategories || subRes.data?.data || subRes.data || []);
     } catch (err) {
-      setError("Failed to load data: " + err.message);
+      showToast?.('Failed to sync taxonomy matrix.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, [token]);
-
-  const resetForm = () => {
-    setName("");
-    setParentId("");
-    setEditCatId(null);
-    setEditSubId(null);
-    setError(null);
+  const toggleRow = (id) => {
+    setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleCatSave = async () => {
-    setFormLoading(true);
-    setError(null);
+  // --- CRUD OPERATIONS ---
+  const openModal = (mode, item = null, parentId = null) => {
+    setModalMode(mode);
+    if (item) {
+      setEditingItem(item);
+      setForm({
+        name: item.name || '',
+        slug: item.slug || '',
+        description: item.description || '',
+        category_id: item.category_id || parentId || ''
+      });
+    } else {
+      setEditingItem(null);
+      setForm({ name: '', slug: '', description: '', category_id: parentId || '' });
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleAutoSlug = (name) => {
+    setForm(prev => ({ 
+      ...prev, 
+      name, 
+      slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') 
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsProcessing(true);
     try {
-      if (!name.trim()) throw new Error("Category name is required.");
-      if (editCatId) {
-        await catApi.update(editCatId, { name });
+      const endpoint = modalMode === 'category' ? '/categories' : '/subcategories';
+      const payload = { ...form };
+
+      if (editingItem) {
+        await api.put(`${endpoint}/${editingItem.id || editingItem._id}`, payload);
+        showToast?.(`${modalMode === 'category' ? 'Cluster' : 'Sub-Node'} updated`, 'success');
       } else {
-        await catApi.create({ name });
+        await api.post(endpoint, payload);
+        showToast?.(`${modalMode === 'category' ? 'Cluster' : 'Sub-Node'} deployed`, 'success');
       }
-      resetForm();
-      loadData();
-    } catch (e) {
-      setError(e?.response?.data?.message || "Failed to save category: " + e.message);
+      setIsModalOpen(false);
+      fetchTaxonomy();
+    } catch (err) {
+      showToast?.('Taxonomy mutation failed', 'error');
     } finally {
-      setFormLoading(false);
+      setIsProcessing(false);
     }
   };
 
-  const handleSubSave = async () => {
-    setFormLoading(true);
-    setError(null);
+  const handleDelete = async (id, mode) => {
+    const isCategory = mode === 'category';
+    const warning = isCategory 
+      ? 'WARNING: Purging a Master Cluster will orphan all its Sub-Nodes and products. Proceed?' 
+      : 'Purge this Sub-Node from the taxonomy?';
+      
+    if (!window.confirm(warning)) return;
+
     try {
-      if (!name.trim() || !parentId) throw new Error("Subcategory name and parent category are required.");
-      const data = { name, category_id: parentId };
-      if (editSubId) {
-        await subCatApi.update(editSubId, data);
-      } else {
-        await subCatApi.create(data);
-      }
-      resetForm();
-      loadData();
-    } catch (e) {
-      setError(e?.response?.data?.message || "Failed to save subcategory: " + e.message);
-    } finally {
-      setFormLoading(false);
+      const endpoint = isCategory ? `/categories/${id}` : `/subcategories/${id}`;
+      await api.delete(endpoint);
+      showToast?.('Entity purged successfully', 'success');
+      fetchTaxonomy();
+    } catch (err) {
+      showToast?.('Purge protocol failed', 'error');
     }
   };
 
-  const handleRemoveCat = async (id) => {
-    if (window.confirm("Are you sure you want to delete this category? This will also delete all associated subcategories.")) {
-      setFormLoading(true);
-      setError(null);
-      try {
-        await catApi.delete(id);
-        loadData();
-      } catch (e) {
-        setError(e?.response?.data?.message || "Failed to delete category: " + e.message);
-      } finally {
-        setFormLoading(false);
-      }
-    }
+  // --- ANALYTICS & GROUPING ---
+  const filteredCategories = useMemo(() => {
+    return categories.filter(c => c.name?.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [categories, searchTerm]);
+
+  const getSubcategories = (categoryId) => {
+    return subcategories.filter(sub => 
+      (sub.category_id === categoryId) || 
+      (sub.category_id?._id === categoryId) || 
+      (sub.category_id?.id === categoryId)
+    );
   };
 
-  const handleRemoveSub = async (id) => {
-    if (window.confirm("Are you sure you want to delete this subcategory?")) {
-      setFormLoading(true);
-      setError(null);
-      try {
-        await subCatApi.delete(id);
-        loadData();
-      } catch (e) {
-        setError(e?.response?.data?.message || "Failed to delete subcategory: " + e.message);
-      } finally {
-        setFormLoading(false);
-      }
-    }
-  };
+  // Telemetry KPIs
+  const totalClusters = categories.length;
+  const totalSubNodes = subcategories.length;
+  const emptyClusters = categories.filter(c => getSubcategories(c.id || c._id).length === 0).length;
 
-  if (loading) return (
-    <div className="min-h-screen bg-[#0a0c10] flex items-center justify-center">
-      <div className="relative">
-        <div className="w-16 h-16 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
-        <Zap className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-cyan-500 animate-pulse" size={20} />
+  if (loading && categories.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
+        <p className="text-slate-500 font-black uppercase text-[10px] tracking-[0.3em] animate-pulse">Syncing Taxonomy Matrix...</p>
       </div>
-    </div>
-  );
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[#0a0c10] text-gray-100 p-4 lg:p-8 font-sans selection:bg-cyan-500/30">
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-600/10 blur-[120px] rounded-full animate-pulse delay-700" />
+    <div className="p-4 md:p-8 space-y-6 bg-[#020617] min-h-screen text-slate-300 font-sans animate-in fade-in duration-300">
+      
+      {/* COMMAND HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+        <div>
+          <h1 className="text-3xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+            Taxonomy <span className="text-purple-500">Matrix</span>
+          </h1>
+          <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest mt-1 flex items-center gap-2">
+            <FolderTree size={12} className="text-purple-500" /> Advanced Hierarchy & Routing Control
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={fetchTaxonomy} className="p-3 bg-slate-900 border border-slate-800 text-slate-400 rounded-xl hover:bg-slate-800 hover:text-purple-400 transition-all">
+            <RefreshCw size={18} />
+          </button>
+          <button 
+            onClick={() => openModal('category')}
+            className="flex items-center gap-2 px-5 py-3 bg-purple-500/10 border border-purple-500/50 text-purple-400 font-black uppercase text-[10px] tracking-widest rounded-xl hover:bg-purple-500 hover:text-white transition-all shadow-[0_0_15px_rgba(168,85,247,0.15)]"
+          >
+            <Plus size={16} /> Deploy Master Cluster
+          </button>
+        </div>
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#161b22]/40 backdrop-blur-xl border border-white/5 p-6 rounded-[2rem] shadow-2xl">
-          <div>
-            <h1 className="text-3xl font-black tracking-tighter bg-gradient-to-r from-white via-cyan-400 to-purple-500 bg-clip-text text-transparent flex items-center gap-3">
-              <Layers className="text-cyan-400" />
-              Taxonomy Engine
-            </h1>
-            <p className="text-gray-400 text-xs mt-1 font-mono uppercase tracking-widest">Global Classification & Hierarchy</p>
-          </div>
-          <div className="flex gap-2">
-             <button onClick={loadData} className="p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all">
-                <Sparkles size={18} className="text-cyan-400" />
-             </button>
+      {/* KPI DASHBOARD */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-slate-900/40 border border-slate-800/80 p-5 rounded-2xl flex items-center gap-5 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 blur-2xl -mr-6 -mt-6"></div>
+          <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-purple-500 z-10"><Layers size={20} /></div>
+          <div className="z-10">
+            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Master Clusters (Level 1)</p>
+            <h4 className="text-2xl font-black text-white tracking-tight">{totalClusters}</h4>
           </div>
         </div>
-
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/50 p-4 rounded-2xl flex items-center gap-3 text-red-400 animate-fade-in backdrop-blur-md">
-            <AlertCircle size={20} />
-            <span className="text-sm font-medium">{error}</span>
-            <button onClick={() => setError(null)} className="ml-auto hover:bg-red-500/20 p-1 rounded-lg transition-colors">
-              <X size={18} />
-            </button>
+        <div className="bg-slate-900/40 border border-slate-800/80 p-5 rounded-2xl flex items-center gap-5 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 blur-2xl -mr-6 -mt-6"></div>
+          <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-blue-500 z-10"><Component size={20} /></div>
+          <div className="z-10">
+            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Sub-Nodes (Level 2)</p>
+            <h4 className="text-2xl font-black text-white tracking-tight">{totalSubNodes}</h4>
           </div>
-        )}
+        </div>
+        <div className="bg-slate-900/40 border border-slate-800/80 p-5 rounded-2xl flex items-center gap-5 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-amber-500/10 blur-2xl -mr-6 -mt-6"></div>
+          <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-amber-500 z-10"><AlertTriangle size={20} /></div>
+          <div className="z-10">
+            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Empty Clusters (No Subs)</p>
+            <h4 className="text-2xl font-black text-white tracking-tight">{emptyClusters}</h4>
+          </div>
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          <section className="space-y-6">
-            <div className="bg-[#161b22]/40 backdrop-blur-xl border border-white/5 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              
-              <div className="flex items-center gap-4 mb-8">
-                <div className="p-3 bg-cyan-500/10 rounded-2xl border border-cyan-500/20">
-                  <Grid3x3 className="text-cyan-400" size={24} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold">Primary Departments</h2>
-                  <p className="text-xs text-gray-500 font-mono">Top-level structural nodes</p>
-                </div>
-              </div>
+      <div className="relative group">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+        <input 
+          type="text" placeholder="Search taxonomy..." 
+          value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full bg-slate-900/40 border border-slate-800 focus:border-purple-500/50 rounded-xl py-3 pl-10 pr-4 text-white font-bold text-sm outline-none transition-all"
+        />
+      </div>
 
-              <div className="space-y-4 mb-8 p-6 bg-white/5 rounded-3xl border border-white/5">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Category Identifier</label>
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter category name..."
-                    className="w-full bg-[#0a0c10] border border-white/10 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-cyan-500/50 outline-none transition-all placeholder:text-gray-700 text-sm"
-                    disabled={formLoading}
-                  />
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleCatSave}
-                    disabled={formLoading || !name.trim()}
-                    className="flex-1 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 disabled:opacity-50 text-black font-black text-xs uppercase tracking-widest py-4 rounded-2xl shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all flex items-center justify-center gap-2"
-                  >
-                    {formLoading ? <Loader2 className="animate-spin" size={16} /> : (editCatId ? <Save size={16} /> : <Plus size={16} />)}
-                    {editCatId ? "Commit Update" : "Deploy Category"}
-                  </button>
-                  {editCatId && (
-                    <button onClick={resetForm} className="px-6 bg-white/5 hover:bg-white/10 text-gray-400 rounded-2xl transition-colors">
-                      <X size={20} />
+      {/* NESTED TAXONOMY TREE */}
+      <div className="bg-slate-900/30 border border-slate-800/80 rounded-[2rem] overflow-hidden shadow-2xl">
+        <div className="grid grid-cols-12 bg-slate-950/80 border-b border-slate-800 p-4 text-[9px] font-black uppercase text-slate-500 tracking-widest">
+          <div className="col-span-4 pl-4">Hierarchy Node</div>
+          <div className="col-span-3">URL Routing (Slug)</div>
+          <div className="col-span-3">Taxonomy Health</div>
+          <div className="col-span-2 text-right pr-4">Operations</div>
+        </div>
+
+        <div className="divide-y divide-slate-800/50">
+          {filteredCategories.length === 0 ? (
+            <div className="p-12 text-center text-slate-500 font-bold text-xs">No taxonomy data matched parameters.</div>
+          ) : filteredCategories.map(category => {
+            const catId = category.id || category._id;
+            const isExpanded = expandedRows[catId];
+            const subs = getSubcategories(catId);
+            const hasDescription = !!category.description;
+
+            return (
+              <React.Fragment key={catId}>
+                {/* MASTER CATEGORY ROW */}
+                <div className="grid grid-cols-12 items-center p-3 hover:bg-slate-800/30 transition-colors group">
+                  <div className="col-span-4 flex items-center gap-3 pl-2">
+                    <button onClick={() => toggleRow(catId)} className={`p-1.5 rounded-lg transition-colors ${subs.length > 0 ? 'bg-slate-800 text-white hover:bg-purple-500' : 'opacity-20 cursor-default'}`}>
+                      {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                     </button>
-                  )}
-                </div>
-              </div>
+                    <div className="w-8 h-8 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center text-purple-500">
+                      <Layers size={14} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-white">{category.name}</p>
+                      <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{subs.length} Linked Sub-Nodes</p>
+                    </div>
+                  </div>
+                  
+                  <div className="col-span-3 flex items-center gap-2">
+                    <LinkIcon size={12} className="text-slate-600" />
+                    <span className="text-xs font-mono text-slate-400">/shop/<span className="text-purple-400">{category.slug}</span></span>
+                  </div>
 
-              <div className="overflow-hidden rounded-3xl border border-white/5 bg-[#0a0c10]/50">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-white/5">
-                      <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Ref ID</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Label</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5 text-sm">
-                    {(Array.isArray(categories) ? categories : []).map((c) => (
-                      <tr key={c.id} className="hover:bg-white/[0.02] transition-colors group">
-                        <td className="px-6 py-4 font-mono text-cyan-500/70 text-xs">#{c.id.toString().padStart(3, '0')}</td>
-                        <td className="px-6 py-4 font-bold text-gray-300">{c.name}</td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button 
-                              onClick={() => { setEditCatId(c.id); setName(c.name); setEditSubId(null); setParentId(""); }}
-                              className="p-2 hover:bg-cyan-500/20 text-cyan-400 rounded-lg transition-colors"
-                            >
-                              <Edit3 size={16} />
-                            </button>
-                            <button 
-                              onClick={() => handleRemoveCat(c.id)}
-                              className="p-2 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {(!Array.isArray(categories) || categories.length === 0) && (
-                      <tr>
-                        <td colSpan="3" className="px-6 py-12 text-center text-gray-600 italic">No primary departments detected.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                  <div className="col-span-3">
+                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest ${hasDescription ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                      {hasDescription ? <CheckCircle size={10} /> : <AlertTriangle size={10} />}
+                      {hasDescription ? 'SEO Optimized' : 'Missing Desc'}
+                    </div>
+                  </div>
+
+                  <div className="col-span-2 flex items-center justify-end gap-1.5 pr-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => openModal('subcategory', null, catId)} title="Inject Sub-Node" className="p-1.5 bg-slate-950 border border-slate-800 rounded-md text-blue-500 hover:bg-blue-500 hover:text-white transition-all"><Plus size={14} /></button>
+                    <button onClick={() => openModal('category', category)} title="Edit Cluster" className="p-1.5 bg-slate-950 border border-slate-800 rounded-md text-purple-500 hover:bg-purple-500 hover:text-white transition-all"><Edit2 size={14} /></button>
+                    <button onClick={() => handleDelete(catId, 'category')} title="Purge Cluster" className="p-1.5 bg-slate-950 border border-slate-800 rounded-md text-rose-500 hover:bg-rose-500 hover:text-white transition-all"><Trash2 size={14} /></button>
+                  </div>
+                </div>
+
+                {/* EXPANDED SUBCATEGORY ROWS */}
+                {isExpanded && subs.map(sub => {
+                  const subId = sub.id || sub._id;
+                  const hasSubDesc = !!sub.description;
+                  return (
+                    <div key={subId} className="grid grid-cols-12 items-center p-3 bg-slate-950/40 hover:bg-slate-800/40 transition-colors group">
+                      <div className="col-span-4 flex items-center gap-3 pl-12">
+                        <div className="w-4 h-[1px] bg-slate-700"></div>
+                        <div className="w-6 h-6 rounded-md bg-slate-900 border border-slate-800 flex items-center justify-center text-blue-500">
+                          <Component size={12} />
+                        </div>
+                        <p className="text-xs font-bold text-slate-300">{sub.name}</p>
+                      </div>
+                      
+                      <div className="col-span-3 flex items-center gap-2">
+                        <span className="text-[10px] font-mono text-slate-500">/shop/{category.slug}/<span className="text-blue-400">{sub.slug}</span></span>
+                      </div>
+
+                      <div className="col-span-3">
+                        <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${hasSubDesc ? 'text-emerald-600' : 'text-amber-600'}`}>
+                          {hasSubDesc ? 'Optimized' : 'Missing Desc'}
+                        </div>
+                      </div>
+
+                      <div className="col-span-2 flex items-center justify-end gap-1.5 pr-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => openModal('subcategory', sub, catId)} className="p-1.5 bg-slate-900 rounded text-blue-500 hover:bg-blue-500 hover:text-white"><Edit2 size={12} /></button>
+                        <button onClick={() => handleDelete(subId, 'subcategory')} className="p-1.5 bg-slate-900 rounded text-rose-500 hover:bg-rose-500 hover:text-white"><Trash2 size={12} /></button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* UNIFIED DEPLOYMENT MODAL */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-sm">
+          <div className="bg-[#0a0c10] border border-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            
+            <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+              <div>
+                <h2 className="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
+                  {editingItem ? 'Reconfigure' : 'Deploy'} {modalMode === 'category' ? 'Master Cluster' : 'Sub-Node'}
+                </h2>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Taxonomy Routing Engine</p>
               </div>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-rose-500 transition-colors bg-slate-950 p-2 rounded-xl">
+                <XCircle size={20} />
+              </button>
             </div>
-          </section>
 
-          <section className="space-y-6">
-             <div className="bg-[#161b22]/40 backdrop-blur-xl border border-white/5 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-purple-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              
-              <div className="flex items-center gap-4 mb-8">
-                <div className="p-3 bg-purple-500/10 rounded-2xl border border-purple-500/20">
-                  <FolderPlus className="text-purple-400" size={24} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold">Sub-Classifications</h2>
-                  <p className="text-xs text-gray-500 font-mono">Secondary hierarchical clusters</p>
-                </div>
-              </div>
-
-              <div className="space-y-4 mb-8 p-6 bg-white/5 rounded-3xl border border-white/5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Parent Nexus</label>
-                    <select
-                      value={parentId}
-                      onChange={(e) => setParentId(e.target.value)}
-                      className="w-full bg-[#0a0c10] border border-white/10 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-purple-500/50 outline-none transition-all text-sm appearance-none"
-                      disabled={formLoading || !Array.isArray(categories) || categories.length === 0}
+            <form onSubmit={handleSubmit}>
+              <div className="p-6 space-y-5">
+                
+                {modalMode === 'subcategory' && (
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 block mb-2">Parent Cluster Linkage</label>
+                    <select 
+                      required value={form.category_id} onChange={e => setForm({...form, category_id: e.target.value})}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-white font-bold outline-none focus:border-blue-500/50 appearance-none cursor-pointer"
                     >
-                      <option value="">Select Parent</option>
-                      {(Array.isArray(categories) ? categories : []).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      <option value="">Select Parent Taxonomy...</option>
+                      {categories.map(c => <option key={c.id || c._id} value={c.id || c._id}>{c.name}</option>)}
                     </select>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Sub Label</label>
-                    <input
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Smartphones"
-                      className="w-full bg-[#0a0c10] border border-white/10 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-purple-500/50 outline-none transition-all placeholder:text-gray-700 text-sm"
-                      disabled={formLoading}
+                )}
+
+                <div className="grid grid-cols-2 gap-5">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 block mb-2">Node Designation (Name)</label>
+                    <input 
+                      required type="text" placeholder="e.g. Exterior Lighting"
+                      value={form.name} onChange={e => handleAutoSlug(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-white font-bold outline-none focus:border-purple-500/50" 
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 block mb-2">URL Routing Identity (Slug)</label>
+                    <input 
+                      required type="text" 
+                      value={form.slug} onChange={e => setForm({...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')})}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-purple-400 font-mono outline-none focus:border-purple-500/50" 
                     />
                   </div>
                 </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleSubSave}
-                    disabled={formLoading || !name.trim() || !parentId}
-                    className="flex-1 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 disabled:opacity-50 text-black font-black text-xs uppercase tracking-widest py-4 rounded-2xl shadow-[0_0_20px_rgba(168,85,247,0.3)] transition-all flex items-center justify-center gap-2"
-                  >
-                    {formLoading ? <Loader2 className="animate-spin" size={16} /> : (editSubId ? <Save size={16} /> : <Plus size={16} />)}
-                    {editSubId ? "Commit Change" : "Initialize Sub-Node"}
-                  </button>
-                  {editSubId && (
-                    <button onClick={resetForm} className="px-6 bg-white/5 hover:bg-white/10 text-gray-400 rounded-2xl transition-colors">
-                      <X size={20} />
-                    </button>
-                  )}
+
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-2 mb-2">
+                    SEO Meta Description <span className={form.description ? 'text-emerald-500' : 'text-amber-500'}>{form.description ? '(Optimized)' : '(Missing)'}</span>
+                  </label>
+                  <textarea 
+                    rows={4} placeholder="Briefly describe this category for search engines..."
+                    value={form.description} onChange={e => setForm({...form, description: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-300 resize-none outline-none focus:border-purple-500/50" 
+                  />
                 </div>
+
               </div>
 
-              <div className="overflow-hidden rounded-3xl border border-white/5 bg-[#0a0c10]/50">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-white/5">
-                      <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Cluster</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Nexus</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5 text-sm">
-                    {(Array.isArray(subcategories) ? subcategories : []).map((sc) => (
-                      <tr key={sc.id} className="hover:bg-white/[0.02] transition-colors group">
-                        <td className="px-6 py-4 font-bold text-gray-300">{sc.name}</td>
-                        <td className="px-6 py-4">
-                          <span className="px-3 py-1 bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-mono rounded-full uppercase tracking-tighter">
-                            {(Array.isArray(categories) ? categories : []).find(c => c.id === sc.category_id)?.name || "N/A"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                           <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button 
-                              onClick={() => { setEditSubId(sc.id); setName(sc.name); setParentId(sc.category_id); setEditCatId(null); }}
-                              className="p-2 hover:bg-purple-500/20 text-purple-400 rounded-lg transition-colors"
-                            >
-                              <Edit3 size={16} />
-                            </button>
-                            <button 
-                              onClick={() => handleRemoveSub(sc.id)}
-                              className="p-2 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {(!Array.isArray(subcategories) || subcategories.length === 0) && (
-                      <tr>
-                        <td colSpan="3" className="px-6 py-12 text-center text-gray-600 italic">No sub-clusters indexed.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+              <div className="p-5 border-t border-slate-800 bg-slate-950/80 flex justify-end gap-3">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-3 text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-900 transition-colors">
+                  Abort
+                </button>
+                <button type="submit" disabled={isProcessing} className={`px-8 py-3 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg flex items-center gap-2 ${modalMode === 'category' ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-500/20' : 'bg-blue-600 hover:bg-blue-500 shadow-blue-500/20'} disabled:opacity-50`}>
+                  {isProcessing ? <RefreshCw size={14} className="animate-spin" /> : <Layers size={14} />} 
+                  Execute Integration
+                </button>
               </div>
-            </div>
-          </section>
+            </form>
+          </div>
         </div>
-      </div>
+      )}
 
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #374151; }
-      `}</style>
     </div>
   );
 }
