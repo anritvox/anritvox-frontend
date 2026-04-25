@@ -51,11 +51,24 @@ export default function ProductDetail() {
       setLoading(true);
       setNotFound(false);
       try {
-        const isObjectId = /^[a-f\d]{24}$/i.test(id); const res = isObjectId ? await productsApi.getById(id) : await productsApi.getBySlug(id);
+        // Recognize both MongoDB 24-char hex strings AND standard numeric IDs
+        const isObjectId = /^[a-f\d]{24}$/i.test(id) || /^\d+$/.test(id);
+        let res;
+        
+        try {
+          res = isObjectId ? await productsApi.getById(id) : await productsApi.getBySlug(id);
+        } catch (firstErr) {
+          // Auto-Retry Fallback: If backend routing expects the opposite, we catch the 404 and swap the call
+          if (firstErr.response && firstErr.response.status === 404) {
+            res = isObjectId ? await productsApi.getBySlug(id) : await productsApi.getById(id);
+          } else {
+            throw firstErr; // Throw if it's a 500 or other network error
+          }
+        }
+        
         setProduct(res.data?.data || res.data);
       } catch (err) {
         console.error("Product fetch error:", err);
-        // CRITICAL FIX: Gracefully handle 404 instead of crashing
         if (err.response && err.response.status === 404) {
           setNotFound(true);
         }
@@ -75,7 +88,6 @@ export default function ProductDetail() {
     }
   };
 
-  // Safe fallback UI if the product doesn't exist in the database
   if (notFound) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center bg-slate-950 text-white p-6">
