@@ -254,7 +254,9 @@ export default function Shop() {
                       </h4>
                       <div className="text-lg font-mono text-slate-900">₹{product.price?.toLocaleString()}</div>
                     </div>
-Redesign: Professional sidebar-based catalog with improved product grid and filters for Shop pageRedesign: Professional sidebar-based catalog with improved product grid and filters for Shop page              </div>
+                  </motion.div>
+                ))}
+              </div>
             ) : (
               <div className="text-center py-20 border-2 border-dashed border-slate-100">
                 <FiSearch className="mx-auto text-4xl text-slate-200 mb-4" />
