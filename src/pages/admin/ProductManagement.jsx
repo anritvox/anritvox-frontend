@@ -2,9 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Box, Plus, Edit2, Trash2, Search, Filter, RefreshCw, AlertTriangle, 
   CheckCircle, XCircle, ChevronLeft, ChevronRight, Image as ImageIcon, 
-  Video, BoxSelect, ShieldCheck, Tag, Zap, Activity, Cpu, QrCode
+  Video, BoxSelect, ShieldCheck, Tag, Activity, Cpu, QrCode, List
 } from 'lucide-react';
-import { products as productsApi, categories as categoriesApi, serials as serialsApi, BASE_URL } from '../../services/api';
+import api, { products as productsApi, categories as categoriesApi, serials as serialsApi, BASE_URL } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
 export default function ProductManagement() {
@@ -21,14 +21,17 @@ export default function ProductManagement() {
   const [isProductModalOpen, setProductModalOpen] = useState(false);
   const [isSerialModalOpen, setSerialModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('basic'); // 'basic', 'media', 'warranty'
+  const [serialTab, setSerialTab] = useState('generate'); // 'generate', 'view'
   
   const [currentProduct, setCurrentProduct] = useState(null);
+  const [productSerials, setProductSerials] = useState([]);
+  const [loadingSerials, setLoadingSerials] = useState(false);
   const { showToast } = useToast() || {};
 
   // Form States
   const [form, setForm] = useState({
-    name: '', description: '', price: '', stock: '', category: '', 
-    youtube_url: '', three_d_model_url: '', warranty_months: 12, is_active: true
+    name: '', description: '', price: '', quantity: '', category_id: '', 
+    video_urls: '', model_3d_url: '', warranty_period: 12, status: 'active'
   });
   const [images, setImages] = useState([]);
 
@@ -68,8 +71,10 @@ export default function ProductManagement() {
   // Handlers
   const handleToggleStatus = async (id, currentStatus) => {
     try {
-      await productsApi.toggleStatus(id, !currentStatus);
-      showToast?.(`Node ${!currentStatus ? 'activated' : 'deactivated'} successfully`, 'success');
+      // FIX 1: Send string "active" or "inactive" to prevent 400 Bad Request
+      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      await productsApi.toggleStatus(id, newStatus);
+      showToast?.(`Node ${newStatus} successfully`, 'success');
       fetchData();
     } catch (err) {
       showToast?.('Status toggle failed', 'error');
@@ -87,6 +92,17 @@ export default function ProductManagement() {
     }
   };
 
+  const handleWipeImages = async (productId) => {
+    if (!window.confirm('Are you sure you want to permanently delete all images for this product?')) return;
+    try {
+      await api.delete(`/products/${productId}/images/all`);
+      showToast?.('All images purged from database', 'success');
+      fetchData();
+    } catch(e) {
+      showToast?.('Failed to wipe images', 'error');
+    }
+  };
+
   const openProductModal = (product = null) => {
     if (product) {
       setCurrentProduct(product);
@@ -94,19 +110,19 @@ export default function ProductManagement() {
         name: product.name || '',
         description: product.description || '',
         price: product.price || '',
-        stock: product.stock || '',
-        category: typeof product.category === 'object' ? product.category?._id || product.category?.id : product.category || '',
-        youtube_url: product.youtube_url || product.videos?.[0] || '',
-        three_d_model_url: product.three_d_model_url || product.threeDModel || '',
-        warranty_months: product.warranty_months || 12,
-        is_active: product.is_active !== undefined ? product.is_active : true
+        quantity: product.quantity || product.stock || '',
+        category_id: product.category_id || '',
+        video_urls: product.video_urls || '',
+        model_3d_url: product.model_3d_url || '',
+        warranty_period: product.warranty_period || 12,
+        status: product.status || 'active'
       });
-      setImages([]); // Handled separately via API usually, or append existing
+      setImages([]); 
     } else {
       setCurrentProduct(null);
       setForm({
-        name: '', description: '', price: '', stock: '', category: '', 
-        youtube_url: '', three_d_model_url: '', warranty_months: 12, is_active: true
+        name: '', description: '', price: '', quantity: '', category_id: '', 
+        video_urls: '', model_3d_url: '', warranty_period: 12, status: 'active'
       });
       setImages([]);
     }
@@ -117,25 +133,27 @@ export default function ProductManagement() {
   const handleSaveProduct = async (e) => {
     e.preventDefault();
     try {
-      // Basic payload (could use FormData if backend requires multipart for creation)
       const payload = { ...form };
       
       let savedProduct;
       if (currentProduct) {
         const res = await productsApi.update(currentProduct._id || currentProduct.id, payload);
-        savedProduct = res.data?.product || res.data;
+        // FIX 2: Safely extract ID from standard backend response shape
+        savedProduct = res.data?.data || res.data?.product || res.data;
         showToast?.('Node configuration updated.', 'success');
       } else {
         const res = await productsApi.create(payload);
-        savedProduct = res.data?.product || res.data;
+        savedProduct = res.data?.data || res.data?.product || res.data;
         showToast?.('New node deployed to registry.', 'success');
       }
 
-      // Handle Image Upload if new images were selected
-      if (images.length > 0 && savedProduct) {
+      // Handle Image Upload to the correct product ID
+      const finalId = savedProduct?.id || savedProduct?._id;
+      if (images.length > 0 && finalId) {
         const formData = new FormData();
         Array.from(images).forEach(img => formData.append('images', img));
-        await productsApi.uploadImages(savedProduct._id || savedProduct.id, formData);
+        await productsApi.uploadImages(finalId, formData);
+        showToast?.('Visual payloads successfully attached', 'success');
       }
 
       setProductModalOpen(false);
@@ -147,14 +165,34 @@ export default function ProductManagement() {
 
   const openSerialModal = (product) => {
     setCurrentProduct(product);
+    setSerialTab('generate');
     setSerialForm({
       count: 10,
       prefix: product.name.substring(0, 3).toUpperCase(),
       format: 'advanced',
-      base_warranty_months: product.warranty_months || 12
+      base_warranty_months: product.warranty_period || 12
     });
     setSerialModalOpen(true);
   };
+
+  const loadProductSerials = async () => {
+    if (!currentProduct) return;
+    setLoadingSerials(true);
+    try {
+      const res = await serialsApi.getByProduct(currentProduct.id || currentProduct._id);
+      setProductSerials(res.data?.serials || res.data?.data || res.data || []);
+    } catch(e) {
+      showToast?.('Failed to load serial registry', 'error');
+    } finally {
+      setLoadingSerials(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isSerialModalOpen && serialTab === 'view') {
+      loadProductSerials();
+    }
+  }, [serialTab, isSerialModalOpen]);
 
   const handleGenerateSerials = async (e) => {
     e.preventDefault();
@@ -165,7 +203,7 @@ export default function ProductManagement() {
       };
       const res = await serialsApi.generate(payload);
       showToast?.(`Generated ${res.data?.count || serialForm.count} serial hashes successfully.`, 'success');
-      setSerialModalOpen(false);
+      setSerialTab('view'); // Switch to view tab to see new serials
     } catch (err) {
       showToast?.('Serial generation protocol failed.', 'error');
     }
@@ -175,7 +213,7 @@ export default function ProductManagement() {
   const filteredProducts = useMemo(() => {
     return products.filter(p => 
       p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.category?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      p.category_name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [products, searchTerm]);
 
@@ -227,9 +265,9 @@ export default function ProductManagement() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { label: 'Total Nodes', val: products.length, icon: Box, color: 'emerald' },
-          { label: 'Active Streams', val: products.filter(p => p.is_active).length, icon: Activity, color: 'blue' },
-          { label: 'Low Stock Alerts', val: products.filter(p => p.stock < 10).length, icon: AlertTriangle, color: 'amber' },
-          { label: 'Avg Node Valuation', val: `₹${(products.reduce((acc, p) => acc + (p.price || 0), 0) / (products.length || 1)).toFixed(0)}`, icon: Tag, color: 'purple' }
+          { label: 'Active Streams', val: products.filter(p => p.status === 'active').length, icon: Activity, color: 'blue' },
+          { label: 'Low Stock Alerts', val: products.filter(p => p.quantity < 10).length, icon: AlertTriangle, color: 'amber' },
+          { label: 'Avg Node Valuation', val: `₹${(products.reduce((acc, p) => acc + parseFloat(p.price || 0), 0) / (products.length || 1)).toFixed(0)}`, icon: Tag, color: 'purple' }
         ].map((stat, i) => (
           <div key={i} className="bg-slate-900/40 border border-slate-800/80 p-6 rounded-[2rem] flex items-center gap-6 shadow-xl relative overflow-hidden group">
             <div className={`absolute top-0 right-0 w-24 h-24 bg-${stat.color}-500/10 blur-2xl -mr-8 -mt-8 group-hover:bg-${stat.color}-500/20 transition-colors duration-500`}></div>
@@ -256,9 +294,6 @@ export default function ProductManagement() {
             className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500/50 rounded-xl py-3.5 pl-12 pr-4 text-white font-bold text-sm outline-none transition-all"
           />
         </div>
-        <button className="px-6 py-3.5 bg-slate-950 border border-slate-800 text-slate-400 rounded-xl hover:text-white transition-all flex items-center gap-2 font-black uppercase text-[10px] tracking-widest">
-          <Filter size={16} /> Filters
-        </button>
       </div>
 
       {/* Products Registry Grid */}
@@ -297,35 +332,35 @@ export default function ProductManagement() {
                       <div>
                         <p className="text-sm font-black text-white uppercase tracking-tight line-clamp-1">{product.name}</p>
                         <div className="flex items-center gap-3 mt-1.5">
-                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1"><ShieldCheck size={10} className="text-emerald-500"/> {product.warranty_months} Mo</span>
-                          {(product.youtube_url || product.videos?.length > 0) && <Video size={12} className="text-blue-500" title="Video Embedded" />}
-                          {(product.three_d_model_url || product.threeDModel) && <Box size={12} className="text-purple-500" title="3D Model Attached" />}
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1"><ShieldCheck size={10} className="text-emerald-500"/> {product.warranty_period || 12} Mo</span>
+                          {(product.video_urls) && <Video size={12} className="text-blue-500" title="Video Embedded" />}
+                          {(product.model_3d_url) && <Box size={12} className="text-purple-500" title="3D Model Attached" />}
                         </div>
                       </div>
                     </div>
                   </td>
                   <td className="p-6">
                     <span className="px-3 py-1 bg-slate-950 border border-slate-800 text-slate-400 rounded-lg text-[10px] font-bold uppercase tracking-widest">
-                      {typeof product.category === 'object' ? product.category?.name : 'Component'}
+                      {product.category_name || 'Component'}
                     </span>
                   </td>
                   <td className="p-6">
                     <div className="flex flex-col">
                       <span className="text-emerald-400 font-black tracking-tight">₹{product.price?.toLocaleString()}</span>
-                      <span className={`text-[10px] font-black uppercase tracking-widest mt-1 ${product.stock > 10 ? 'text-slate-500' : 'text-rose-500'}`}>
-                        {product.stock} Units
+                      <span className={`text-[10px] font-black uppercase tracking-widest mt-1 ${product.quantity > 10 ? 'text-slate-500' : 'text-rose-500'}`}>
+                        {product.quantity} Units
                       </span>
                     </div>
                   </td>
                   <td className="p-6">
                     <button 
-                      onClick={() => handleToggleStatus(product._id || product.id, product.is_active)}
+                      onClick={() => handleToggleStatus(product._id || product.id, product.status)}
                       className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${
-                        product.is_active ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
+                        product.status === 'active' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
                       }`}
                     >
-                      {product.is_active ? <CheckCircle size={10} /> : <XCircle size={10} />}
-                      {product.is_active ? 'Live' : 'Offline'}
+                      {product.status === 'active' ? <CheckCircle size={10} /> : <XCircle size={10} />}
+                      {product.status === 'active' ? 'Live' : 'Offline'}
                     </button>
                   </td>
                   <td className="p-6 text-right">
@@ -333,7 +368,7 @@ export default function ProductManagement() {
                       <button 
                         onClick={() => openSerialModal(product)}
                         className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-amber-500 hover:bg-amber-500 hover:text-slate-950 transition-all"
-                        title="Generate RMA Serials"
+                        title="Manage RMA Serials"
                       >
                         <QrCode size={16} />
                       </button>
@@ -467,7 +502,7 @@ export default function ProductManagement() {
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Available Units (Stock)</label>
                       <input 
                         required type="number" 
-                        value={form.stock} onChange={e => setForm({...form, stock: e.target.value})}
+                        value={form.quantity} onChange={e => setForm({...form, quantity: e.target.value})}
                         className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-emerald-500/50 transition-all" 
                       />
                     </div>
@@ -475,7 +510,7 @@ export default function ProductManagement() {
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Taxonomy Assignment</label>
                       <select 
                         required 
-                        value={form.category} onChange={e => setForm({...form, category: e.target.value})}
+                        value={form.category_id} onChange={e => setForm({...form, category_id: e.target.value})}
                         className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-emerald-500/50 transition-all appearance-none cursor-pointer"
                       >
                         <option value="">Select Primary Category Cluster</option>
@@ -498,6 +533,7 @@ export default function ProductManagement() {
                 {/* TAB 2: MEDIA ASSETS */}
                 {activeTab === 'media' && (
                   <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                    {/* Visual Uploads */}
                     <div className="p-6 border border-dashed border-slate-700 bg-slate-900/30 rounded-3xl text-center relative hover:bg-slate-900/50 transition-colors group">
                       <input 
                         type="file" multiple accept="image/*" 
@@ -510,11 +546,21 @@ export default function ProductManagement() {
                       {images.length > 0 && <p className="mt-4 text-xs font-bold text-emerald-500">{images.length} payload(s) queued for uplink</p>}
                     </div>
 
+                    {currentProduct && (
+                      <button 
+                        type="button"
+                        onClick={() => handleWipeImages(currentProduct.id || currentProduct._id)}
+                        className="w-full py-4 border border-rose-500/30 bg-rose-500/5 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center justify-center gap-2"
+                      >
+                        <Trash2 size={14} /> Purge All Existing Database Images
+                      </button>
+                    )}
+
                     <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2 flex items-center gap-2"><Video size={12} /> YouTube Embedded Stream</label>
                       <input 
                         type="url" 
-                        value={form.youtube_url} onChange={e => setForm({...form, youtube_url: e.target.value})}
+                        value={form.video_urls} onChange={e => setForm({...form, video_urls: e.target.value})}
                         className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-blue-500/50 transition-all placeholder:text-slate-700" 
                         placeholder="https://www.youtube.com/watch?v=..."
                       />
@@ -524,7 +570,7 @@ export default function ProductManagement() {
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2 flex items-center gap-2"><Box size={12} /> 3D Spatial Model URL (GLTF/GLB)</label>
                       <input 
                         type="url" 
-                        value={form.three_d_model_url} onChange={e => setForm({...form, three_d_model_url: e.target.value})}
+                        value={form.model_3d_url} onChange={e => setForm({...form, model_3d_url: e.target.value})}
                         className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-purple-500/50 transition-all placeholder:text-slate-700" 
                         placeholder="https://models.anritvox.com/hardware.glb"
                       />
@@ -540,11 +586,11 @@ export default function ProductManagement() {
                       <div className="flex items-center gap-4">
                         <input 
                           type="range" min="0" max="60" step="6"
-                          value={form.warranty_months} onChange={e => setForm({...form, warranty_months: e.target.value})}
+                          value={form.warranty_period} onChange={e => setForm({...form, warranty_period: e.target.value})}
                           className="flex-1 accent-emerald-500"
                         />
                         <div className="w-20 py-2 bg-slate-950 border border-slate-800 rounded-xl text-center text-emerald-400 font-black text-lg">
-                          {form.warranty_months}
+                          {form.warranty_period}
                         </div>
                       </div>
                       <p className="text-[10px] font-bold text-slate-600 mt-4 leading-relaxed">
@@ -552,13 +598,13 @@ export default function ProductManagement() {
                       </p>
                     </div>
 
-                    <div className="flex items-center justify-between p-6 bg-slate-900/50 border border-slate-800 rounded-3xl cursor-pointer" onClick={() => setForm({...form, is_active: !form.is_active})}>
+                    <div className="flex items-center justify-between p-6 bg-slate-900/50 border border-slate-800 rounded-3xl cursor-pointer" onClick={() => setForm({...form, status: form.status === 'active' ? 'inactive' : 'active'})}>
                       <div>
                         <h4 className="text-sm font-black text-white uppercase tracking-tight">Deploy to Live Front-End</h4>
                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Make this hardware visible to retail clients</p>
                       </div>
-                      <div className={`w-14 h-8 rounded-full p-1 transition-colors ${form.is_active ? 'bg-emerald-500' : 'bg-slate-800'}`}>
-                        <div className={`w-6 h-6 bg-white rounded-full transition-transform shadow-md ${form.is_active ? 'translate-x-6' : 'translate-x-0'}`} />
+                      <div className={`w-14 h-8 rounded-full p-1 transition-colors ${form.status === 'active' ? 'bg-emerald-500' : 'bg-slate-800'}`}>
+                        <div className={`w-6 h-6 bg-white rounded-full transition-transform shadow-md ${form.status === 'active' ? 'translate-x-6' : 'translate-x-0'}`} />
                       </div>
                     </div>
                   </div>
@@ -579,67 +625,133 @@ export default function ProductManagement() {
         </div>
       )}
 
-      {/* --- SERIAL GENERATOR MODAL --- */}
+      {/* --- SERIAL GENERATOR / REGISTRY MODAL --- */}
       {isSerialModalOpen && currentProduct && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-xl">
-          <div className="bg-[#0a0c10] border border-slate-800 w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-[#0a0c10] border border-slate-800 w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-8 border-b border-slate-800 flex justify-between items-start bg-amber-500/5">
               <div>
-                <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500 mb-4">
-                  <QrCode size={24} />
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500">
+                    <QrCode size={20} />
+                  </div>
+                  <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Serial Console</h2>
                 </div>
-                <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Generate Serials</h2>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Target: {currentProduct.name}</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Target Node: <span className="text-amber-400">{currentProduct.name}</span></p>
               </div>
               <button onClick={() => setSerialModalOpen(false)} className="text-slate-500 hover:text-white transition-colors p-2">
                 <XCircle size={24} />
               </button>
             </div>
             
-            <form onSubmit={handleGenerateSerials} className="p-8 space-y-6">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Batch Count</label>
-                  <input 
-                    type="number" min="1" max="1000" required
-                    value={serialForm.count} onChange={e => setSerialForm({...serialForm, count: parseInt(e.target.value)})}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-amber-500/50 transition-all text-center text-xl" 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Hash Prefix</label>
-                  <input 
-                    type="text" required maxLength="6"
-                    value={serialForm.prefix} onChange={e => setSerialForm({...serialForm, prefix: e.target.value.toUpperCase()})}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-amber-500 font-mono font-bold outline-none focus:border-amber-500/50 transition-all text-center text-xl uppercase" 
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Encryption Format</label>
-                <select 
-                  value={serialForm.format} onChange={e => setSerialForm({...serialForm, format: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-amber-500/50 transition-all appearance-none cursor-pointer"
-                >
-                  <option value="advanced">Advanced Secure (Checksum Auth)</option>
-                  <option value="legacy">Legacy / Standard</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Override Warranty Horizon (Months)</label>
-                <input 
-                  type="number" required
-                  value={serialForm.base_warranty_months} onChange={e => setSerialForm({...serialForm, base_warranty_months: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-amber-500/50 transition-all" 
-                />
-              </div>
-
-              <button type="submit" className="w-full py-4 bg-amber-500 text-slate-950 font-black uppercase tracking-widest text-sm rounded-2xl shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:bg-amber-400 transition-all hover:-translate-y-0.5 mt-4">
-                Execute Batch Generation
+            <div className="flex border-b border-slate-800 px-8 bg-slate-950/30">
+              <button
+                onClick={() => setSerialTab('generate')}
+                className={`flex items-center gap-2 px-6 py-4 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${
+                  serialTab === 'generate' ? 'border-amber-500 text-amber-400 bg-amber-500/5' : 'border-transparent text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                <Plus size={16} /> Batch Generate
               </button>
-            </form>
+              <button
+                onClick={() => setSerialTab('view')}
+                className={`flex items-center gap-2 px-6 py-4 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${
+                  serialTab === 'view' ? 'border-amber-500 text-amber-400 bg-amber-500/5' : 'border-transparent text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                <List size={16} /> View Registry
+              </button>
+            </div>
+
+            {/* Generate Tab */}
+            {serialTab === 'generate' && (
+              <form onSubmit={handleGenerateSerials} className="p-8 space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Batch Count</label>
+                    <input 
+                      type="number" min="1" max="1000" required
+                      value={serialForm.count} onChange={e => setSerialForm({...serialForm, count: parseInt(e.target.value)})}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-amber-500/50 transition-all text-center text-xl" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Hash Prefix</label>
+                    <input 
+                      type="text" required maxLength="6"
+                      value={serialForm.prefix} onChange={e => setSerialForm({...serialForm, prefix: e.target.value.toUpperCase()})}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-amber-500 font-mono font-bold outline-none focus:border-amber-500/50 transition-all text-center text-xl uppercase" 
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Encryption Format</label>
+                  <select 
+                    value={serialForm.format} onChange={e => setSerialForm({...serialForm, format: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-amber-500/50 transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="advanced">Advanced Secure (Checksum Auth)</option>
+                    <option value="legacy">Legacy / Standard</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Override Warranty Horizon (Months)</label>
+                  <input 
+                    type="number" required
+                    value={serialForm.base_warranty_months} onChange={e => setSerialForm({...serialForm, base_warranty_months: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold outline-none focus:border-amber-500/50 transition-all" 
+                  />
+                </div>
+
+                <button type="submit" className="w-full py-4 bg-amber-500 text-slate-950 font-black uppercase tracking-widest text-sm rounded-2xl shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:bg-amber-400 transition-all hover:-translate-y-0.5 mt-4">
+                  Execute Batch Generation
+                </button>
+              </form>
+            )}
+
+            {/* View Registry Tab */}
+            {serialTab === 'view' && (
+              <div className="p-8 h-[400px] overflow-y-auto custom-scrollbar">
+                {loadingSerials ? (
+                  <div className="flex justify-center items-center h-full">
+                    <RefreshCw className="w-8 h-8 text-amber-500 animate-spin" />
+                  </div>
+                ) : productSerials.length === 0 ? (
+                  <div className="text-center text-slate-500 font-bold uppercase tracking-widest mt-20">
+                    No Serials Found in Registry
+                  </div>
+                ) : (
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                        <th className="pb-3">Hash Identity</th>
+                        <th className="pb-3">Status</th>
+                        <th className="pb-3 text-right">Created</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {productSerials.map((s, idx) => (
+                        <tr key={idx} className="border-b border-slate-800/50 hover:bg-slate-900/50">
+                          <td className="py-3 font-mono text-sm font-bold text-amber-400">{s.serial_number || s.serial}</td>
+                          <td className="py-3">
+                            <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest ${
+                              s.status === 'available' ? 'bg-blue-500/10 text-blue-500' : 'bg-emerald-500/10 text-emerald-500'
+                            }`}>
+                              {s.status}
+                            </span>
+                          </td>
+                          <td className="py-3 text-right text-xs text-slate-400 font-medium">
+                            {new Date(s.created_at).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
