@@ -35,7 +35,7 @@ const TAB_COMPONENTS = {
   products: ProductManagement,
   categories: CategoryManagement,
   inventory: InventoryManagement,
-  orders: OrderManaement,
+  orders: OrderManagement, // <-- TYPO FIXED HERE
   returns: ReturnManagement,
   'flash-sales': FlashSalesManagement,
   coupons: CouponManagement,
