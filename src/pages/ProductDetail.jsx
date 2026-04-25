@@ -12,11 +12,13 @@ import { useToast } from '../context/ToastContext';
 
 const Product360Viewer = ({ images }) => {
   const [frame, setFrame] = useState(0);
-  const totalFrames = images?.length || 8;
+  // Safely parse JSON array if MySQL returns stringified JSON
+  const parsedImages = typeof images === 'string' ? JSON.parse(images) : images;
+  const totalFrames = parsedImages?.length || 8;
 
   return (
     <div className="relative aspect-square bg-slate-900 rounded-[3rem] overflow-hidden group border border-slate-800">
-      <img src={images?.[frame] || images?.[0] || '/logo.webp'} className="w-full h-full object-contain" alt="360 view" />
+      <img src={parsedImages?.[frame] || parsedImages?.[0] || '/logo.webp'} className="w-full h-full object-contain" alt="360 view" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent flex items-end justify-center p-8">
          <div className="flex items-center space-x-4 bg-black/60 backdrop-blur-xl px-6 py-3 rounded-full border border-white/10">
             <RotateCcw size={16} className="text-emerald-500 animate-spin-slow" />
@@ -33,14 +35,13 @@ const Product360Viewer = ({ images }) => {
 };
 
 export default function ProductDetail() {
-  const { id } = useParams();
+  const { id, slug } = useParams(); // Destructure both possible routes from App.jsx
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { showToast } = useToast() || {};
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [quantity, setQuantity] = useState(1);
   const [pincode, setPincode] = useState('');
   const [deliveryDate, setDeliveryDate] = useState(null);
   const [activeTab, setActiveTab] = useState('specs');
@@ -51,27 +52,40 @@ export default function ProductDetail() {
       setLoading(true);
       setNotFound(false);
       try {
-        // Recognize both MongoDB 24-char hex strings AND standard numeric IDs
-        const isObjectId = /^[a-f\d]{24}$/i.test(id) || /^\d+$/.test(id);
-        let res;
+        // Determine exact identifier
+        const identifier = slug || id;
         
-        try {
-          res = isObjectId ? await productsApi.getById(id) : await productsApi.getBySlug(id);
-        } catch (firstErr) {
-          // Auto-Retry Fallback: If backend routing expects the opposite, we catch the 404 and swap the call
-          if (firstErr.response && firstErr.response.status === 404) {
-            res = isObjectId ? await productsApi.getBySlug(id) : await productsApi.getById(id);
-          } else {
-            throw firstErr; // Throw if it's a 500 or other network error
-          }
-        }
-        
-        setProduct(res.data?.data || res.data);
-      } catch (err) {
-        console.error("Product fetch error:", err);
-        if (err.response && err.response.status === 404) {
+        if (!identifier || identifier === 'undefined') {
           setNotFound(true);
+          return;
         }
+
+        const isNumericId = /^\d+$/.test(identifier);
+        let res;
+
+        // Route perfectly to the backend without guessing
+        try {
+            if (slug || !isNumericId) {
+                res = await productsApi.getBySlug(identifier);
+            } else {
+                res = await productsApi.getById(identifier);
+            }
+        } catch (err) {
+            // Ultimate fallback in case a slug is purely numeric
+            if (err.response && err.response.status === 404) {
+               res = isNumericId ? await productsApi.getBySlug(identifier) : await productsApi.getById(identifier);
+            } else {
+               throw err;
+            }
+        }
+        
+        const productData = res.data?.data || res.data;
+        if (!productData) throw new Error("Data empty");
+        
+        setProduct(productData);
+      } catch (err) {
+        console.error("Product Nexus Sync Error:", err);
+        setNotFound(true);
       } finally {
         setLoading(false);
       }
@@ -80,7 +94,7 @@ export default function ProductDetail() {
     
     const stored = localStorage.getItem('anritvox_garage');
     if (stored) setGarage(JSON.parse(stored));
-  }, [id]);
+  }, [id, slug]);
 
   const checkDelivery = () => {
     if (pincode.length === 6) {
@@ -93,7 +107,7 @@ export default function ProductDetail() {
       <div className="min-h-[80vh] flex flex-col items-center justify-center bg-slate-950 text-white p-6">
         <AlertTriangle size={64} className="text-amber-500 mb-6" />
         <h2 className="text-4xl font-black uppercase tracking-tighter mb-4">Node Not Found</h2>
-        <p className="text-slate-400 font-medium mb-8">The requested hardware specification (ID: {id}) does not exist in the active registry.</p>
+        <p className="text-slate-400 font-medium mb-8">The requested hardware specification does not exist in the active registry.</p>
         <button onClick={() => navigate('/shop')} className="px-8 py-4 bg-emerald-500 text-black font-black uppercase tracking-widest rounded-full hover:bg-emerald-400 transition-all">
           Return to Catalog
         </button>
@@ -109,10 +123,8 @@ export default function ProductDetail() {
     <div className="min-h-screen bg-slate-950 text-white font-sans py-12 px-6">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16">
         
-        {/* LEFT: VISUALS */}
         <div className="space-y-8">
            <Product360Viewer images={product.images} />
-           
            <div className="p-6 bg-slate-900/50 rounded-3xl border border-slate-800 flex items-center justify-between">
               <div className="flex items-center space-x-4">
                  <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500">
@@ -127,7 +139,6 @@ export default function ProductDetail() {
            </div>
         </div>
 
-        {/* RIGHT: DATA */}
         <div className="space-y-10">
           <div className="space-y-4">
              {garage && (
@@ -218,7 +229,6 @@ export default function ProductDetail() {
                 <Heart size={28} />
              </button>
           </div>
-
         </div>
       </div>
     </div>
