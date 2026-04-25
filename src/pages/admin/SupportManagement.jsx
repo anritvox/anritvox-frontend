@@ -1,223 +1,192 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { support as supportApi } from '../../services/api';
-import { Headphones, MessageCircle, Send, Paperclip, X, Clock, CheckCircle, AlertCircle, RefreshCw, Search, Image as ImageIcon, Video, FileText } from 'lucide-react';
-
-const STATUS_COLORS = {
-  open: { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' },
-  in_progress: { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' },
-  resolved: { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' },
-  closed: { bg: 'bg-slate-50', text: 'text-slate-400', border: 'border-slate-200' },
-};
+import React, { useState, useEffect, useCallback } from "react";
+import { support } from "../../services/api";
+import {
+  Loader2, LifeBuoy, Search, Trash2, RefreshCw, Eye, X, Mail, User, Clock, AlertCircle
+} from "lucide-react";
 
 export default function SupportManagement() {
   const [tickets, setTickets] = useState([]);
-  const [selectedTicket, setSelectedTicket] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [reply, setReply] = useState('');
-  const [attachments, setAttachments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
-  const [filter, setFilter] = useState('all');
-  const [search, setSearch] = useState('');
-  const messagesEndRef = useRef(null);
-  const fileInputRef = useRef(null);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedTicket, setSelectedTicket] = useState(null);
 
-  useEffect(() => { fetchTickets(); const interval = setInterval(fetchTickets, 15000); return () => clearInterval(interval); }, []);
-  useEffect(() => { if (selectedTicket) { fetchMessages(selectedTicket.id); const interval = setInterval(() => fetchMessages(selectedTicket.id), 5000); return () => clearInterval(interval); } }, [selectedTicket]);
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
-
-  const fetchTickets = async () => {
+  const loadTickets = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const res = await supportApi.getAllTickets();
-      const data = res.data?.tickets || res.data?.data || res.data || [];
+      const res = await support.getAllAdmin();
+      const data = res.data?.data || res.data;
       setTickets(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error(err);
+      console.error("Support fetch error:", err);
+      setError(err.message || "Failed to initialize support module.");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchMessages = async (ticketId) => {
+  useEffect(() => {
+    loadTickets();
+  }, [loadTickets]);
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Permanently purge this support ticket from the registry?")) return;
     try {
-      const res = await supportApi.getTicket(ticketId);
-      setMessages(res.data?.messages || res.data?.data?.messages || []);
+      await support.delete(id);
+      loadTickets();
     } catch (err) {
-      console.error(err);
+      alert("Failed to purge ticket: " + (err.response?.data?.message || err.message));
     }
   };
 
-  const handleFileChange = async (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-    const formData = new FormData();
-    files.forEach(f => formData.append('files', f));
-    try {
-      const res = await supportApi.uploadAttachment(formData);
-      const urls = res.data?.urls || [];
-      setAttachments(prev => [...prev, ...urls.map(url => ({ url, type: files.find(f => url.includes(f.name.split('.')[0]))?.type || 'file' }))]);
-    } catch (err) {
-      alert('Upload failed: ' + err.message);
-    }
-  };
+  const filtered = tickets.filter(t =>
+    t.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    t.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    t.message?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const sendReply = async () => {
-    if (!reply.trim() && attachments.length === 0) return;
-    setSending(true);
-    try {
-      await supportApi.replyToTicket(selectedTicket.id, { message: reply, attachments: attachments.map(a => a.url) });
-      setReply('');
-      setAttachments([]);
-      fetchMessages(selectedTicket.id);
-      fetchTickets();
-    } catch (err) {
-      alert('Failed to send: ' + err.message);
-    } finally {
-      setSending(false);
-    }
-  };
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <Loader2 className="animate-spin text-cyan-400" size={32} />
+      <span className="ml-3 text-gray-400 font-mono text-sm">Loading support nodes...</span>
+    </div>
+  );
 
-  const updateStatus = async (ticketId, status) => {
-    try {
-      await supportApi.updateTicketStatus(ticketId, status);
-      fetchTickets();
-      if (selectedTicket?.id === ticketId) setSelectedTicket({...selectedTicket, status});
-    } catch (err) {
-      alert('Failed to update: ' + err.message);
-    }
-  };
-
-  const filtered = tickets.filter(t => {
-    if (filter !== 'all' && t.status !== filter) return false;
-    if (search && !t.subject?.toLowerCase().includes(search.toLowerCase()) && !t.user_email?.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
+  if (error) return (
+    <div className="flex flex-col items-center justify-center h-64 gap-4">
+      <AlertCircle className="text-red-400" size={32} />
+      <div className="text-red-400 font-mono text-sm">{error}</div>
+      <button onClick={loadTickets} className="px-6 py-3 bg-cyan-500/20 text-cyan-400 rounded-xl font-bold uppercase text-xs hover:bg-cyan-500/30 transition-all">
+        Retry Connection
+      </button>
+    </div>
+  );
 
   return (
-    <div className="flex gap-6 h-[calc(100vh-12rem)]">
-      {/* Tickets List */}
-      <div className="w-96 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col">
-        <div className="p-6 border-b border-slate-100">
-          <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-2">
-            <Headphones size={24} /> Support Tickets
-          </h2>
-          <div className="mt-4 relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search tickets..." className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-          </div>
-          <div className="mt-3 flex gap-2 overflow-x-auto">
-            {['all', 'open', 'in_progress', 'resolved', 'closed'].map(f => (
-              <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize whitespace-nowrap transition ${filter === f ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
-                {f === 'all' ? 'All' : f.replace('_', ' ')}
-              </button>
-            ))}
-          </div>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+            <LifeBuoy className="text-cyan-400" size={32} /> Support <span className="text-cyan-400">Desk</span>
+          </h1>
+          <p className="text-gray-500 font-bold text-xs mt-1 uppercase tracking-widest">Global Ticket Management</p>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="text-center py-16 text-slate-400 text-sm">No tickets found</div>
-          ) : (
-            filtered.map(t => {
-              const color = STATUS_COLORS[t.status] || STATUS_COLORS.open;
-              return (
-                <div key={t.id} onClick={() => setSelectedTicket(t)} className={`p-4 rounded-2xl border cursor-pointer transition ${selectedTicket?.id === t.id ? 'bg-emerald-50 border-emerald-200' : 'bg-white hover:bg-slate-50 border-slate-100'}`}>
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="font-bold text-sm text-slate-900 truncate flex-1">{t.subject || '(No Subject)'}</div>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${color.bg} ${color.text}`}>{t.status || 'open'}</span>
-                  </div>
-                  <div className="text-xs text-slate-500">{t.user_email || t.user_name || 'Unknown User'}</div>
-                  <div className="text-xs text-slate-400 mt-1">{t.created_at ? new Date(t.created_at).toLocaleDateString('en-IN') : 'Recently'}</div>
-                </div>
-              );
-            })
-          )}
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-black uppercase text-cyan-400 bg-cyan-400/10 px-4 py-2 rounded-full border border-cyan-400/20">
+            {tickets.length} Active Tickets
+          </span>
+          <button
+            onClick={loadTickets}
+            className="p-3 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-cyan-400 rounded-xl transition-all"
+          >
+            <RefreshCw size={18} />
+          </button>
         </div>
       </div>
 
-      {/* Chat Panel */}
-      <div className="flex-1 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col">
-        {selectedTicket ? (
-          <>
-            <div className="p-6 border-b border-slate-100">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="font-black text-slate-900 text-lg">{selectedTicket.subject || '(No Subject)'}</h3>
-                  <div className="text-xs text-slate-500 mt-1">{selectedTicket.user_email || selectedTicket.user_name} • Ticket #{selectedTicket.id}</div>
-                </div>
-                <select value={selectedTicket.status || 'open'} onChange={e => updateStatus(selectedTicket.id, e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                  <option value="open">Open</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="resolved">Resolved</option>
-                  <option value="closed">Closed</option>
-                </select>
-              </div>
-            </div>
+      <div className="relative">
+        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" />
+        <input
+          type="text"
+          placeholder="Filter by client name, email, or ticket payload..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full bg-[#0a0c10] border border-white/10 rounded-2xl pl-12 pr-6 py-4 outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all text-sm placeholder:text-gray-600 font-bold"
+        />
+      </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {messages.map((m, i) => {
-                const isAdmin = m.sender_role === 'admin' || m.is_admin;
-                return (
-                  <div key={i} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-md ${isAdmin ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-900'} rounded-2xl px-4 py-3`}>
-                      <div className="text-sm leading-relaxed">{m.content || m.message}</div>
-                      {m.attachments?.length > 0 && (
-                        <div className="mt-2 space-y-1">
-                          {m.attachments.map((att, idx) => (
-                            <a key={idx} href={att} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs underline">
-                              <Paperclip size={10} /> {att.split('/').pop()}
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                      <div className={`text-xs mt-2 ${isAdmin ? 'text-emerald-100' : 'text-slate-400'}`}>
-                        {m.created_at ? new Date(m.created_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : 'Now'}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              <div ref={messagesEndRef} />
-            </div>
-
-            <div className="p-4 border-t border-slate-100">
-              {attachments.length > 0 && (
-                <div className="flex gap-2 mb-3 flex-wrap">
-                  {attachments.map((att, i) => (
-                    <div key={i} className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-lg text-xs">
-                      {att.type?.startsWith('image') ? <ImageIcon size={12} /> : att.type?.startsWith('video') ? <Video size={12} /> : <FileText size={12} />}
-                      <span className="text-slate-700 max-w-[120px] truncate">{att.url.split('/').pop()}</span>
-                      <button onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-slate-600">
-                        <X size={12} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="flex gap-2">
-                <input ref={fileInputRef} type="file" multiple onChange={handleFileChange} className="hidden" />
-                <button onClick={() => fileInputRef.current?.click()} className="flex items-center justify-center w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
-                  <Paperclip size={16} className="text-slate-600" />
-                </button>
-                <input type="text" value={reply} onChange={e => setReply(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendReply()} placeholder="Type your reply..." className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-                <button onClick={sendReply} disabled={sending} className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-sm transition disabled:opacity-50">
-                  {sending ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />}
-                </button>
-              </div>
-            </div>
-          </>
+      <div className="space-y-3">
+        {filtered.length === 0 ? (
+          <div className="text-center text-gray-600 font-bold uppercase tracking-widest py-16">No tickets detected.</div>
         ) : (
-          <div className="flex items-center justify-center h-full text-center">
-            <div>
-              <MessageCircle size={48} className="mx-auto text-slate-300 mb-4" />
-              <p className="text-slate-400 font-bold">Select a ticket to view conversation</p>
+          filtered.map((ticket, i) => (
+            <div key={ticket.id || i} className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col md:flex-row items-start justify-between gap-4 hover:border-cyan-500/30 transition-all group">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <User size={14} className="text-cyan-400 shrink-0" />
+                  <span className="text-sm font-black text-white uppercase tracking-tight">{ticket.name}</span>
+                  <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2 bg-slate-900 px-2 py-1 rounded">
+                    Ticket #{ticket.id?.toString().padStart(4, '0') || 'N/A'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-4 text-xs font-bold text-gray-500 mb-3">
+                  <span className="flex items-center gap-1"><Mail size={12} />{ticket.email}</span>
+                  {ticket.phone && <span className="flex items-center gap-1 text-emerald-400"><Clock size={12} />{ticket.phone}</span>}
+                </div>
+                <p className="text-sm text-gray-300 font-medium line-clamp-2 pr-4">{ticket.message}</p>
+              </div>
+              
+              <div className="flex flex-row md:flex-col items-center md:items-end justify-between w-full md:w-auto gap-4 shrink-0 mt-4 md:mt-0">
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-widest bg-[#0a0c10] px-3 py-1.5 rounded-lg border border-white/5">
+                  {ticket.created_at ? new Date(ticket.created_at).toLocaleDateString() : "Just Now"}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setSelectedTicket(ticket)}
+                    className="px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 font-bold text-xs uppercase tracking-widest rounded-xl transition-all flex items-center gap-2"
+                  >
+                    <Eye size={14} /> Review
+                  </button>
+                  <button
+                    onClick={() => handleDelete(ticket.id)}
+                    className="p-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl transition-all"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
+          ))
         )}
       </div>
+
+      {selectedTicket && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0a0c10] border border-white/10 rounded-3xl p-8 w-full max-w-2xl shadow-2xl relative">
+            <button onClick={() => setSelectedTicket(null)} className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors bg-white/5 p-2 rounded-full hover:bg-rose-500 hover:border-rose-500 border border-transparent">
+              <X size={20} />
+            </button>
+            
+            <div className="flex items-center gap-4 mb-8 border-b border-white/10 pb-6">
+              <div className="w-14 h-14 bg-cyan-500/10 border border-cyan-500/20 rounded-2xl flex items-center justify-center text-cyan-400 font-black text-xl">
+                {selectedTicket.name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-white uppercase tracking-tighter">{selectedTicket.name}</h3>
+                <div className="text-sm font-bold text-cyan-400">{selectedTicket.email}</div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-white/5 p-5 rounded-2xl border border-white/10">
+                <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Ticket Payload</div>
+                <div className="text-gray-200 text-sm leading-relaxed whitespace-pre-wrap font-medium">{selectedTicket.message}</div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                  <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Phone Protocol</div>
+                  <div className="text-white font-bold text-sm">{selectedTicket.phone || 'N/A'}</div>
+                </div>
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                  <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Timestamp</div>
+                  <div className="text-white font-bold text-sm">{selectedTicket.created_at ? new Date(selectedTicket.created_at).toLocaleString() : 'N/A'}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex gap-3">
+               <button onClick={() => window.location.href = `mailto:${selectedTicket.email}`} className="flex-1 py-4 bg-cyan-500 text-black font-black uppercase tracking-widest rounded-xl hover:bg-cyan-400 transition-all flex items-center justify-center gap-2">
+                 <Mail size={18} /> Reply via Email
+               </button>
+               <button onClick={() => { handleDelete(selectedTicket.id); setSelectedTicket(null); }} className="px-6 py-4 bg-rose-500/10 text-rose-500 font-black uppercase tracking-widest rounded-xl hover:bg-rose-500 hover:text-black transition-all flex items-center justify-center">
+                 <Trash2 size={18} />
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
