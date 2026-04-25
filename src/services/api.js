@@ -36,7 +36,7 @@ api.interceptors.response.use(
 );
 
 // ==========================================
-// --- ULTIMATE API MODULE MAP ---
+// --- COMPLETE API MODULE MAP (A-Z FIX) ---
 // ==========================================
 
 export const auth = {
@@ -55,7 +55,7 @@ export const users = {
 };
 
 export const products = {
-  getAllActive: (params) => api.get("/products/active", { params }), 
+  getAllActive: (params) => api.get("/products/active", { params }),
   getAllAdmin: () => api.get("/products"),
   getById: (id) => api.get(`/products/${id}`),
   getBySlug: (slug) => api.get(`/products/slug/${slug}`),
@@ -125,7 +125,9 @@ export const coupons = {
 
 export const reviews = {
   getByProduct: (productId) => api.get(`/reviews/product/${productId}`),
+  getAllAdmin: () => api.get("/reviews"),
   submit: (data) => api.post("/reviews", data),
+  approve: (id) => api.patch(`/reviews/${id}/approve`),
   delete: (id) => api.delete(`/reviews/${id}`),
 };
 
@@ -201,38 +203,70 @@ export const adminManagement = {
   getAllOrders: () => api.get("/admin/orders"),
 };
 
-// ─── ALIAS & VIRTUAL MODULES (To prevent Vercel crashes) ───
+// --- AFFILIATE MODULE ---
+export const affiliate = {
+  getAllPartners: () => api.get("/affiliate/partners"),
+  getAllWithdrawals: () => api.get("/affiliate/withdrawals"),
+  getConfig: () => api.get("/affiliate/config"),
+  updatePartnerStatus: (id, status) => api.patch(`/affiliate/partners/${id}/status`, { status }),
+  approveWithdrawal: (id) => api.patch(`/affiliate/withdrawals/${id}/approve`),
+  updateConfig: (data) => api.put("/affiliate/config", data),
+};
+
+// --- FLASH SALES MODULE ---
+export const flashSales = {
+  getAll: () => api.get("/flash-sales"),
+  getAllAdmin: () => api.get("/flash-sales"),
+  getActive: () => api.get("/flash-sales/active"),
+  create: (data) => api.post("/flash-sales", data),
+  update: (id, data) => api.put(`/flash-sales/${id}`, data),
+  delete: (id) => api.delete(`/flash-sales/${id}`),
+};
+
+// --- SUPPORT MODULE ---
 export const support = {
   getAllAdmin: () => api.get("/contact"),
   updateStatus: (id, status) => api.patch(`/contact/${id}/status`, { status }),
   delete: (id) => api.delete(`/contact/${id}`),
 };
 
+// --- LOYALTY MODULE ---
 export const loyalty = {
   getSystemConfig: () => api.get("/settings"),
   updateSystemConfig: (data) => api.put("/settings", data),
   getMembers: () => api.get("/admin/users"),
-  adjustPoints: (userId, data) => api.patch(`/admin/users/${userId}/status`, data), 
+  adjustPoints: (userId, data) => api.patch(`/admin/users/${userId}/status`, data),
 };
 
-// VIRTUAL MODULE: Flash Sales maps securely to products and settings
-export const flashSales = {
-  getActive: () => api.get("/products/active", { params: { is_flash: true } }),
-  getAllAdmin: () => api.get("/products", { params: { flash_sale: true } }),
-  create: (data) => api.put(`/products/${data.product_id}`, data), // Proxies to product update
-  delete: (id) => api.put(`/products/${id}`, { flash_sale_active: false }),
-};
+// --- Q&A MODULE ---
+export const fetchProductQA = (productId) => api.get(`/products/${productId}/qa`);
+export const submitProductQuestion = (productId, data) => api.post(`/products/${productId}/qa`, data);
 
+// --- CART HELPERS ---
 export const fetchCart = () => cart.get();
 export const addToCartAPI = (productId, quantity) => cart.add({ productId, quantity });
 export const removeFromCartAPI = (productId) => cart.remove(productId);
 export const clearCartAPI = () => cart.clear();
-export const fetchPublicSettings = () => settings.get(); 
-export const fetchProducts = () => products.getAllActive(); 
+
+// --- MISC HELPERS ---
+export const fetchPublicSettings = () => settings.get();
+export const fetchProducts = () => products.getAllActive();
 export const fetchCategories = () => categories.getAll();
 export const submitContact = (data) => contact.submit(data);
-export const fetchAddressesAPI = async () => { const res = await addresses.getAll(); return res.data; };
-export const saveAddressAPI = async (data) => { const res = await addresses.create(data); return res.data.addresses || res.data; };
-export const placeOrderAPI = async (data) => { const res = await orders.create(data); return res.data; };
+
+export const fetchAddressesAPI = async () => {
+  const res = await addresses.getAll();
+  return res.data;
+};
+
+export const saveAddressAPI = async (data) => {
+  const res = await addresses.create(data);
+  return res.data.addresses || res.data;
+};
+
+export const placeOrderAPI = async (data) => {
+  const res = await orders.create(data);
+  return res.data;
+};
 
 export default api;
