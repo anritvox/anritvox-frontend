@@ -62,9 +62,11 @@ export const products = {
   create: (data) => api.post("/products", data),
   update: (id, data) => api.put(`/products/${id}`, data),
   toggleStatus: (id, status) => api.patch(`/products/${id}/status`, { status }),
-  uploadImages: (id, formData) => api.post(`/products/${id}/images`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  // FIX: Removed explicit multipart header to allow Axios to generate the payload boundary natively
+  uploadImages: (id, formData) => api.post(`/products/${id}/images`, formData),
   deleteImage: (id, imageId) => api.delete(`/products/${id}/images`, { data: { imageId } }),
-  addSerials: (id, serials) => api.post(`/products/${id}/serials`, { serials }),
+  // FIX: Mapped to correct backend serial attachment route
+  addSerials: (id, serials) => api.post(`/serials/${id}/add`, { serials }),
   delete: (id) => api.delete(`/products/${id}`),
 };
 
@@ -184,11 +186,16 @@ export const warranty = {
   updateStatus: (id, status) => api.patch(`/warranty/${id}/status`, { status }),
 };
 
+// FIX: Completely aligned with backend serialRoutes.js
 export const serials = {
   validate: (serial) => api.post("/serials/validate", { serial }),
-  getAllAdmin: () => api.get("/serials"),
-  add: (data) => api.post("/serials", data),
-  delete: (id) => api.delete(`/serials/${id}`),
+  getAllAdmin: () => api.get("/serials/admin/all"),
+  getByProduct: (productId) => api.get(`/serials/${productId}`),
+  getStats: (productId) => api.get(`/serials/${productId}/stats`),
+  generate: (data) => api.post("/serials/generate", data),
+  addManual: (productId, data) => api.post(`/serials/${productId}/add`, data),
+  update: (productId, serialId, data) => api.patch(`/serials/${productId}/${serialId}`, data),
+  delete: (productId, serialId) => api.delete(`/serials/${productId}/${serialId}`),
 };
 
 export const contact = {
@@ -204,7 +211,6 @@ export const adminManagement = {
   getAllOrders: () => api.get("/admin/orders"),
 };
 
-// --- AFFILIATE MODULE ---
 export const affiliate = {
   getAllPartners: () => api.get("/affiliate/partners"),
   getAllWithdrawals: () => api.get("/affiliate/withdrawals"),
@@ -214,7 +220,6 @@ export const affiliate = {
   updateConfig: (data) => api.put("/affiliate/config", data),
 };
 
-// --- FLASH SALES MODULE ---
 export const flashSales = {
   getAll: () => api.get("/flash-sales"),
   getAllAdmin: () => api.get("/flash-sales"),
@@ -224,14 +229,12 @@ export const flashSales = {
   delete: (id) => api.delete(`/flash-sales/${id}`),
 };
 
-// --- SUPPORT MODULE ---
 export const support = {
   getAllAdmin: () => api.get("/contact"),
   updateStatus: (id, status) => api.patch(`/contact/${id}/status`, { status }),
   delete: (id) => api.delete(`/contact/${id}`),
 };
 
-// --- LOYALTY MODULE ---
 export const loyalty = {
   getSystemConfig: () => api.get("/settings"),
   updateSystemConfig: (data) => api.put("/settings", data),
@@ -239,17 +242,14 @@ export const loyalty = {
   adjustPoints: (userId, data) => api.patch(`/admin/users/${userId}/status`, data),
 };
 
-// --- Q&A MODULE ---
 export const fetchProductQA = (productId) => api.get(`/products/${productId}/qa`);
 export const submitProductQuestion = (productId, data) => api.post(`/products/${productId}/qa`, data);
 
-// --- CART HELPERS ---
 export const fetchCart = () => cart.get();
 export const addToCartAPI = (productId, quantity) => cart.add({ productId, quantity });
 export const removeFromCartAPI = (productId) => cart.remove(productId);
 export const clearCartAPI = () => cart.clear();
 
-// --- MISC HELPERS ---
 export const fetchPublicSettings = () => settings.getPublic();
 export const fetchProducts = () => products.getAllActive();
 export const fetchCategories = () => categories.getAll();
@@ -270,7 +270,6 @@ export const placeOrderAPI = async (data) => {
   return res.data;
 };
 
-// --- FITMENT MODULE ---
 export const fitment = {
     check: (productId, make, model, year) => api.get('/fitment/check', { params: { productId, make, model, year } }),
     getByProduct: (productId) => api.get(`/fitment/product/${productId}`),
