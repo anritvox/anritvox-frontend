@@ -1,139 +1,200 @@
-import React, { useState } from "react";
-import { FiMail, FiPhone, FiMapPin, FiSend, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
-import { motion, AnimatePresence } from "framer-motion";
-// 100% PROPER IMPORT: Using the strictly mapped contact object
-import { contact } from "../services/api";
+import React, { useState } from 'react';
+import { 
+  Send, Mail, Phone, MapPin, MessageSquare, 
+  HelpCircle, FileText, AlertCircle, RefreshCw,
+  ShieldCheck, Wrench, Package, ArrowRight, CheckCircle, ChevronDown,
+} from 'lucide-react';
+import api from '../services/api';
+import { useToast } from '../context/ToastContext';
+
+const FAQS = [
+  {
+    q: "How do I check compatibility for my vehicle?",
+    a: "Navigate to any hardware node page and use our Guaranteed Fit System. Enter your vehicle's Make, Model, and Year to instantly verify matrix compatibility against our live database."
+  },
+  {
+    q: "What is your warranty policy on LED hardware?",
+    a: "Most of our primary lighting nodes include a standard 12-month comprehensive warranty. Your unique RMA Serial Hash is generated upon purchase and acts as your digital warranty card."
+  },
+  {
+    q: "How long does priority shipping take?",
+    a: "Orders processed before 14:00 IST are dispatched same-day. Standard transit times are 2-4 business days depending on your regional routing."
+  },
+  {
+    q: "Can I return a component if it doesn't fit?",
+    a: "Yes. If the component is uninstalled and in its original packaging, you may initiate a return within 7 days of delivery. Refer to our Returns matrix for full conditions."
+  }
+];
 
 export default function Contact() {
-  const [formData, setFormData] = useState({ name: "", email: "", subject: "", message: "" });
-  const [status, setStatus] = useState({ loading: false, success: false, error: "" });
-
-  const handleChange = (e) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  };
+  const [form, setForm] = useState({
+    name: '', email: '', phone: '', order_id: '', subject: 'technical_support', message: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeFaq, setActiveFaq] = useState(null);
+  const [ticketGenerated, setTicketGenerated] = useState(false);
+  const { showToast } = useToast() || {};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setStatus({ loading: true, success: false, error: "" });
+    setIsSubmitting(true);
     try {
-      // REWRITTEN: Proper object-oriented API
-      await contact.submit(formData);
-      setStatus({ loading: false, success: true, error: "" });
-      setFormData({ name: "", email: "", subject: "", message: "" });
-      
-      // Auto-clear success message after 5 seconds
-      setTimeout(() => setStatus(prev => ({ ...prev, success: false })), 5000);
+      // Pushing to the standard contact endpoint
+      await api.post('/contact', form);
+      setTicketGenerated(true);
+      showToast?.('Support ticket injected successfully.', 'success');
+      setForm({ name: '', email: '', phone: '', order_id: '', subject: 'technical_support', message: '' });
     } catch (err) {
-      setStatus({ 
-        loading: false, 
-        success: false, 
-        error: err.response?.data?.message || "Transmission failed. Please verify your connection and try again." 
-      });
+      showToast?.('Failed to transmit support payload.', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-16 px-4 md:px-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tighter mb-4">Command Center</h1>
-          <p className="text-slate-500 font-bold max-w-2xl mx-auto">Initiate contact with the Anritvox support nexus. We prioritize rapid deployment of solutions for all hardware and order inquiries.</p>
+    <div className="min-h-screen bg-black text-white pt-24 pb-20">
+      
+      {/* Hero Section */}
+      <div className="max-w-7xl mx-auto px-6 mb-16 text-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[10px] font-black uppercase tracking-widest mb-6">
+          <HelpCircle size={12} /> Support Matrix Active
+        </div>
+        <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-6">
+          Client <span className="text-blue-500">Support</span>
+        </h1>
+        <p className="text-slate-400 font-bold max-w-2xl mx-auto text-sm">
+          Need assistance with your hardware, routing, or telemetry? Our engineering and support team is standing by to resolve your queries.
+        </p>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12">
+        
+        {/* Support Ticket Form */}
+        <div className="lg:col-span-7">
+          <div className="bg-slate-900/40 border border-slate-800/80 rounded-[3rem] p-8 md:p-12 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-3xl rounded-full pointer-events-none"></div>
+            
+            {ticketGenerated ? (
+              <div className="flex flex-col items-center justify-center text-center py-16 animate-in zoom-in duration-500">
+                <div className="w-24 h-24 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center text-emerald-500 mb-6">
+                  <CheckCircle size={48} />
+                </div>
+                <h3 className="text-3xl font-black uppercase tracking-tighter mb-4">Ticket Generated</h3>
+                <p className="text-slate-400 font-bold mb-8 max-w-md">
+                  Your support payload has been securely transmitted to our resolution matrix. An agent will contact you shortly.
+                </p>
+                <button onClick={() => setTicketGenerated(false)} className="px-8 py-3.5 bg-slate-900 border border-slate-800 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all">
+                  Submit Another Request
+                </button>
+              </div>
+            ) : (
+              <>
+                <h2 className="text-2xl font-black uppercase tracking-tighter mb-2 flex items-center gap-3">
+                  <MessageSquare size={24} className="text-blue-500" /> Transmit Payload
+                </h2>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-8">Generate a secure support ticket</p>
+                
+                <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 block mb-2">Identity (Name)</label>
+                      <input required type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs text-white font-bold outline-none focus:border-blue-500/50 transition-all" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 block mb-2">Comms Channel (Email)</label>
+                      <input required type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs text-white font-bold outline-none focus:border-blue-500/50 transition-all" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 block mb-2">Telemetry (Phone) - Optional</label>
+                      <input type="tel" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs text-white font-bold outline-none focus:border-blue-500/50 transition-all" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 block mb-2">Order Hash - Optional</label>
+                      <input type="text" placeholder="e.g. #001234" value={form.order_id} onChange={e => setForm({...form, order_id: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs text-white font-mono outline-none focus:border-blue-500/50 transition-all" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 block mb-2">Routing Category</label>
+                    <select value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs text-white font-bold outline-none focus:border-blue-500/50 transition-all appearance-none cursor-pointer">
+                      <option value="technical_support">Hardware / Technical Support</option>
+                      <option value="order_status">Logistics / Order Tracking</option>
+                      <option value="returns_rma">Returns / RMA Generation</option>
+                      <option value="general">General Transmission</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 block mb-2">Transmission Data</label>
+                    <textarea required rows={5} value={form.message} onChange={e => setForm({...form, message: e.target.value})} placeholder="Describe the anomaly or request in detail..." className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs text-slate-300 outline-none focus:border-blue-500/50 transition-all resize-none custom-scrollbar" />
+                  </div>
+
+                  <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-blue-600 text-white font-black uppercase tracking-widest text-xs rounded-2xl hover:bg-blue-500 transition-all shadow-[0_0_20px_rgba(37,99,235,0.2)] disabled:opacity-50 flex items-center justify-center gap-2 group">
+                    {isSubmitting ? <RefreshCw size={18} className="animate-spin" /> : <Send size={18} className="group-hover:translate-x-1 transition-transform" />} 
+                    Execute Transmission
+                  </button>
+                </form>
+              </>
+            )}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          {/* Contact Info Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 flex items-start gap-4 hover:border-emerald-500 transition-colors">
-              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 flex-shrink-0">
-                <FiMapPin size={24} />
-              </div>
-              <div>
-                <h3 className="text-sm font-black uppercase text-slate-400 mb-1">Headquarters</h3>
-                <p className="text-slate-900 font-bold">Anritvox Electronics<br/>Industrial Sector 4<br/>New Delhi, India 110001</p>
-              </div>
+        {/* Info & FAQ Matrix */}
+        <div className="lg:col-span-5 space-y-8">
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-[2rem]">
+              <Mail className="text-blue-500 mb-4" size={24} />
+              <h4 className="text-[10px] font-black uppercase tracking-widest mb-1">Direct Comms</h4>
+              <p className="text-sm font-bold text-white">support@anritvox.com</p>
             </div>
-
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 flex items-start gap-4 hover:border-emerald-500 transition-colors">
-              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 flex-shrink-0">
-                <FiPhone size={24} />
-              </div>
-              <div>
-                <h3 className="text-sm font-black uppercase text-slate-400 mb-1">Direct Line</h3>
-                <p className="text-slate-900 font-bold">+91 1800-ANRITVOX<br/><span className="text-xs text-slate-500 font-medium">Mon-Sat, 09:00 - 18:00 IST</span></p>
-              </div>
-            </div>
-
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 flex items-start gap-4 hover:border-emerald-500 transition-colors">
-              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 flex-shrink-0">
-                <FiMail size={24} />
-              </div>
-              <div>
-                <h3 className="text-sm font-black uppercase text-slate-400 mb-1">Digital Support</h3>
-                <p className="text-slate-900 font-bold">support@anritvox.com<br/><span className="text-xs text-slate-500 font-medium">24/7 Automated Ticketing</span></p>
-              </div>
+            <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-[2rem]">
+              <Phone className="text-emerald-500 mb-4" size={24} />
+              <h4 className="text-[10px] font-black uppercase tracking-widest mb-1">Voice Matrix</h4>
+              <p className="text-sm font-bold text-white">+91 90000 00000</p>
             </div>
           </div>
 
-          {/* Contact Form */}
-          <div className="lg:col-span-2">
-            <form onSubmit={handleSubmit} className="bg-white p-8 md:p-10 rounded-3xl shadow-sm border border-slate-100 space-y-6">
-              
-              <AnimatePresence>
-                {status.success && (
-                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }} className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-start gap-3">
-                    <FiCheckCircle className="text-emerald-500 mt-0.5 text-lg" />
-                    <div>
-                      <p className="font-black text-emerald-900 uppercase text-sm tracking-widest">Message Transmitted</p>
-                      <p className="text-emerald-700 text-sm font-medium">Our support nexus has received your data. Expect a response within 24 hours.</p>
-                    </div>
-                  </motion.div>
-                )}
-                
-                {status.error && (
-                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }} className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-start gap-3">
-                    <FiAlertCircle className="text-rose-500 mt-0.5 text-lg" />
-                    <div>
-                      <p className="font-black text-rose-900 uppercase text-sm tracking-widest">Transmission Failure</p>
-                      <p className="text-rose-700 text-sm font-medium">{status.error}</p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase text-slate-400 pl-2">Full Designation</label>
-                  <input required type="text" name="name" value={formData.name} onChange={handleChange} placeholder="John Doe" className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 font-bold outline-none transition-all" />
+          <div className="bg-slate-900/40 border border-slate-800 p-8 rounded-[2.5rem]">
+            <h3 className="text-lg font-black uppercase tracking-tighter mb-6 flex items-center gap-2">
+              <FileText size={18} className="text-purple-500" /> FAQ Database
+            </h3>
+            <div className="space-y-4">
+              {FAQS.map((faq, i) => (
+                <div key={i} className="border border-slate-800 bg-slate-950/50 rounded-2xl overflow-hidden transition-all">
+                  <button 
+                    onClick={() => setActiveFaq(activeFaq === i ? null : i)}
+                    className="w-full p-4 flex items-center justify-between text-left focus:outline-none"
+                  >
+                    <span className="text-xs font-bold text-slate-300 pr-4">{faq.q}</span>
+                    <ChevronDown size={14} className={`text-slate-500 transition-transform duration-300 ${activeFaq === i ? 'rotate-180 text-blue-500' : ''}`} />
+                  </button>
+                  <div className={`px-4 overflow-hidden transition-all duration-300 ease-in-out ${activeFaq === i ? 'max-h-40 pb-4 opacity-100' : 'max-h-0 opacity-0'}`}>
+                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed border-t border-slate-800/50 pt-3">
+                      {faq.a}
+                    </p>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase text-slate-400 pl-2">Network Identity (Email)</label>
-                  <input required type="email" name="email" value={formData.email} onChange={handleChange} placeholder="john@domain.com" className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 font-bold outline-none transition-all" />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase text-slate-400 pl-2">Directive Subject</label>
-                <input required type="text" name="subject" value={formData.subject} onChange={handleChange} placeholder="Order Inquiry #12345" className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 font-bold outline-none transition-all" />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase text-slate-400 pl-2">Data Payload</label>
-                <textarea required name="message" value={formData.message} onChange={handleChange} rows="5" placeholder="Detail your operational requirements here..." className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 font-bold outline-none transition-all resize-none"></textarea>
-              </div>
-
-              <button disabled={status.loading} type="submit" className="w-full bg-slate-900 text-white p-5 rounded-2xl font-black uppercase tracking-widest hover:bg-emerald-500 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group">
-                {status.loading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                ) : (
-                  <>
-                    Initialize Transfer <FiSend className="group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </button>
-            </form>
+              ))}
+            </div>
           </div>
+
+          <div className="bg-blue-500/10 border border-blue-500/20 p-8 rounded-[2.5rem]">
+            <h3 className="text-sm font-black uppercase tracking-widest text-blue-400 mb-2">Enterprise Solutions</h3>
+            <p className="text-xs font-bold text-slate-400 mb-6">Looking for bulk hardware acquisitions or B2B dealership matrices? Connect with our wholesale division.</p>
+            <button className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white hover:text-blue-400 transition-colors">
+              Wholesale Portal <ArrowRight size={12} />
+            </button>
+          </div>
+
         </div>
       </div>
     </div>
   );
 }
+
+// Ensure you import ChevronDown at the top if it wasn't already in your lucide-react imports:
+// import { ..., ChevronDown } from 'lucide-react';
