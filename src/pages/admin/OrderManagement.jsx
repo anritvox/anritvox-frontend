@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 import { 
   ShoppingBag, Truck, Package, CheckCircle, XCircle, AlertCircle, 
   Search, Filter, Download, RefreshCw, Eye, IndianRupee, 
-  MapPin, User, CreditCard, Calendar, ArrowRight, Printer, Activity,
+  MapPin, User, CreditCard, ArrowRight, Printer, Activity,
   Clock, ShieldCheck, Mail, Phone, FileText
 } from 'lucide-react';
 import api from '../../services/api';
@@ -12,13 +12,14 @@ import { useToast } from '../../context/ToastContext';
 const STATUS_MAP = {
   'pending': { label: 'Pending', color: 'amber', icon: Clock },
   'processing': { label: 'Processing', color: 'blue', icon: Activity },
-  'shipped': { label: 'Shipped', color: 'purple', icon: Truck },
+  'shipped': { label: 'Shipped / In Transit', color: 'purple', icon: Truck },
   'delivered': { label: 'Delivered', color: 'emerald', icon: CheckCircle },
   'cancelled': { label: 'Cancelled', color: 'rose', icon: XCircle },
   'returned': { label: 'Returned', color: 'slate', icon: AlertCircle }
 };
 
-const TIMELINE_STAGES = ['pending', 'processing', 'shipped', 'delivered'];
+// FIX: Dynamic 10-digit padding for professional Order IDs
+const formatId = (id) => String(id).padStart(10, '0');
 
 export default function OrderManagement() {
   const [orders, setOrders] = useState([]);
@@ -32,8 +33,10 @@ export default function OrderManagement() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
   
+  // Tracking Form States
   const [trackingNumber, setTrackingNumber] = useState('');
   const [courierName, setCourierName] = useState('');
+  const [trackingStatus, setTrackingStatus] = useState('shipped');
 
   const { showToast } = useToast() || {};
 
@@ -44,7 +47,6 @@ export default function OrderManagement() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      // FIX: Call the correct globally exposed admin route
       const res = await api.get('/orders/all');
       setOrders(res.data || []);
     } catch (err) {
@@ -71,7 +73,10 @@ export default function OrderManagement() {
       showToast?.(`Order marked as ${newStatus}`, 'success');
       
       setOrders(orders.map(o => (o.id === orderId) ? { ...o, status: newStatus } : o));
-      if (selectedOrder) setSelectedOrder({ ...selectedOrder, status: newStatus });
+      if (selectedOrder) {
+        setSelectedOrder({ ...selectedOrder, status: newStatus });
+        setTrackingStatus(newStatus);
+      }
     } catch (err) {
       showToast?.('Failed to update status', 'error');
     } finally {
@@ -79,22 +84,27 @@ export default function OrderManagement() {
     }
   };
 
+  // FIX: Allowing admins to dictate the exact status when updating tracking
   const handleUpdateTracking = async (e) => {
     e.preventDefault();
     if (!selectedOrder) return;
     setIsUpdating(true);
     try {
       const orderId = selectedOrder.id;
-      // Combine Tracking Update & Status Change
       await api.put(`/orders/${orderId}/status`, { 
-        status: 'shipped', 
+        status: trackingStatus, 
         trackingNumber: trackingNumber, 
         courier: courierName 
       });
       
-      showToast?.('Tracking details added & order shipped.', 'success');
+      showToast?.('Order pipeline & tracking updated.', 'success');
       fetchOrders();
-      setSelectedOrder({ ...selectedOrder, tracking_number: trackingNumber, courier: courierName, status: 'shipped' });
+      setSelectedOrder({ 
+        ...selectedOrder, 
+        tracking_number: trackingNumber, 
+        courier: courierName, 
+        status: trackingStatus 
+      });
     } catch (err) {
       showToast?.('Failed to save tracking info', 'error');
     } finally {
@@ -104,7 +114,7 @@ export default function OrderManagement() {
 
   const exportToExcel = () => {
     const worksheetData = orders.map(o => ({
-      'Order ID': o.id,
+      'Order ID': formatId(o.id),
       'Date': new Date(o.created_at).toLocaleString(),
       'Customer': o.user_name || o.address_snapshot?.full_name || 'Guest',
       'Email': o.user_email || 'N/A',
@@ -122,7 +132,8 @@ export default function OrderManagement() {
 
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
-      const searchStr = `${o.id} ${o.user_name || ''} ${o.address_snapshot?.full_name || ''} ${o.user_email || ''}`.toLowerCase();
+      const formattedId = formatId(o.id);
+      const searchStr = `${o.id} ${formattedId} ${o.user_name || ''} ${o.address_snapshot?.full_name || ''} ${o.user_email || ''}`.toLowerCase();
       const matchesSearch = searchStr.includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || o.status === statusFilter;
       return matchesSearch && matchesStatus;
@@ -249,7 +260,7 @@ export default function OrderManagement() {
                 const status = STATUS_MAP[order.status] || STATUS_MAP['pending'];
                 return (
                   <tr key={order.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-5 font-bold text-slate-900">#{order.id}</td>
+                    <td className="p-5 font-bold text-slate-900 font-mono">#{formatId(order.id)}</td>
                     <td className="p-5">
                       <p className="font-bold text-slate-800">{order.address_snapshot?.full_name || order.user_name || 'Guest'}</p>
                       <p className="text-xs text-slate-500">{order.user_email || 'No email'}</p>
@@ -267,6 +278,7 @@ export default function OrderManagement() {
                           setSelectedOrder(order);
                           setTrackingNumber(order.tracking_number || '');
                           setCourierName(order.courier || '');
+                          setTrackingStatus(order.status || 'shipped');
                         }}
                         className="px-4 py-2 bg-slate-100 hover:bg-emerald-600 hover:text-white text-slate-700 rounded-lg text-sm font-bold transition-colors shadow-sm"
                       >
@@ -281,7 +293,7 @@ export default function OrderManagement() {
         </div>
       </div>
 
-      {/* order detail MODAL */}
+      {/* ORDER DETAIL MODAL */}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
           <div className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl my-auto relative flex flex-col max-h-[90vh]">
@@ -289,8 +301,8 @@ export default function OrderManagement() {
             {/* Header */}
             <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-3xl">
               <div>
-                <h2 className="text-2xl font-extrabold text-slate-900">
-                  Order #{selectedOrder.id}
+                <h2 className="text-2xl font-extrabold text-slate-900 font-mono tracking-tight">
+                  Order #{formatId(selectedOrder.id)}
                 </h2>
                 <p className="text-sm text-slate-500 font-medium mt-1">
                   Placed on {new Date(selectedOrder.created_at).toLocaleString()}
@@ -304,25 +316,6 @@ export default function OrderManagement() {
                   <XCircle size={20} />
                 </button>
               </div>
-            </div>
-
-            {/* Quick Actions (Admin overrides) */}
-            <div className="bg-white border-b border-slate-100 p-6 flex flex-wrap items-center gap-4">
-               <span className="text-sm font-bold text-slate-700">Update Status:</span>
-               {Object.keys(STATUS_MAP).map(status => (
-                  <button 
-                    key={status}
-                    disabled={isUpdating || selectedOrder.status === status}
-                    onClick={() => handleUpdateStatus(selectedOrder.id, status)}
-                    className={`px-4 py-2 rounded-lg text-sm font-bold border transition-colors ${
-                      selectedOrder.status === status 
-                        ? `bg-${STATUS_MAP[status].color}-100 border-${STATUS_MAP[status].color}-200 text-${STATUS_MAP[status].color}-700` 
-                        : 'bg-white border-slate-200 text-slate-600 hover:border-slate-400'
-                    } disabled:opacity-50`}
-                  >
-                    {STATUS_MAP[status].label}
-                  </button>
-               ))}
             </div>
 
             {/* Content Body */}
@@ -384,30 +377,36 @@ export default function OrderManagement() {
                         </>
                       ) : 'Address not found.'}
                     </div>
-                    {selectedOrder.notes && (
-                      <div className="mt-4 p-4 bg-amber-50 border border-amber-100 rounded-xl text-sm text-amber-800">
-                        <span className="font-bold block mb-1">Customer Note:</span>
-                        {selectedOrder.notes}
-                      </div>
-                    )}
                   </div>
 
-                  {/* Add Tracking Info */}
+                  {/* FIX: Form now allows selecting ANY status + tracking details */}
                   <div className="border border-slate-200 rounded-2xl p-6 bg-blue-50/50">
                     <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><Truck size={18}/> Dispatch & Tracking</h3>
                     <form onSubmit={handleUpdateTracking} className="space-y-4">
                       <div>
-                        <label className="text-sm font-bold text-slate-700 block mb-1">Tracking Number</label>
+                        <label className="text-sm font-bold text-slate-700 block mb-1">Update Status</label>
+                        <select 
+                          value={trackingStatus} 
+                          onChange={e => setTrackingStatus(e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-lg p-3 text-sm focus:border-blue-500 outline-none transition-colors"
+                        >
+                          {Object.entries(STATUS_MAP).map(([key, { label }]) => (
+                            <option key={key} value={key}>{label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-sm font-bold text-slate-700 block mb-1">Tracking Number (Optional)</label>
                         <input 
-                          type="text" placeholder="AWB Number"
+                          type="text" placeholder="e.g. AWB Number"
                           value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)}
                           className="w-full bg-white border border-slate-200 rounded-lg p-3 text-sm focus:border-blue-500 outline-none transition-colors" 
                         />
                       </div>
                       <div>
-                        <label className="text-sm font-bold text-slate-700 block mb-1">Courier Partner</label>
+                        <label className="text-sm font-bold text-slate-700 block mb-1">Courier Partner (Optional)</label>
                         <input 
-                          type="text" placeholder="e.g. BlueDart"
+                          type="text" placeholder="e.g. BlueDart, FedEx"
                           value={courierName} onChange={e => setCourierName(e.target.value)}
                           className="w-full bg-white border border-slate-200 rounded-lg p-3 text-sm focus:border-blue-500 outline-none transition-colors" 
                         />
@@ -416,7 +415,7 @@ export default function OrderManagement() {
                         type="submit" disabled={isUpdating}
                         className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
                       >
-                        {isUpdating ? 'Saving...' : 'Save & Mark as Shipped'}
+                        {isUpdating ? 'Saving Pipeline...' : 'Apply Tracking & Status'}
                       </button>
                     </form>
                   </div>
