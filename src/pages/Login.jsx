@@ -96,10 +96,13 @@ export default function Login() {
     setLoading(true); setError('');
     try {
       const res = await authApi.verify2FA({ email: formData.email, otp: otpString });
-      localStorage.setItem('anritvox_token', res.data.token);
+      
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
       window.location.href = from;
+      
     } catch (err) {
-      setError(err.response?.data?.message || "Invalid 2FA Token. Access Denied.");
+      setError(err.response?.data?.message || "Invalid Code. Access Denied.");
       setLoading(false);
     }
   };
