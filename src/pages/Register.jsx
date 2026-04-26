@@ -79,14 +79,18 @@ export default function Register() {
     }
   };
 
-  const handleVerifyOtp = async (e) => {
+ const handleVerifyOtp = async (e) => {
     e.preventDefault();
     const otpString = otp.join('');
     if (otpString.length < 6) return setError("Complete the 6-digit sequence.");
     
     setLoading(true); setError('');
     try {
-      await verifyEmail({ email: formData.email, otp: otpString });
+      await verifyEmail({ 
+        email: formData.email, 
+        otp: otpString, 
+        securityAnswer: formData.securityAnswer 
+      });
       setSuccessMsg("Node activated successfully. Entering terminal...");
       setTimeout(() => navigate('/profile', { replace: true }), 1500);
     } catch (err) {
