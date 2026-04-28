@@ -386,13 +386,33 @@ export default function ProductManagement() {
               <button onClick={() => setSerialTab('generate')} className={`flex items-center gap-1.5 px-4 py-3 text-[10px] font-black uppercase tracking-widest border-b-2 ${serialTab === 'generate' ? 'border-amber-500 text-amber-400' : 'border-transparent text-slate-500'}`}><Plus size={14} /> Batch Gen</button>
               <button onClick={() => setSerialTab('view')} className={`flex items-center gap-1.5 px-4 py-3 text-[10px] font-black uppercase tracking-widest border-b-2 ${serialTab === 'view' ? 'border-amber-500 text-amber-400' : 'border-transparent text-slate-500'}`}><List size={14} /> Registry</button>
             </div>
-            {serialTab === 'generate' && (
+                        {serialTab === 'generate' && (
               <form onSubmit={handleGenerateSerials} className="p-5 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div><label className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Batch Count</label><input type="number" required value={serialForm.count} onChange={e=>setSerialForm({...serialForm, count: parseInt(e.target.value)})} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-white" /></div>
-                  <div><label className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Prefix</label><input type="text" required value={serialForm.prefix} onChange={e=>setSerialForm({...serialForm, prefix: e.target.value.toUpperCase()})} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-amber-500 font-mono" /></div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Batch Count</label>
+                    <input type="number" required min="1" value={serialForm.count} onChange={e=>setSerialForm({...serialForm, count: parseInt(e.target.value)})} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-white" />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Prefix</label>
+                    <input type="text" required value={serialForm.prefix} onChange={e=>setSerialForm({...serialForm, prefix: e.target.value.toUpperCase()})} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-amber-500 font-mono" />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Warranty Horizon</label>
+                    <select required value={serialForm.base_warranty_months} onChange={e=>setSerialForm({...serialForm, base_warranty_months: parseInt(e.target.value)})} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-white">
+                      <option value={6}>6 Months</option>
+                      <option value={12}>12 Months</option>
+                      <option value={18}>18 Months</option>
+                      <option value={24}>24 Months</option>
+                      <option value={36}>36 Months</option>
+                      <option value={48}>48 Months</option>
+                      <option value={60}>60 Months</option>
+                    </select>
+                  </div>
                 </div>
-                <button type="submit" className="w-full py-3 bg-amber-500 text-slate-950 font-black uppercase text-xs rounded-xl mt-2 hover:bg-amber-400">Generate & Export XLSX</button>
+                <button type="submit" className="w-full py-3 bg-amber-500 text-slate-950 font-black uppercase text-xs rounded-xl mt-2 hover:bg-amber-400 transition-colors">
+                  Generate & Export XLSX
+                </button>
               </form>
             )}
             {serialTab === 'view' && (
