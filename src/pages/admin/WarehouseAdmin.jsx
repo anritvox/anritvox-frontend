@@ -11,6 +11,7 @@ export default function WarehouseAdmin() {
   const [distributors, setDistributors] = useState([]);
   const [sales, setSales] = useState([]);
   const [summary, setSummary] = useState([]);
+  const [stocks, setStocks] = useState([]); // NEW: Tracks Live Inventory
   
   // Edit Modal State
   const [editUser, setEditUser] = useState(null);
@@ -26,23 +27,33 @@ export default function WarehouseAdmin() {
     }
   }, []);
 
+  // Safe Fetch Wrapper: Prevents one failed endpoint from crashing the whole dashboard
+  const fetchSafe = async (url, headers) => {
+    try {
+      const res = await fetch(url, { headers });
+      if (!res.ok) throw new Error('HTTP Error');
+      return await res.json();
+    } catch (e) {
+      console.warn(`Fallback triggered for ${url}`);
+      return { success: false };
+    }
+  };
+
   const fetchMasterData = async (authToken) => {
     try {
       const headers = { 'Authorization': `Bearer ${authToken}` };
       
-      const [usersRes, salesRes, summaryRes] = await Promise.all([
-        fetch(`${BASE_URL}/api/warehouse/admin/users`, { headers }),
-        fetch(`${BASE_URL}/api/warehouse/admin/sales`, { headers }),
-        fetch(`${BASE_URL}/api/warehouse/admin/sales-summary`, { headers })
+      const [usersData, salesData, summaryData, invData] = await Promise.all([
+        fetchSafe(`${BASE_URL}/api/warehouse/admin/users`, headers),
+        fetchSafe(`${BASE_URL}/api/warehouse/admin/sales`, headers),
+        fetchSafe(`${BASE_URL}/api/warehouse/admin/sales-summary`, headers),
+        fetchSafe(`${BASE_URL}/api/warehouse/admin/inventory`, headers) // New Extractor
       ]);
 
-      const usersData = await usersRes.json();
-      const salesData = await salesRes.json();
-      const summaryData = await summaryRes.json();
-
-      if (usersData.success) setDistributors(usersData.users);
-      if (salesData.success) setSales(salesData.sales);
-      if (summaryData.success) setSummary(summaryData.summary);
+      if (usersData.success) setDistributors(usersData.users || []);
+      if (salesData.success) setSales(salesData.sales || []);
+      if (summaryData.success) setSummary(summaryData.summary || []);
+      if (invData.success) setStocks(invData.inventory || []);
       
     } catch (err) {
       console.error("Failed to fetch warehouse core data", err);
@@ -56,17 +67,14 @@ export default function WarehouseAdmin() {
     try {
       const res = await fetch(`${BASE_URL}/api/warehouse/admin/user-deep-edit/${editUser.user_id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(editForm)
       });
       const data = await res.json();
       if (data.success) {
         alert('User profile deeply updated successfully.');
         setEditUser(null);
-        fetchMasterData(token); // Refresh data
+        fetchMasterData(token);
       } else {
         alert('Failed to update: ' + data.message);
       }
@@ -91,11 +99,8 @@ export default function WarehouseAdmin() {
 
   if (!token) return <Navigate to="/warehouseadmin" />;
 
-  // Calculate top metrics
   const totalRevenue = sales.reduce((acc, curr) => acc + parseFloat(curr.total_value), 0);
   const totalItemsSold = sales.reduce((acc, curr) => acc + curr.quantity, 0);
-  const topSellingProduct = summary.length > 0 ? summary[0] : null;
-  const leastSellingProduct = summary.length > 0 ? summary[summary.length - 1] : null;
 
   return (
     <div className="min-h-screen bg-[#020617] text-white p-6 overflow-y-auto">
@@ -108,7 +113,7 @@ export default function WarehouseAdmin() {
             <p className="text-slate-400 mt-1">Deep Dive Architectural Overview of all Warehouse Nodes.</p>
           </div>
           <div className="flex space-x-2 mt-4 md:mt-0">
-            {['dashboard', 'distributors', 'ledger', 'analytics'].map(tab => (
+            {['dashboard', 'distributors', 'stocks', 'ledger', 'analytics'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -120,7 +125,7 @@ export default function WarehouseAdmin() {
           </div>
         </div>
 
-        {/* TAB: Dashboard Overview */}
+        {/* TAB: Dashboard */}
         {activeTab === 'dashboard' && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-fade-in">
             <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl">
@@ -138,6 +143,81 @@ export default function WarehouseAdmin() {
             <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl">
               <h3 className="text-slate-400 text-sm font-medium">Total Transactions</h3>
               <p className="text-3xl font-bold text-white mt-2">{sales.length}</p>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: Live Stocks (NEW) */}
+        {activeTab === 'stocks' && (
+          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden animate-fade-in p-6">
+            <div className="mb-6 border-b border-slate-800 pb-4">
+               <h2 className="text-xl font-bold text-white">Live Node Inventory Matrix</h2>
+               <p className="text-xs text-slate-400 mt-1">Real-time sync of current on-hand stocks across all distributors.</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+               {stocks.map((node) => {
+                  let parsedState = {};
+                  try {
+                     parsedState = typeof node.app_state === 'string' ? JSON.parse(node.app_state) : (node.app_state || {});
+                  } catch(e) {}
+                  
+                  // Extract items array heuristically from the synced state
+                  let items = [];
+                  Object.values(parsedState).forEach(val => {
+                     if (Array.isArray(val) && val.length > 0 && (val[0].n || val[0].name)) {
+                        items = val;
+                     }
+                  });
+
+                  return (
+                     <div key={node.user_id} className="bg-slate-800 rounded-lg p-5 border border-slate-700 shadow-lg">
+                        <div className="flex justify-between items-start mb-4 border-b border-slate-700/50 pb-3">
+                           <div>
+                              <h3 className="font-bold text-emerald-400 truncate w-40">{node.store_name || 'Unknown Store'}</h3>
+                              <p className="text-xs text-slate-400 mt-1">{node.distributor_name}</p>
+                           </div>
+                           <div className="text-right">
+                              <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold block">Last Synced</span>
+                              <span className="text-xs text-white">{new Date(node.updated_at).toLocaleDateString()}</span>
+                           </div>
+                        </div>
+
+                        {items.length > 0 ? (
+                           <div className="max-h-60 overflow-y-auto custom-scrollbar pr-2">
+                              <table className="w-full text-xs text-left">
+                                 <thead className="text-slate-400 sticky top-0 bg-slate-800 py-2">
+                                    <tr>
+                                       <th className="font-medium pb-2">Product Name</th>
+                                       <th className="font-medium pb-2 text-right">Qty</th>
+                                       <th className="font-medium pb-2 text-right">Price</th>
+                                    </tr>
+                                 </thead>
+                                 <tbody className="divide-y divide-slate-700/50">
+                                    {items.map((item, idx) => (
+                                       <tr key={idx} className="hover:bg-slate-700/30 transition-colors">
+                                          <td className="py-2 text-slate-300 font-medium">{item.n || item.name || 'Unnamed Item'}</td>
+                                          <td className="py-2 text-right text-emerald-400 font-bold">{item.q || item.quantity || item.qty || 0}</td>
+                                          <td className="py-2 text-right text-slate-400">₹{item.pr || item.price || 0}</td>
+                                       </tr>
+                                    ))}
+                                 </tbody>
+                              </table>
+                           </div>
+                        ) : (
+                           <div className="flex flex-col items-center justify-center h-32 text-slate-500">
+                              <p className="text-sm italic">No active inventory found.</p>
+                              <p className="text-xs mt-1">Node hasn't synced items yet.</p>
+                           </div>
+                        )}
+                     </div>
+                  );
+               })}
+               {stocks.length === 0 && (
+                 <div className="col-span-full text-center py-12 text-slate-500">
+                    No active node synchronizations found in the database.
+                 </div>
+               )}
             </div>
           </div>
         )}
@@ -279,40 +359,19 @@ export default function WarehouseAdmin() {
             <form onSubmit={handleDeepEdit} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-1">Full Name</label>
-                <input 
-                  type="text" 
-                  value={editForm.name} 
-                  onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none focus:border-emerald-500"
-                />
+                <input type="text" value={editForm.name} onChange={(e) => setEditForm({...editForm, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none focus:border-emerald-500" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-1">Email Address</label>
-                <input 
-                  type="email" 
-                  value={editForm.email} 
-                  onChange={(e) => setEditForm({...editForm, email: e.target.value})}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none focus:border-emerald-500"
-                />
+                <input type="email" value={editForm.email} onChange={(e) => setEditForm({...editForm, email: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none focus:border-emerald-500" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-1">Warehouse Store Name</label>
-                <input 
-                  type="text" 
-                  value={editForm.store_name} 
-                  onChange={(e) => setEditForm({...editForm, store_name: e.target.value})}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none focus:border-emerald-500"
-                />
+                <input type="text" value={editForm.store_name} onChange={(e) => setEditForm({...editForm, store_name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none focus:border-emerald-500" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-1">Force Password Reset (Leave blank to keep current)</label>
-                <input 
-                  type="text" 
-                  placeholder="New password override"
-                  value={editForm.password} 
-                  onChange={(e) => setEditForm({...editForm, password: e.target.value})}
-                  className="w-full bg-slate-800 border border-red-900/50 rounded-md px-3 py-2 text-white outline-none focus:border-red-500 placeholder:text-slate-600"
-                />
+                <input type="text" placeholder="New password override" value={editForm.password} onChange={(e) => setEditForm({...editForm, password: e.target.value})} className="w-full bg-slate-800 border border-red-900/50 rounded-md px-3 py-2 text-white outline-none focus:border-red-500 placeholder:text-slate-600" />
               </div>
               <div className="pt-4 flex justify-end space-x-3">
                 <button type="button" onClick={() => setEditUser(null)} className="px-4 py-2 bg-slate-800 text-slate-300 rounded hover:bg-slate-700">Cancel</button>
