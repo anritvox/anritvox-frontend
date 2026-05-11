@@ -11,9 +11,7 @@ import "./index.css";
 
 const Home = lazy(() => import("./pages/Home.jsx"));
 const Warehouse = lazy(() => import("./pages/Warehouse.jsx"));
-const WarehouseAdmin = lazy(() => import("./pages/admin/WarehouseAdmin.jsx"));
 const WarehouseManagement = lazy(() => import("./pages/admin/WarehouseManagement.jsx"));
-const WarehouseAdminLogin = lazy(() => import("./pages/WarehouseAdminLogin.jsx"));
 const Shop = lazy(() => import("./pages/Shop.jsx"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail.jsx"));
 const EWarranty = lazy(() => import("./pages/EWarranty.jsx"));
@@ -49,6 +47,7 @@ function AdminRoute({ children }) {
 
 function WarehouseRoute({ children }) {
   const t = localStorage.getItem('token') || localStorage.getItem('warehouseToken');
+  // If the user isn't logged in, send them to the main website login.
   if (!t) return <Navigate to="/login" />;
   return children;
 }
@@ -56,7 +55,7 @@ function WarehouseRoute({ children }) {
 function AppContent() {
   const location = useLocation();
   const isAdminPath = location.pathname.startsWith("/admin");
-  const isWarehousePath = location.pathname.startsWith("/warehouse") || location.pathname.startsWith("/warehouseadmin");
+  const isWarehousePath = location.pathname.startsWith("/warehouse");
 
   return (
     <>
@@ -75,6 +74,7 @@ function AppContent() {
           <Route path="/compare" element={<Compare />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
           <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
@@ -84,12 +84,11 @@ function AppContent() {
           <Route path="/returns" element={<ProtectedRoute><Returns /></ProtectedRoute>} />
           <Route path="/affiliate" element={<ProtectedRoute><Affiliate /></ProtectedRoute>} />
           
-          {/* WAREHOUSE POS BRIDGE (Frontend -> Backend HTML) */}
+          {/* THE I-FRAME BRIDGE FOR NODE OPERATORS */}
           <Route path="/warehouse" element={<WarehouseRoute><Warehouse /></WarehouseRoute>} />
           
-          {/* MASTER WAREHOUSE ADMIN DASHBOARD */}
+          {/* THE MASTER ADMIN INSPECTOR DASHBOARD */}
           <Route path="/warehouseadmin" element={<AdminRoute><WarehouseManagement /></AdminRoute>} />
-          <Route path="/warehouseadmin/login" element={<WarehouseAdminLogin />} />
           
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
