@@ -14,6 +14,7 @@ const Warehouse = lazy(() => import("./pages/Warehouse.jsx"));
 const WarehouseAdmin = lazy(() => import("./pages/admin/WarehouseAdmin.jsx"));
 const WarehouseManagement = lazy(() => import("./pages/admin/WarehouseManagement.jsx"));
 const WarehouseAdminLogin = lazy(() => import("./pages/WarehouseAdminLogin.jsx"));
+const WarehouseLogin = lazy(() => import("./pages/WarehouseLogin.jsx")); // Added
 const Shop = lazy(() => import("./pages/Shop.jsx"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail.jsx"));
 const EWarranty = lazy(() => import("./pages/EWarranty.jsx"));
@@ -43,7 +44,7 @@ function ProtectedRoute({ children }) {
   if (a.loading) return <PageLoader />; if (!u || !t) return <Navigate to="/login" />; return children;
 }
 
-// Fixed Admin guard: explicitly routes failures to /admin/login
+// Admin guard
 function AdminRoute({ children }) {
   const a = useAuth() || {}; const u = a.user || JSON.parse(localStorage.getItem('user') || 'null'); const t = localStorage.getItem('token');
   if (a.loading) return <PageLoader />; 
@@ -51,9 +52,10 @@ function AdminRoute({ children }) {
   return children;
 }
 
+// Fixed Warehouse guard
 function WarehouseRoute({ children }) {
   const t = localStorage.getItem('token') || localStorage.getItem('warehouseToken');
-  if (!t) return <Navigate to="/login" />;
+  if (!t) return <Navigate to="/warehouse/login" />; // Redirects to warehouse specific login
   return children;
 }
 
@@ -97,17 +99,16 @@ function AppContent() {
           <Route path="/affiliate" element={<ProtectedRoute><Affiliate /></ProtectedRoute>} />
           
           {/* Warehouse System Routes */}
+          <Route path="/warehouse/login" element={<WarehouseLogin />} />
           <Route path="/warehouse" element={<WarehouseRoute><Warehouse /></WarehouseRoute>} />
           <Route path="/warehouse/admin" element={<WarehouseRoute><WarehouseAdmin /></WarehouseRoute>} />
           <Route path="/warehouse/management" element={<WarehouseAdminRoute><WarehouseManagement /></WarehouseAdminRoute>} />
           <Route path="/warehouseadmin" element={<WarehouseAdminLogin />} />
           <Route path="/warehouseadmin/*" element={<WarehouseAdminLogin />} />
           
-          {/* THE FIX: Explicit Admin Login Routes Placed Above Wildcards */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin-login" element={<AdminLogin />} />
           
-          {/* Protected Admin Routes */}
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/admin/dashboard/:tab" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/admin/*" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
@@ -121,7 +122,21 @@ function AppContent() {
 }
 
 function App() {
-  return <BrowserRouter><AuthProvider><CartProvider><WishlistProvider><CompareProvider><ToastProvider><AppContent /></ToastProvider></CompareProvider></WishlistProvider></CartProvider></AuthProvider></BrowserRouter>;
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <CartProvider>
+          <WishlistProvider>
+            <CompareProvider>
+              <ToastProvider>
+                <AppContent />
+              </ToastProvider>
+            </CompareProvider>
+          </WishlistProvider>
+        </CartProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  );
 }
 
 export default App;
