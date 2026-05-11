@@ -1,44 +1,81 @@
-import React, { useState, useRef } from 'react';
-import { Turnstile } from '@marsidev/react-turnstile';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import './AdminLogin.css';
+import { useToast } from '../context/ToastContext';
+import { ShieldCheck } from 'lucide-react';
+import api from '../services/api';
 
-const API = import.meta.env.VITE_API_URL || 'https://service.anritvox.com';
-
-const WarehouseAdminLogin = () => {
-  const [step, setStep] = useState(1);
+export default function WarehouseAdminLogin() {
   const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
-  const [turnstileToken, setTurnstileToken] = useState(null);
-  const [status, setStatus] = useState({ type: '', message: '' });
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const turnstileRef = useRef();
-  const { warehouseLoginVerify } = useAuth();
+  const navigate = useNavigate();
+  const { showToast } = useToast() || {};
 
-  const handleRequestOtp = async (e) => {
-    e.preventDefault(); setStatus({ type: '', message: '' }); if (!turnstileToken) { setStatus({ type: 'error', message: 'Bot verification required.' }); return; }
+  const handleLogin = async (e) => {
+    e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch(`${API}/api/auth/warehouse/request-otp`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, turnstileToken }) });
-      const data = await res.json(); if (!res.ok) throw new Error(data.message);
-      setStatus({ type: 'success', message: 'OTP sent! Check your email. Valid for 10 minutes.' }); setStep(2);
-    } catch (err) { setStatus({ type: 'error', message: err.message || 'Failed to send OTP.' }); if (turnstileRef.current) { turnstileRef.current.reset(); setTurnstileToken(null); } } finally { setLoading(false); }
-  };
-
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault(); setStatus({ type: '', message: '' }); if (!turnstileToken) { setStatus({ type: 'error', message: 'Bot verification required.' }); return; }
-    setLoading(true);
-    try {
-      const res = await fetch(`${API}/api/auth/warehouse/verify-otp`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, otp }) });
-      const data = await res.json(); if (!res.ok) throw new Error(data.message);
-      warehouseLoginVerify(data);
-      window.location.href = '/warehouse';
-    } catch (err) { setStatus({ type: 'error', message: err.message || 'Invalid OTP.' }); if (turnstileRef.current) { turnstileRef.current.reset(); setTurnstileToken(null); } } finally { setLoading(false); }
+      // Authenticate with backend
+      const res = await api.post('/auth/admin-login', { email, password });
+      
+      if (res.data.token) {
+        localStorage.setItem('warehouseToken', res.data.token);
+        localStorage.setItem('ms_token', res.data.token);
+        showToast?.('Master Admin Authenticated', 'success');
+        
+        // THE FIX: Send the user to the Admin HTML Bridge, NOT the standard warehouse
+        // Note: If you prefer the React Dashboard we built earlier, change this to: navigate('/warehouse/management');
+        navigate('/warehouse/admin'); 
+      }
+    } catch (err) {
+      showToast?.(err.response?.data?.message || 'Invalid Master Credentials', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="admin-login-wrapper"><div className="admin-login-box"><div className="admin-login-header"><h1>ANRITVOX</h1><span className="terminal-tag">WAREHOUSE PORTAL</span></div>{step === 1 ? (<form onSubmit={handleRequestOtp}><div className="form-group"><label>Warehouse Admin Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="warehouse@anritvox.com" required autoComplete="email" /></div><Turnstile ref={turnstileRef} siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} onSuccess={token => setTurnstileToken(token)} onExpire={() => setTurnstileToken(null)} theme="dark" /><button type="submit" disabled={loading || !turnstileToken}>{loading ? 'SENDING OTP...' : 'SEND LOGIN OTP'}</button></form>) : (<form onSubmit={handleVerifyOtp}><div className="form-group"><label>OTP sent to {email}</label><input type="text" value={otp} onChange={e => setOtp(e.target.value)} placeholder="6-digit OTP" maxLength={6} required autoComplete="one-time-code" /></div><Turnstile ref={turnstileRef} siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} onSuccess={token => setTurnstileToken(token)} onExpire={() => setTurnstileToken(null)} theme="dark" /><button type="submit" disabled={loading || !turnstileToken}>{loading ? 'VERIFYING...' : 'ACCESS WAREHOUSE'}</button><button type="button" className="back-btn" onClick={() => { setStep(1); setOtp(''); setStatus({ type: '', message: '' }); }}>Back</button></form>)}{status.message && <p className={`status-msg ${status.type}`}>{status.message}</p>}</div></div>
+    <div className="min-h-screen bg-[#020617] flex flex-col justify-center items-center p-4">
+      <div className="max-w-md w-full bg-slate-900/50 border border-slate-800 p-8 rounded-3xl shadow-2xl">
+        <div className="flex justify-center mb-6">
+          <div className="w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center">
+            <ShieldCheck size={32} />
+          </div>
+        </div>
+        <h2 className="text-2xl font-black text-white text-center mb-2 uppercase tracking-tight">Master Node Login</h2>
+        <p className="text-slate-400 text-center text-sm mb-8">Authenticate to access the Warehouse Admin Terminal</p>
+        
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <input 
+              type="email" 
+              placeholder="Master Email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white outline-none focus:border-emerald-500 transition-colors"
+              required 
+            />
+          </div>
+          <div>
+            <input 
+              type="password" 
+              placeholder="Secure Password" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white outline-none focus:border-emerald-500 transition-colors"
+              required 
+            />
+          </div>
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full bg-emerald-500 text-black font-black uppercase tracking-widest p-4 rounded-xl hover:bg-emerald-400 transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Authenticating...' : 'Access Terminal'}
+          </button>
+        </form>
+      </div>
+    </div>
   );
-};
-
-export default WarehouseAdminLogin;
+}
