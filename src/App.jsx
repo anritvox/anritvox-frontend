@@ -11,7 +11,9 @@ import "./index.css";
 
 const Home = lazy(() => import("./pages/Home.jsx"));
 const Warehouse = lazy(() => import("./pages/Warehouse.jsx"));
+const WarehouseAdmin = lazy(() => import("./pages/admin/WarehouseAdmin.jsx"));
 const WarehouseManagement = lazy(() => import("./pages/admin/WarehouseManagement.jsx"));
+const WarehouseAdminLogin = lazy(() => import("./pages/WarehouseAdminLogin.jsx"));
 const Shop = lazy(() => import("./pages/Shop.jsx"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail.jsx"));
 const EWarranty = lazy(() => import("./pages/EWarranty.jsx"));
@@ -35,6 +37,7 @@ const Legal = lazy(() => import("./pages/Legal.jsx"));
 
 const PageLoader = () => <div className="min-h-screen bg-black flex items-center justify-center"><div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div></div>;
 
+// Standard guards
 function ProtectedRoute({ children }) {
   const a = useAuth() || {}; const u = a.user || JSON.parse(localStorage.getItem('user') || 'null'); const t = localStorage.getItem('token');
   if (a.loading) return <PageLoader />; if (!u || !t) return <Navigate to="/login" />; return children;
@@ -45,17 +48,24 @@ function AdminRoute({ children }) {
   if (a.loading) return <PageLoader />; if (!u || !t || (u.role !== 'admin' && u.role !== 'superadmin')) return <Navigate to="/admin-login" />; return children;
 }
 
+// Fixed Warehouse Guard - Kicks to user login if missing token
 function WarehouseRoute({ children }) {
   const t = localStorage.getItem('token') || localStorage.getItem('warehouseToken');
-  // If the user isn't logged in, send them to the main website login.
   if (!t) return <Navigate to="/login" />;
+  return children;
+}
+
+// NEW: Fixed Warehouse Admin Guard - Allows entry if ANY valid admin token is present
+function WarehouseAdminRoute({ children }) {
+  const t = localStorage.getItem('token') || localStorage.getItem('warehouseToken') || localStorage.getItem('ms_token');
+  if (!t) return <Navigate to="/warehouseadmin" />;
   return children;
 }
 
 function AppContent() {
   const location = useLocation();
   const isAdminPath = location.pathname.startsWith("/admin");
-  const isWarehousePath = location.pathname.startsWith("/warehouse");
+  const isWarehousePath = location.pathname.startsWith("/warehouse") || location.pathname.startsWith("/warehouseadmin");
 
   return (
     <>
@@ -74,7 +84,6 @@ function AppContent() {
           <Route path="/compare" element={<Compare />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
           <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
@@ -84,11 +93,16 @@ function AppContent() {
           <Route path="/returns" element={<ProtectedRoute><Returns /></ProtectedRoute>} />
           <Route path="/affiliate" element={<ProtectedRoute><Affiliate /></ProtectedRoute>} />
           
-          {/* THE I-FRAME BRIDGE FOR NODE OPERATORS */}
+          {/* THE IFRAME BRIDGE: standard users hitting /warehouse */}
           <Route path="/warehouse" element={<WarehouseRoute><Warehouse /></WarehouseRoute>} />
+          <Route path="/warehouse/admin" element={<WarehouseRoute><WarehouseAdmin /></WarehouseRoute>} />
           
-          {/* THE MASTER ADMIN INSPECTOR DASHBOARD */}
-          <Route path="/warehouseadmin" element={<AdminRoute><WarehouseManagement /></AdminRoute>} />
+          {/* THE NEW DASHBOARD: accessed AFTER logging in */}
+          <Route path="/warehouse/management" element={<WarehouseAdminRoute><WarehouseManagement /></WarehouseAdminRoute>} />
+          
+          {/* RESTORED: The actual login page for warehouse admins */}
+          <Route path="/warehouseadmin" element={<WarehouseAdminLogin />} />
+          <Route path="/warehouseadmin/*" element={<WarehouseAdminLogin />} />
           
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
