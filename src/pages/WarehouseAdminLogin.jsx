@@ -16,16 +16,15 @@ export default function WarehouseAdminLogin() {
     e.preventDefault();
     setLoading(true);
     try {
-      // Authenticate with backend
-      const res = await api.post('/auth/admin-login', { email, password });
+      // THE FIX: Corrected endpoint from /admin-login to /admin/login
+      const res = await api.post('/auth/admin/login', { email, password });
       
       if (res.data.token) {
         localStorage.setItem('warehouseToken', res.data.token);
         localStorage.setItem('ms_token', res.data.token);
         showToast?.('Master Admin Authenticated', 'success');
         
-        // THE FIX: Send the user to the Admin HTML Bridge, NOT the standard warehouse
-        // Note: If you prefer the React Dashboard we built earlier, change this to: navigate('/warehouse/management');
+        // Navigate to the Warehouse Admin HTML Bridge
         navigate('/warehouse/admin'); 
       }
     } catch (err) {
@@ -49,8 +48,8 @@ export default function WarehouseAdminLogin() {
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <input 
-              type="email" 
-              placeholder="Master Email" 
+              type="text" 
+              placeholder="Master Email or ID" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white outline-none focus:border-emerald-500 transition-colors"
