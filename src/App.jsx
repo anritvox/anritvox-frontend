@@ -49,7 +49,7 @@ function AdminRoute({ children }) {
 
 function WarehouseRoute({ children }) {
   const t = localStorage.getItem('token') || localStorage.getItem('warehouseToken');
-  if (!t) return <Navigate to="/warehouseadmin" />;
+  if (!t) return <Navigate to="/login" />;
   return children;
 }
 
@@ -83,11 +83,14 @@ function AppContent() {
           <Route path="/address-book" element={<ProtectedRoute><AddressBook /></ProtectedRoute>} />
           <Route path="/returns" element={<ProtectedRoute><Returns /></ProtectedRoute>} />
           <Route path="/affiliate" element={<ProtectedRoute><Affiliate /></ProtectedRoute>} />
+          
+          {/* WAREHOUSE POS BRIDGE (Frontend -> Backend HTML) */}
           <Route path="/warehouse" element={<WarehouseRoute><Warehouse /></WarehouseRoute>} />
-          <Route path="/warehouse/admin" element={<WarehouseRoute><WarehouseAdmin /></WarehouseRoute>} />
-          <Route path="/warehouse/management" element={<WarehouseRoute><WarehouseManagement /></WarehouseRoute>} />
-          <Route path="/warehouseadmin" element={<WarehouseAdminLogin />} />
-          <Route path="/warehouseadmin/*" element={<WarehouseAdminLogin />} />
+          
+          {/* MASTER WAREHOUSE ADMIN DASHBOARD */}
+          <Route path="/warehouseadmin" element={<AdminRoute><WarehouseManagement /></AdminRoute>} />
+          <Route path="/warehouseadmin/login" element={<WarehouseAdminLogin />} />
+          
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/admin/dashboard/:tab" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
