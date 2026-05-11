@@ -1,49 +1,39 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Package, LogOut, Server, AlertTriangle, Upload, UserPlus } from 'lucide-react';
-import api from '../services/api';
-import { useToast } from '../context/ToastContext';
+import React, { useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
+import { BASE_URL } from '../services/api';
 
 export default function Warehouse() {
-  const [storeName, setStoreName] = useState('Connecting...');
-  const [products, setProducts] = useState([]);
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [formData, setFormData] = useState({ product_name: '', quantity: 1, sale_price: '', isWalkin: false });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const toastCtx = useToast();
-  const showToast = toastCtx?.showToast;
 
-  const performLogout = () => { ['token', 'warehouseToken', 'ms_token', 'user'].forEach(k => localStorage.removeItem(k)); window.location.href = '/warehouseadmin'; };
-
-  const init = useCallback(async () => {
-    setLoading(true); setError(null);
-    try {
-      const t = localStorage.getItem('token') || localStorage.getItem('warehouseToken') || localStorage.getItem('ms_token');
-      if (!t || t === 'null' || t === 'undefined') { performLogout(); return; }
-      const accessRes = await api.get('/warehouse/check-access');
-      setStoreName(accessRes.data?.storeName || 'Master Admin Access');
-      const prodRes = await api.get('/products');
-      setProducts(prodRes.data?.data || prodRes.data?.products || (Array.isArray(prodRes.data) ? prodRes.data : []));
-    } catch (e) { setError(e?.response?.data?.message || 'Connection failed.'); } finally { setLoading(false); }
+  useEffect(() => {
+    const currentToken = localStorage.getItem('token') || localStorage.getItem('warehouseToken');
+    setToken(currentToken);
+    setLoading(false);
   }, []);
 
-  useEffect(() => { init(); }, [init]);
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
-  const handleRestore = async e => {
-    const f = e.target.files[0]; if (!f) return;
-    const r = new FileReader(); r.onload = async ev => { try { await api.post('/warehouse/restore-legacy', { backupData: JSON.parse(ev.target.result) }); showToast?.('Legacy Ledger Synced', 'success'); } catch (err) { showToast?.('Invalid Backup File', 'error'); } }; r.readAsText(f);
-  };
+  if (!token) {
+    return <Navigate to="/login" />;
+  }
 
-  const handleSubmit = async e => {
-    e.preventDefault(); if (!formData.product_name) return showToast?.('Select a product', 'error'); if (!formData.sale_price || formData.sale_price <= 0) return showToast?.('Invalid price', 'error');
-    setIsSubmitting(true);
-    try { await api.post(formData.isWalkin ? '/warehouse/walkin-sale' : '/warehouse/log-sale', { product_name: formData.product_name, quantity: formData.quantity, sale_price: parseFloat(formData.sale_price) }); showToast?.('Transaction secured.', 'success'); setFormData({ product_name: '', quantity: 1, sale_price: '', isWalkin: formData.isWalkin }); } catch (e) { showToast?.(e?.response?.data?.message || 'Log failed.', 'error'); } finally { setIsSubmitting(false); }
-  };
-
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#020617]"><div className="flex flex-col items-center gap-4"><div className="w-8 h-8 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div><p className="text-emerald-500 font-black tracking-widest uppercase text-[10px] animate-pulse">Verifying Clearance...</p></div></div>;
-  if (error) return <div className="min-h-screen flex flex-col items-center justify-center bg-[#020617] text-center px-4"><AlertTriangle className="w-12 h-12 text-rose-500 mb-4" /><h2 className="text-2xl font-black text-white uppercase tracking-tight mb-2">Connection Error</h2><p className="text-slate-500 text-sm mb-6 uppercase font-bold">{error}</p><button onClick={performLogout} className="px-6 py-3 bg-rose-500/10 text-rose-500 border border-rose-500/30 rounded-xl text-xs font-black uppercase hover:bg-rose-500 hover:text-white transition-all">Return to Login</button></div>;
+  const backendHtmlUrl = `${BASE_URL}/warehouse?auth_token=${token}`;
 
   return (
-    <div className="min-h-screen bg-[#020617] text-[#e2e8f0] p-4 md:p-8 font-sans"><div className="max-w-2xl mx-auto"><div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-800"><div><h1 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2"><Package className="text-emerald-500" /> Local <span className="text-emerald-500">Warehouse</span></h1><p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">{storeName}</p></div><div className="flex gap-2"><label className="p-2.5 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-xl hover:bg-blue-500 hover:text-white transition-all shadow-md cursor-pointer"><Upload className="w-5 h-5" /><input type="file" className="hidden" accept=".avbak,.json" onChange={handleRestore} /></label><button onClick={performLogout} className="p-2.5 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-xl hover:bg-rose-500 hover:text-white transition-all shadow-md"><LogOut className="w-5 h-5" /></button></div></div><div className="bg-[#0f172a] border border-slate-800 rounded-2xl p-6 shadow-2xl"><div className="flex items-center justify-between mb-6"><h2 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2"><Server className="text-emerald-500 w-5 h-5" /> Log Sale</h2><button type="button" onClick={() => setFormData({ ...formData, isWalkin: !formData.isWalkin })} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${formData.isWalkin ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-400'}`}><UserPlus size={14} /> {formData.isWalkin ? 'Walk-in Mode' : 'Registered Mode'}</button></div><form onSubmit={handleSubmit} className="space-y-4"><div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Select Product SKU</label><select required value={formData.product_name} onChange={e => setFormData({ ...formData, product_name: e.target.value })} className="w-full bg-[#0f172a] border border-slate-800 text-white p-3 rounded-xl outline-none focus:border-emerald-500 appearance-none cursor-pointer"><option value="">-- Select Valid Product --</option>{products.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}</select></div><div className="grid grid-cols-2 gap-4"><div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Quantity</label><input type="number" min="1" required value={formData.quantity} onChange={e => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })} className="w-full bg-[#0f172a] border border-slate-800 text-white p-3 rounded-xl outline-none focus:border-emerald-500" /></div><div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Sale Price (₹)</label><input type="number" min="0" step="0.01" required value={formData.sale_price} onChange={e => setFormData({ ...formData, sale_price: e.target.value })} className="w-full bg-[#0f172a] border border-slate-800 text-white p-3 rounded-xl outline-none focus:border-emerald-500" /></div></div><button type="submit" disabled={isSubmitting} className="w-full py-4 bg-emerald-500 text-slate-950 font-black uppercase tracking-widest rounded-xl hover:bg-emerald-400 transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(16,185,129,0.2)]">{isSubmitting ? 'Syncing to Ledger...' : 'Secure Transaction'}</button></form></div></div></div>
+    <div className="w-full h-screen bg-black overflow-hidden relative">
+      <iframe
+        src={backendHtmlUrl}
+        className="w-full h-full border-none absolute top-0 left-0"
+        title="Anritvox Warehouse POS System"
+        allow="camera; microphone; fullscreen"
+      />
+    </div>
   );
 }
