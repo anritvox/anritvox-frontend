@@ -37,25 +37,26 @@ const Legal = lazy(() => import("./pages/Legal.jsx"));
 
 const PageLoader = () => <div className="min-h-screen bg-black flex items-center justify-center"><div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div></div>;
 
-// Standard guards
+// Standard customer guard
 function ProtectedRoute({ children }) {
   const a = useAuth() || {}; const u = a.user || JSON.parse(localStorage.getItem('user') || 'null'); const t = localStorage.getItem('token');
   if (a.loading) return <PageLoader />; if (!u || !t) return <Navigate to="/login" />; return children;
 }
 
+// Fixed Admin guard: explicitly routes failures to /admin/login
 function AdminRoute({ children }) {
   const a = useAuth() || {}; const u = a.user || JSON.parse(localStorage.getItem('user') || 'null'); const t = localStorage.getItem('token');
-  if (a.loading) return <PageLoader />; if (!u || !t || (u.role !== 'admin' && u.role !== 'superadmin')) return <Navigate to="/admin-login" />; return children;
+  if (a.loading) return <PageLoader />; 
+  if (!u || !t || (u.role !== 'admin' && u.role !== 'superadmin')) return <Navigate to="/admin/login" />; 
+  return children;
 }
 
-// Fixed Warehouse Guard - Kicks to user login if missing token
 function WarehouseRoute({ children }) {
   const t = localStorage.getItem('token') || localStorage.getItem('warehouseToken');
   if (!t) return <Navigate to="/login" />;
   return children;
 }
 
-// NEW: Fixed Warehouse Admin Guard - Allows entry if ANY valid admin token is present
 function WarehouseAdminRoute({ children }) {
   const t = localStorage.getItem('token') || localStorage.getItem('warehouseToken') || localStorage.getItem('ms_token');
   if (!t) return <Navigate to="/warehouseadmin" />;
@@ -82,8 +83,10 @@ function AppContent() {
           <Route path="/legal" element={<Legal />} />
           <Route path="/order-tracking" element={<OrderTracking />} />
           <Route path="/compare" element={<Compare />} />
+          
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
           <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
@@ -93,21 +96,22 @@ function AppContent() {
           <Route path="/returns" element={<ProtectedRoute><Returns /></ProtectedRoute>} />
           <Route path="/affiliate" element={<ProtectedRoute><Affiliate /></ProtectedRoute>} />
           
-          {/* THE IFRAME BRIDGE: standard users hitting /warehouse */}
+          {/* Warehouse System Routes */}
           <Route path="/warehouse" element={<WarehouseRoute><Warehouse /></WarehouseRoute>} />
           <Route path="/warehouse/admin" element={<WarehouseRoute><WarehouseAdmin /></WarehouseRoute>} />
-          
-          {/* THE NEW DASHBOARD: accessed AFTER logging in */}
           <Route path="/warehouse/management" element={<WarehouseAdminRoute><WarehouseManagement /></WarehouseAdminRoute>} />
-          
-          {/* RESTORED: The actual login page for warehouse admins */}
           <Route path="/warehouseadmin" element={<WarehouseAdminLogin />} />
           <Route path="/warehouseadmin/*" element={<WarehouseAdminLogin />} />
           
+          {/* THE FIX: Explicit Admin Login Routes Placed Above Wildcards */}
+          <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin-login" element={<AdminLogin />} />
+          
+          {/* Protected Admin Routes */}
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/admin/dashboard/:tab" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/admin/*" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Suspense>
