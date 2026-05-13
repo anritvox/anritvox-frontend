@@ -2,30 +2,82 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="alternate icon" type="image/x-icon" href="/favicon.ico" />
-    
-    <!-- Performance: Preconnect to CDN and Google Fonts -->
+    <!-- Primary SEO Tags -->
+    <title>Bhumivera | Luxury 100% Natural Skincare & Organic Soap</title>
+    <meta name="description" content="Bhumivera: Premier luxury skincare. 100% natural, fragrance-free, and preservative-free organic soaps crafted for sensitive skin." />
+    <meta name="keywords" content="natural skincare, organic soap, fragrance-free, preservative-free, luxury beauty, sensitive skin" />
+    <link rel="canonical" href="https://bhumivera.com" />
+
+    <!-- Performance: Resource Hints -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://your-cloudfront-domain.cloudfront.net" crossorigin />
+    <!-- Add your specific CDN here if applicable -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
 
+    <!-- Favicons & Brand Assets -->
+    <link rel="icon" type="image/webp" href="/assets/images/logo.webp" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/assets/images/logo-192.png">
+    
+    <!-- Mobile & PWA Configuration -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
     <meta name="theme-color" content="#1f2937" />
-    <meta name="description" content="Anritvox - Premium Audio & Tech Accessories" />
     <link rel="manifest" href="/manifest.json" />
-    
-    <title>Anritvox - Premium Tech</title>
+
+    <!-- Social Media SEO (Open Graph) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://bhumivera.com" />
+    <meta property="og:title" content="Bhumivera | Luxury 100% Natural Skincare" />
+    <meta property="og:description" content="100% natural, fragrance-free, and preservative-free organic soaps crafted for sensitive skin." />
+    <meta property="og:image" content="https://bhumivera.com/assets/images/og-image.jpg" />
+
+    <!-- Twitter SEO -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Bhumivera | Luxury 100% Natural Skincare" />
+    <meta name="twitter:description" content="100% natural, fragrance-free, and preservative-free organic soaps." />
+    <meta name="twitter:image" content="https://bhumivera.com/assets/images/og-image.jpg" />
+
+    <!-- Structured Data: JSON-LD for Search Engines -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Bhumivera",
+      "alternateName": "Bhumivera Skincare",
+      "url": "https://bhumivera.com",
+      "logo": "https://bhumivera.com/assets/images/logo.webp",
+      "sameAs": [
+        "https://instagram.com/bhumivera",
+        "https://facebook.com/bhumivera"
+      ],
+      "description": "Luxury beauty brand specializing in 100% natural, fragrance-free skincare and organic soaps.",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "",
+        "contactType": "customer service"
+      }
+    }
+    </script>
   </head>
+
   <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
+    <!-- Main Application Entry Point -->
     <div id="root"></div>
+
+    <!-- Core Logic & Service Worker -->
     <script type="module" src="/src/main.jsx"></script>
+    
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(error => {
-            console.log('ServiceWorker registration failed: ', error);
-          });
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('SW registered: ', registration);
+            })
+            .catch(error => {
+              console.log('SW registration failed: ', error);
+            });
         });
       }
     </script>
