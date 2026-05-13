@@ -12,13 +12,26 @@ export default function WarehouseAdmin() {
   const [sales, setSales] = useState([]);
   const [summary, setSummary] = useState([]);
   const [stocks, setStocks] = useState([]);
+  const [activityLog, setActivityLog] = useState([]);
   
   // God Mode Edit Modal State
   const [editUser, setEditUser] = useState(null);
-  const [editForm, setEditForm] = useState({ 
-    name: '', email: '', store_name: '', password: '', 
-    wallet_balance: '', role: '', is_active: 1 
+  const [editForm, setEditForm] = useState({
+    name: '', email: '', store_name: '', password: '',
+    wallet_balance: '', role: '', is_active: 1
   });
+  
+  // Add New User Modal State
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [newUserForm, setNewUserForm] = useState({
+    name: '', email: '', password: '', store_name: '', role: 'customer', wallet_balance: 0
+  });
+  
+  // Confirm Dialog State
+  const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
+  
+  // Search/Filter State
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const currentToken = localStorage.getItem('warehouseToken') || localStorage.getItem('ms_token') || localStorage.getItem('token');
@@ -34,7 +47,7 @@ export default function WarehouseAdmin() {
     try {
       const res = await fetch(url, { headers });
       const data = await res.json();
-      return data; // Trust the backend's graceful failure JSON
+      return data;
     } catch (e) {
       return { success: false };
     }
@@ -44,18 +57,19 @@ export default function WarehouseAdmin() {
     try {
       const headers = { 'Authorization': `Bearer ${authToken}` };
       
-      const [usersData, salesData, summaryData, invData] = await Promise.all([
+      const [usersData, salesData, summaryData, invData, activityData] = await Promise.all([
         fetchSafe(`${BASE_URL}/api/warehouse/admin/users`, headers),
         fetchSafe(`${BASE_URL}/api/warehouse/admin/sales`, headers),
         fetchSafe(`${BASE_URL}/api/warehouse/admin/sales-summary`, headers),
-        fetchSafe(`${BASE_URL}/api/warehouse/admin/inventory`, headers)
+        fetchSafe(`${BASE_URL}/api/warehouse/admin/inventory`, headers),
+        fetchSafe(`${BASE_URL}/api/warehouse/admin/activity-log`, headers)
       ]);
-
+      
       setDistributors(usersData?.users || []);
       setSales(salesData?.sales || []);
       setSummary(summaryData?.summary || []);
       setStocks(invData?.inventory || []);
-      
+      setActivityLog(activityData?.logs || []);
     } catch (err) {
       console.error("Critical failure bypassed.", err);
     } finally {
@@ -68,208 +82,478 @@ export default function WarehouseAdmin() {
     try {
       const res = await fetch(`${BASE_URL}/api/warehouse/admin/user-deep-edit/${editUser.user_id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(editForm)
       });
       const data = await res.json();
       if (data.success) {
-        alert('User God Mode profile updated successfully.');
+        alert('✅ User profile updated successfully.');
         setEditUser(null);
         fetchMasterData(token);
       } else {
-        alert('Failed to update: ' + data.message);
+        alert('❌ Failed to update: ' + data.message);
       }
     } catch (err) {
-      alert('Network error updating user.');
+      alert('❌ Network error updating user.');
     }
+  };
+  
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`${BASE_URL}/api/warehouse/admin/add-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newUserForm)
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('✅ New user added successfully.');
+        setShowAddUser(false);
+        setNewUserForm({ name: '', email: '', password: '', store_name: '', role: 'customer', wallet_balance: 0 });
+        fetchMasterData(token);
+      } else {
+        alert('❌ Failed to add user: ' + data.message);
+      }
+    } catch (err) {
+      alert('❌ Network error adding user.');
+    }
+  };
+  
+  const handleDeleteUser = (userId, userName) => {
+    setConfirmDialog({
+      show: true,
+      message: `⚠️ Are you absolutely sure you want to DELETE user "${userName}"? This action CANNOT be undone and will remove all associated data.`,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`${BASE_URL}/api/warehouse/admin/user/${userId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await res.json();
+          if (data.success) {
+            alert('✅ User deleted successfully.');
+            fetchMasterData(token);
+          } else {
+            alert('❌ Failed to delete: ' + data.message);
+          }
+        } catch (err) {
+          alert('❌ Network error deleting user.');
+        }
+        setConfirmDialog({ show: false, message: '', onConfirm: null });
+      }
+    });
+  };
+  
+  const handleToggleStatus = async (userId, currentStatus, userName) => {
+    const newStatus = currentStatus ? 0 : 1;
+    const action = newStatus ? 'ACTIVATE' : 'SUSPEND';
+    setConfirmDialog({
+      show: true,
+      message: `Are you sure you want to ${action} user "${userName}"?`,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`${BASE_URL}/api/warehouse/admin/toggle-status/${userId}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ is_active: newStatus })
+          });
+          const data = await res.json();
+          if (data.success) {
+            alert(`✅ User ${action}D successfully.`);
+            fetchMasterData(token);
+          } else {
+            alert('❌ Failed: ' + data.message);
+          }
+        } catch (err) {
+          alert('❌ Network error.');
+        }
+        setConfirmDialog({ show: false, message: '', onConfirm: null });
+      }
+    });
+  };
+  
+  const handleWalletAdjust = (userId, currentBalance, userName) => {
+    const adjustment = prompt(`Current balance: ₹${currentBalance}\n\nEnter amount to ADD (+100) or DEDUCT (-50):`);
+    if (adjustment === null) return;
+    const amount = parseFloat(adjustment);
+    if (isNaN(amount)) {
+      alert('❌ Invalid amount.');
+      return;
+    }
+    
+    setConfirmDialog({
+      show: true,
+      message: `Adjust wallet for "${userName}" by ₹${amount}?`,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`${BASE_URL}/api/warehouse/admin/wallet-adjust/${userId}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ adjustment: amount })
+          });
+          const data = await res.json();
+          if (data.success) {
+            alert(`✅ Wallet adjusted. New balance: ₹${data.new_balance}`);
+            fetchMasterData(token);
+          } else {
+            alert('❌ Failed: ' + data.message);
+          }
+        } catch (err) {
+          alert('❌ Network error.');
+        }
+        setConfirmDialog({ show: false, message: '', onConfirm: null });
+      }
+    });
+  };
+  
+  const handleGrantAccess = (userId, userName) => {
+    const storeName = prompt(`Grant warehouse access to "${userName}"\n\nEnter store/node name:`);
+    if (!storeName || storeName.trim() === '') return;
+    
+    setConfirmDialog({
+      show: true,
+      message: `Grant warehouse access to "${userName}" for store "${storeName}"?`,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`${BASE_URL}/api/warehouse/admin/grant-access`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ user_id: userId, store_name: storeName })
+          });
+          const data = await res.json();
+          if (data.success) {
+            alert('✅ Warehouse access granted successfully.');
+            fetchMasterData(token);
+          } else {
+            alert('❌ Failed: ' + data.message);
+          }
+        } catch (err) {
+          alert('❌ Network error.');
+        }
+        setConfirmDialog({ show: false, message: '', onConfirm: null });
+      }
+    });
+  };
+  
+  const handleRevokeAccess = (userId, userName) => {
+    setConfirmDialog({
+      show: true,
+      message: `⚠️ REVOKE warehouse access for "${userName}"? They will lose all warehouse permissions.`,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`${BASE_URL}/api/warehouse/admin/revoke-access/${userId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await res.json();
+          if (data.success) {
+            alert('✅ Warehouse access revoked successfully.');
+            fetchMasterData(token);
+          } else {
+            alert('❌ Failed: ' + data.message);
+          }
+        } catch (err) {
+          alert('❌ Network error.');
+        }
+        setConfirmDialog({ show: false, message: '', onConfirm: null });
+      }
+    });
   };
 
   const openEditModal = (user) => {
     setEditUser(user);
-    setEditForm({ 
-      name: user.name || '', 
-      email: user.email || '', 
-      store_name: user.store_name || '', 
+    setEditForm({
+      name: user.name || '',
+      email: user.email || '',
+      store_name: user.store_name || '',
       password: '',
       wallet_balance: user.wallet_balance || 0,
       role: user.role || 'warehouse_admin',
       is_active: user.user_status !== undefined ? user.user_status : 1
     });
   };
+  
+  // Filter distributors based on search
+  const filteredDistributors = distributors.filter(user => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (user.name && user.name.toLowerCase().includes(q)) ||
+      (user.email && user.email.toLowerCase().includes(q)) ||
+      (user.store_name && user.store_name.toLowerCase().includes(q))
+    );
+  });
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#020617] flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-emerald-400 text-xl font-mono">⏳ Loading Master Control Panel...</div>
       </div>
     );
   }
 
-  if (!token) return <Navigate to="/warehouseadmin" />;
+  if (!token) return <Navigate to="/warehouse" />;
 
   const totalRevenue = sales.reduce((acc, curr) => acc + (curr.quantity * curr.sale_price || 0), 0);
   const totalItemsSold = sales.reduce((acc, curr) => acc + (curr.quantity || 0), 0);
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white p-6 overflow-y-auto">
-      <div className="max-w-7xl mx-auto space-y-6">
-        
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-emerald-400">Master Operations Control</h1>
-            <p className="text-slate-400 mt-1">100% Granular Control Architecture.</p>
-          </div>
-          <div className="flex space-x-2 mt-4 md:mt-0">
-            {['dashboard', 'distributors', 'stocks', 'ledger', 'analytics'].map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === tab ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
-          </div>
+    <div className="min-h-screen bg-slate-950 text-white">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700 shadow-lg">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-2">
+            🔧 God Mode: Master Operations Control
+          </h1>
+          <p className="text-slate-400 text-sm">100% Granular Control over Warehouse Network Architecture.</p>
+        </div>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="flex flex-wrap gap-2 mb-8">
+          {['dashboard', 'users', 'stocks', 'ledger', 'activity'].map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                activeTab === tab
+                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/50'
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
+              }`}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
         </div>
 
         {/* TAB: Dashboard */}
         {activeTab === 'dashboard' && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-fade-in">
-            <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl">
-              <h3 className="text-slate-400 text-sm font-medium">Total Network Revenue</h3>
-              <p className="text-3xl font-bold text-white mt-2">₹{totalRevenue.toLocaleString()}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6 shadow-xl">
+              <h3 className="text-slate-400 text-sm mb-2">Total Network Revenue</h3>
+              <p className="text-3xl font-bold text-emerald-400">₹{totalRevenue.toLocaleString()}</p>
             </div>
-            <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl">
-              <h3 className="text-slate-400 text-sm font-medium">Active Nodes</h3>
-              <p className="text-3xl font-bold text-emerald-400 mt-2">{distributors.filter(d => d.is_active).length}</p>
+            <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6 shadow-xl">
+              <h3 className="text-slate-400 text-sm mb-2">Active Users</h3>
+              <p className="text-3xl font-bold text-cyan-400">{distributors.filter(d => d.is_active || d.user_status).length}</p>
             </div>
-            <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl">
-              <h3 className="text-slate-400 text-sm font-medium">Total Units Sold</h3>
-              <p className="text-3xl font-bold text-white mt-2">{totalItemsSold}</p>
+            <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6 shadow-xl">
+              <h3 className="text-slate-400 text-sm mb-2">Total Units Sold</h3>
+              <p className="text-3xl font-bold text-purple-400">{totalItemsSold}</p>
             </div>
-            <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl">
-              <h3 className="text-slate-400 text-sm font-medium">Total Transactions</h3>
-              <p className="text-3xl font-bold text-white mt-2">{sales.length}</p>
+            <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6 shadow-xl">
+              <h3 className="text-slate-400 text-sm mb-2">Total Transactions</h3>
+              <p className="text-3xl font-bold text-orange-400">{sales.length}</p>
             </div>
           </div>
         )}
 
-        {/* TAB: Live Stocks (CRASH-PROOFED) */}
+        {/* TAB: Users (God Mode Control) */}
+        {activeTab === 'users' && (
+          <div className="space-y-6">
+            {/* Search & Add User */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <input
+                type="text"
+                placeholder="🔍 Search by name, email, or store..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 bg-slate-900 border border-slate-700 rounded-md px-4 py-2 text-white placeholder:text-slate-500 outline-none focus:border-emerald-500"
+              />
+              <button
+                onClick={() => setShowAddUser(true)}
+                className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-md shadow-lg transition-all"
+              >
+                ➕ Add New User
+              </button>
+            </div>
+            
+            {/* User Table */}
+            <div className="bg-slate-900/50 border border-slate-800 rounded-lg overflow-hidden shadow-xl">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-800/70">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase">User / Store</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase">Wallet</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase">Role</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {filteredDistributors.map((user) => (
+                      <tr key={user.user_id} className="hover:bg-slate-800/30 transition-all">
+                        <td className="px-4 py-4">
+                          <div className="font-medium text-white">{user.name}</div>
+                          <div className="text-sm text-slate-400">{user.store_name || 'No Store'}</div>
+                          <div className="text-xs text-slate-500">{user.email}</div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className="text-emerald-400 font-bold">₹{user.wallet_balance || 0}</span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className="px-2 py-1 text-xs font-medium bg-slate-800 text-cyan-400 rounded">
+                            {user.role}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className={`px-2 py-1 text-xs font-medium rounded ${
+                            user.user_status || user.is_active
+                              ? 'bg-emerald-900/30 text-emerald-400'
+                              : 'bg-red-900/30 text-red-400'
+                          }`}>
+                            {user.user_status || user.is_active ? '✓ Active' : '✕ Suspended'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() => openEditModal(user)}
+                              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-all"
+                            >
+                              ✏️ Edit
+                            </button>
+                            <button
+                              onClick={() => handleToggleStatus(user.user_id, user.user_status || user.is_active, user.name)}
+                              className={`px-3 py-1 text-xs font-medium rounded transition-all ${
+                                user.user_status || user.is_active
+                                  ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                              }`}
+                            >
+                              {user.user_status || user.is_active ? '⏸️ Suspend' : '▶️ Activate'}
+                            </button>
+                            <button
+                              onClick={() => handleWalletAdjust(user.user_id, user.wallet_balance || 0, user.name)}
+                              className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded transition-all"
+                            >
+                              💰 Wallet
+                            </button>
+                            {user.store_name ? (
+                              <button
+                                onClick={() => handleRevokeAccess(user.user_id, user.name)}
+                                className="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium rounded transition-all"
+                              >
+                                🔒 Revoke Access
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleGrantAccess(user.user_id, user.name)}
+                                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded transition-all"
+                              >
+                                🔓 Grant Access
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDeleteUser(user.user_id, user.name)}
+                              className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded transition-all"
+                            >
+                              🗑️ Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: Live Stocks */}
         {activeTab === 'stocks' && (
-          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden animate-fade-in p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-               {stocks.map((node) => {
-                  let parsedState = {};
-                  // BUG FIX: Indestructible JSON Parsing preventing the React TypeError
-                  try {
-                     const raw = node.app_state;
-                     const temp = typeof raw === 'string' ? JSON.parse(raw) : raw;
-                     parsedState = temp || {};
-                  } catch(e) { parsedState = {}; }
-                  
-                  let items = [];
-                  if (parsedState && typeof parsedState === 'object') {
-                      Object.values(parsedState).forEach(val => {
-                         if (Array.isArray(val) && val.length > 0 && (val[0].n || val[0].name)) {
-                            items = val;
-                         }
-                      });
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {stocks.map((node) => {
+              let parsedState = {};
+              try {
+                const raw = node.app_state;
+                const temp = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                parsedState = temp || {};
+              } catch(e) {
+                parsedState = {};
+              }
+              
+              let items = [];
+              if (parsedState && typeof parsedState === 'object') {
+                Object.values(parsedState).forEach(val => {
+                  if (Array.isArray(val) && val.length > 0 && (val[0].n || val[0].name)) {
+                    items = val;
                   }
-
-                  return (
-                     <div key={node.user_id} className="bg-slate-800 rounded-lg p-5 border border-slate-700 shadow-lg">
-                        <div className="flex justify-between items-start mb-4 border-b border-slate-700/50 pb-3">
-                           <div>
-                              <h3 className="font-bold text-emerald-400 truncate w-40">{node.store_name || 'Unknown Store'}</h3>
-                              <p className="text-xs text-slate-400 mt-1">{node.distributor_name}</p>
-                           </div>
-                        </div>
-
-                        {items.length > 0 ? (
-                           <div className="max-h-60 overflow-y-auto pr-2">
-                              <table className="w-full text-xs text-left">
-                                 <thead className="text-slate-400 sticky top-0 bg-slate-800 py-2">
-                                    <tr>
-                                       <th className="font-medium pb-2">Product</th>
-                                       <th className="font-medium pb-2 text-right">Qty</th>
-                                    </tr>
-                                 </thead>
-                                 <tbody className="divide-y divide-slate-700/50">
-                                    {items.map((item, idx) => (
-                                       <tr key={idx} className="hover:bg-slate-700/30">
-                                          <td className="py-2 text-slate-300 font-medium">{item.n || item.name || 'Unnamed'}</td>
-                                          <td className="py-2 text-right text-emerald-400 font-bold">{item.q || item.quantity || item.qty || 0}</td>
-                                       </tr>
-                                    ))}
-                                 </tbody>
-                              </table>
-                           </div>
-                        ) : (
-                           <div className="text-center py-6 text-slate-500 text-sm italic">No active inventory found.</div>
-                        )}
-                     </div>
-                  );
-               })}
-            </div>
+                });
+              }
+              
+              return (
+                <div key={node.user_id} className="bg-slate-900/50 border border-slate-800 rounded-lg p-6 shadow-xl">
+                  <h3 className="text-xl font-bold text-white mb-1">{node.store_name || 'Unknown Store'}</h3>
+                  <p className="text-slate-400 text-sm mb-4">{node.distributor_name}</p>
+                  
+                  {items.length > 0 ? (
+                    <table className="w-full">
+                      <thead className="border-b border-slate-700">
+                        <tr>
+                          <th className="text-left py-2 text-xs text-slate-400">Product</th>
+                          <th className="text-right py-2 text-xs text-slate-400">Qty</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800">
+                        {items.map((item, idx) => (
+                          <tr key={idx}>
+                            <td className="py-2 text-sm text-slate-300">{item.n || item.name || 'Unnamed'}</td>
+                            <td className="py-2 text-sm text-right text-emerald-400 font-bold">{item.q || item.quantity || item.qty || 0}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="text-slate-500 text-sm italic">No active inventory found.</p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 
-        {/* TAB: Distributors Control */}
-        {activeTab === 'distributors' && (
-          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden animate-fade-in">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-400">
-                <thead className="bg-slate-800/50 text-xs uppercase text-slate-300">
-                  <tr>
-                    <th className="px-6 py-4">Node / Email</th>
-                    <th className="px-6 py-4">Wallet Balance</th>
-                    <th className="px-6 py-4">System Role</th>
-                    <th className="px-6 py-4">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800">
-                  {distributors.map((user) => (
-                    <tr key={user.id} className="hover:bg-slate-800/20">
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-white">{user.name} <span className="text-emerald-500">({user.store_name})</span></div>
-                        <div className="text-xs text-slate-500">{user.email}</div>
-                      </td>
-                      <td className="px-6 py-4 font-bold text-white">₹{user.wallet_balance}</td>
-                      <td className="px-6 py-4 uppercase text-xs tracking-wider">{user.role}</td>
-                      <td className="px-6 py-4">
-                        <button onClick={() => openEditModal(user)} className="px-3 py-1 bg-red-900/50 text-red-400 hover:text-white hover:bg-red-600 rounded text-xs font-medium border border-red-800 transition-all">
-                          God Mode Edit
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* TAB: Ledger & Analytics remain same logic, just rendering safely */}
+        {/* TAB: Ledger */}
         {activeTab === 'ledger' && (
-          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden animate-fade-in p-6">
-            <div className="overflow-x-auto max-h-[600px]">
-              <table className="w-full text-left text-sm text-slate-400">
-                <thead className="bg-slate-800/50 text-xs uppercase text-slate-300 sticky top-0">
+          <div className="bg-slate-900/50 border border-slate-800 rounded-lg overflow-hidden shadow-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-800/70">
                   <tr>
-                    <th className="px-6 py-4">Distributor</th>
-                    <th className="px-6 py-4">Product</th>
-                    <th className="px-6 py-4">Qty</th>
-                    <th className="px-6 py-4">Total</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase">Distributor</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase">Product</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase">Qty</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase">Total</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase">Date</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
-                  {sales.map((log) => (
-                    <tr key={log.id} className="hover:bg-slate-800/20">
-                      <td className="px-6 py-4 text-emerald-400">{log.distributor_name}</td>
-                      <td className="px-6 py-4 text-white font-medium">{log.product_name}</td>
-                      <td className="px-6 py-4">{log.quantity}</td>
-                      <td className="px-6 py-4 font-bold text-white">₹{log.quantity * log.sale_price}</td>
+                  {sales.map((log, idx) => (
+                    <tr key={idx} className="hover:bg-slate-800/30">
+                      <td className="px-4 py-3 text-sm text-white">{log.distributor_name}</td>
+                      <td className="px-4 py-3 text-sm text-slate-300">{log.product_name}</td>
+                      <td className="px-4 py-3 text-sm text-cyan-400">{log.quantity}</td>
+                      <td className="px-4 py-3 text-sm text-emerald-400 font-bold">₹{log.quantity * log.sale_price}</td>
+                      <td className="px-4 py-3 text-sm text-slate-400">{new Date(log.sold_at).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -277,75 +561,262 @@ export default function WarehouseAdmin() {
             </div>
           </div>
         )}
-
+        
+        {/* TAB: Activity Log */}
+        {activeTab === 'activity' && (
+          <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6 shadow-xl">
+            <h2 className="text-xl font-bold text-white mb-4">🔍 Activity & Audit Log</h2>
+            {activityLog.length > 0 ? (
+              <div className="space-y-3">
+                {activityLog.map((log, idx) => (
+                  <div key={idx} className="bg-slate-800/50 border border-slate-700 rounded-md p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-sm text-slate-300">{log.action}</span>
+                        <p className="text-xs text-slate-500 mt-1">by {log.admin_name} • {log.target_user}</p>
+                      </div>
+                      <span className="text-xs text-slate-400">{new Date(log.timestamp).toLocaleString()}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-slate-500 text-sm italic">Activity logging feature requires backend implementation.</p>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* GOD MODE MODAL */}
+      {/* GOD MODE EDIT MODAL */}
       {editUser && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 w-full max-w-2xl shadow-2xl overflow-y-auto max-h-[90vh]">
-            <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
-              <h3 className="text-xl font-bold text-red-400">God Mode: Override User Profile</h3>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-slate-900 border-b border-slate-700 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-white">⚙️ God Mode: Override User Profile</h2>
               <button onClick={() => setEditUser(null)} className="text-slate-400 hover:text-white text-xl">✕</button>
             </div>
             
-            <form onSubmit={handleDeepEdit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              
-              {/* Basic Info */}
-              <div className="space-y-4 col-span-1">
-                 <div>
-                    <label className="block text-xs font-medium text-slate-400 mb-1">Full Name</label>
-                    <input type="text" value={editForm.name} onChange={(e) => setEditForm({...editForm, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none" />
-                 </div>
-                 <div>
-                    <label className="block text-xs font-medium text-slate-400 mb-1">Email Address</label>
-                    <input type="email" value={editForm.email} onChange={(e) => setEditForm({...editForm, email: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none" />
-                 </div>
-                 <div>
-                    <label className="block text-xs font-medium text-slate-400 mb-1">Store / Node Name</label>
-                    <input type="text" value={editForm.store_name} onChange={(e) => setEditForm({...editForm, store_name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none" />
-                 </div>
-              </div>
-
-              {/* Master Controls */}
-              <div className="space-y-4 col-span-1 bg-slate-950 p-4 rounded-lg border border-red-900/30">
-                 <div>
-                    <label className="block text-xs font-medium text-slate-400 mb-1">Wallet Balance (₹)</label>
-                    <input type="number" step="0.01" value={editForm.wallet_balance} onChange={(e) => setEditForm({...editForm, wallet_balance: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-emerald-400 font-bold outline-none" />
-                 </div>
-                 <div>
-                    <label className="block text-xs font-medium text-slate-400 mb-1">System Role</label>
-                    <select value={editForm.role} onChange={(e) => setEditForm({...editForm, role: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none">
-                       <option value="customer">Customer</option>
-                       <option value="warehouse_admin">Warehouse Admin</option>
-                       <option value="admin">Admin</option>
-                       <option value="superadmin">Superadmin</option>
-                    </select>
-                 </div>
-                 <div>
-                    <label className="block text-xs font-medium text-slate-400 mb-1">Account Status</label>
-                    <select value={editForm.is_active} onChange={(e) => setEditForm({...editForm, is_active: parseInt(e.target.value)})} className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none">
-                       <option value={1}>Active</option>
-                       <option value={0}>Suspended</option>
-                    </select>
-                 </div>
-              </div>
-
-              {/* Danger Zone */}
-              <div className="col-span-1 md:col-span-2 pt-4 border-t border-slate-800">
-                <label className="block text-xs font-bold text-red-400 mb-1">Force Password Reset (Leave blank to keep current)</label>
-                <input type="text" placeholder="Type new password here to override..." value={editForm.password} onChange={(e) => setEditForm({...editForm, password: e.target.value})} className="w-full bg-slate-800 border border-red-900/50 rounded-md px-3 py-2 text-white outline-none focus:border-red-500 placeholder:text-slate-600" />
+            <form onSubmit={handleDeepEdit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none focus:border-emerald-500"
+                />
               </div>
               
-              <div className="col-span-1 md:col-span-2 pt-4 flex justify-end space-x-3">
-                <button type="button" onClick={() => setEditUser(null)} className="px-6 py-2 bg-slate-800 text-slate-300 rounded hover:bg-slate-700">Cancel</button>
-                <button type="submit" className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-500 font-bold shadow-lg shadow-red-900/20">Execute Override</button>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Email Address</label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none focus:border-emerald-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Store / Node Name</label>
+                <input
+                  type="text"
+                  value={editForm.store_name}
+                  onChange={(e) => setEditForm({...editForm, store_name: e.target.value})}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none focus:border-emerald-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Wallet Balance (₹)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editForm.wallet_balance}
+                  onChange={(e) => setEditForm({...editForm, wallet_balance: e.target.value})}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-emerald-400 font-bold outline-none focus:border-emerald-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">System Role</label>
+                <select
+                  value={editForm.role}
+                  onChange={(e) => setEditForm({...editForm, role: e.target.value})}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none focus:border-emerald-500"
+                >
+                  <option value="customer">Customer</option>
+                  <option value="warehouse_admin">Warehouse Admin</option>
+                  <option value="admin">Admin</option>
+                  <option value="superadmin">Superadmin</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Account Status</label>
+                <select
+                  value={editForm.is_active}
+                  onChange={(e) => setEditForm({...editForm, is_active: parseInt(e.target.value)})}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none focus:border-emerald-500"
+                >
+                  <option value={1}>✓ Active</option>
+                  <option value={0}>✕ Suspended</option>
+                </select>
+              </div>
+              
+              <div className="border-t border-red-900/30 pt-4">
+                <label className="block text-sm font-medium text-red-400 mb-1">⚠️ Force Password Reset</label>
+                <p className="text-xs text-slate-500 mb-2">Leave blank to keep current password</p>
+                <input
+                  type="text"
+                  placeholder="Type new password here to override..."
+                  value={editForm.password}
+                  onChange={(e) => setEditForm({...editForm, password: e.target.value})}
+                  className="w-full bg-slate-800 border border-red-900/50 rounded-md px-3 py-2 text-white outline-none focus:border-red-500 placeholder:text-slate-600"
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setEditUser(null)}
+                  className="flex-1 px-6 py-2 bg-slate-800 text-slate-300 rounded hover:bg-slate-700 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded shadow-lg transition-all"
+                >
+                  ⚡ Execute Override
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
+      
+      {/* ADD USER MODAL */}
+      {showAddUser && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-slate-900 border-b border-slate-700 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-white">➕ Add New User</h2>
+              <button onClick={() => setShowAddUser(false)} className="text-slate-400 hover:text-white text-xl">✕</button>
+            </div>
+            
+            <form onSubmit={handleAddUser} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={newUserForm.name}
+                  onChange={(e) => setNewUserForm({...newUserForm, name: e.target.value})}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none focus:border-emerald-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Email Address *</label>
+                <input
+                  type="email"
+                  required
+                  value={newUserForm.email}
+                  onChange={(e) => setNewUserForm({...newUserForm, email: e.target.value})}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none focus:border-emerald-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Password *</label>
+                <input
+                  type="text"
+                  required
+                  value={newUserForm.password}
+                  onChange={(e) => setNewUserForm({...newUserForm, password: e.target.value})}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none focus:border-emerald-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Store / Node Name</label>
+                <input
+                  type="text"
+                  value={newUserForm.store_name}
+                  onChange={(e) => setNewUserForm({...newUserForm, store_name: e.target.value})}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none focus:border-emerald-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">System Role</label>
+                <select
+                  value={newUserForm.role}
+                  onChange={(e) => setNewUserForm({...newUserForm, role: e.target.value})}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white outline-none focus:border-emerald-500"
+                >
+                  <option value="customer">Customer</option>
+                  <option value="warehouse_admin">Warehouse Admin</option>
+                  <option value="admin">Admin</option>
+                  <option value="superadmin">Superadmin</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Initial Wallet Balance (₹)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={newUserForm.wallet_balance}
+                  onChange={(e) => setNewUserForm({...newUserForm, wallet_balance: parseFloat(e.target.value) || 0})}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-emerald-400 font-bold outline-none focus:border-emerald-500"
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddUser(false)}
+                  className="flex-1 px-6 py-2 bg-slate-800 text-slate-300 rounded hover:bg-slate-700 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded shadow-lg transition-all"
+                >
+                  ✓ Create User
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      
+      {/* CONFIRM DIALOG */}
+      {confirmDialog.show && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-lg shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-white mb-4">⚠️ Confirm Action</h3>
+            <p className="text-slate-300 text-sm mb-6 whitespace-pre-line">{confirmDialog.message}</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDialog({ show: false, message: '', onConfirm: null })}
+                className="flex-1 px-4 py-2 bg-slate-800 text-slate-300 rounded hover:bg-slate-700 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDialog.onConfirm}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded transition-all"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
