@@ -482,8 +482,71 @@ export default function WarehouseAdmin() {
         {/* TAB: Live Stocks */}
         {activeTab === 'stocks' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Group inventory items by user/store */}
+    {(() => {
+      // Group flattened inventory items by user
+      const grouped = {};
+      stocks.forEach(item => {
+        const key = `${item.user_id}_${item.store_name || 'unknown'}`;
+        if (!grouped[key]) {
+          grouped[key] = {
+            user_id: item.user_id,
+            distributor_name: item.distributor_name,
+            store_name: item.store_name,
+            items: []
+          };
+        }
+        grouped[key].items.push(item);
+      });
+      
+      return Object.values(grouped).map((group) => (
+        <div key={group.user_id} className="bg-slate-900/50 border border-slate-800 rounded-lg p-6 shadow-xl">
+          <h3 className="text-xl font-bold text-white mb-1">
+            {group.store_name || 'Unknown Store'}
+          </h3>
+          <p className="text-slate-400 text-sm mb-4">
+            {group.distributor_name}
+          </p>
+          
+          {group.items.length > 0 ? (
+            <table className="w-full">
+              <thead className="border-b border-slate-700">
+                <tr>
+                  <th className="text-left py-2 text-xs text-slate-400">Product</th>
+                  <th className="text-right py-2 text-xs text-slate-400">Qty</th>
+                  <th className="text-right py-2 text-xs text-slate-400">Cost</th>
+                  <th className="text-right py-2 text-xs text-slate-400">Price</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {group.items.map((item, idx) => (
+                  <tr key={idx}>
+                    <td className="py-2 text-sm text-slate-300">
+                      {item.product_name || 'Unnamed'}
+                    </td>
+                    <td className="py-2 text-sm text-right text-emerald-400 font-bold">
+                      {item.quantity || 0} {item.unit || ''}
+                    </td>
+                    <td className="py-2 text-sm text-right text-slate-400">
+                      ₹{item.cost_price || 0}
+                    </td>
+                    <td className="py-2 text-sm text-right text-blue-400">
+                      ₹{item.sale_price || 0}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="text-slate-500 text-sm italic">
+              No active inventory found.
+            </p>
+          )}
+        </div>
+      ));
+    })()}
             {stocks.map((node) => {
-              let parsedState = {};
+            /* OLD CODE - REPLACED BY NEW GROUPING LOGIC ABOVE      let parsedState = {};
               try {
                 const raw = node.app_state;
                 const temp = typeof raw === 'string' ? JSON.parse(raw) : raw;
@@ -531,6 +594,7 @@ export default function WarehouseAdmin() {
             })}
           </div>
         )}
+    */
 
         {/* TAB: Ledger */}
         {activeTab === 'ledger' && (
