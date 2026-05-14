@@ -14,6 +14,9 @@ export default function WarehouseAdmin() {
   const [stocks, setStocks] = useState([]);
   const [activityLog, setActivityLog] = useState([]);
   
+  // NEW: Node Impersonation State (Volatile memory)
+  const [nodeView, setNodeView] = useState({ active: false, userName: '', data: null, activeTab: 'inventory' });
+  
   // God Mode Edit Modal State
   const [editUser, setEditUser] = useState(null);
   const [editForm, setEditForm] = useState({
@@ -74,6 +77,66 @@ export default function WarehouseAdmin() {
       console.error("Critical failure bypassed.", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // NEW: Front-End Aggressive Extraction Logic
+  const handleRetrieveData = async (userId, userName) => {
+    try {
+        const res = await fetch(`${BASE_URL}/api/warehouse/admin/retrieve-node/${userId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        if (data.success && data.app_state) {
+            let stateObj = data.app_state;
+            
+            // Aggressive string unwrap
+            for(let i=0; i<5; i++) {
+                if (typeof stateObj === 'string') {
+                    try { stateObj = JSON.parse(stateObj); } catch(e) { break; }
+                }
+            }
+            
+            let inv = [];
+            let sls = [];
+            
+            // Dynamic object scan
+            const scan = (obj) => {
+                if (Array.isArray(obj)) {
+                    if (obj.length > 0 && typeof obj[0] === 'object' && obj[0] !== null) {
+                        const first = obj[0];
+                        if (first.n || first.name || first.product_name) {
+                            if (first.t || first.date || first.sold_at || first.timestamp) {
+                                if(sls.length === 0) sls = obj;
+                            } else {
+                                if(inv.length === 0) inv = obj;
+                            }
+                        }
+                    }
+                } else if (typeof obj === 'object' && obj !== null) {
+                    Object.values(obj).forEach(scan);
+                }
+            };
+            
+            // Standard Paths Priority
+            if (stateObj?.AV?.d?.i) inv = stateObj.AV.d.i;
+            if (stateObj?.AV?.d?.s) sls = stateObj.AV.d.s;
+            
+            // Fallback Scan if empty
+            if (inv.length === 0 || sls.length === 0) scan(stateObj);
+            
+            setNodeView({ 
+                active: true, 
+                userName, 
+                data: { inventory: inv, sales: sls }, 
+                activeTab: 'inventory' 
+            });
+        } else {
+            alert('❌ No warehouse data found for this user/node.');
+        }
+    } catch (e) {
+        alert('❌ Network error retrieving node data.');
     }
   };
 
@@ -289,7 +352,6 @@ export default function WarehouseAdmin() {
     });
   };
   
-  // Filter distributors based on search
   const filteredDistributors = distributors.filter(user => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
@@ -309,6 +371,89 @@ export default function WarehouseAdmin() {
   }
 
   if (!token) return <Navigate to="/warehouse" />;
+
+  // IMPERSONATION OVERLAY RENDERER (Total View of Downloaded User Data)
+  if (nodeView.active) {
+      return (
+          <div className="fixed inset-0 z-[100] bg-slate-950 flex flex-col font-mono text-white overflow-hidden">
+              <div className="bg-emerald-900 border-b border-emerald-700 px-6 py-4 flex justify-between items-center shadow-lg">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">🟢 LIVE CONNECTION ESTABLISHED</h2>
+                    <p className="text-emerald-300 text-sm">Intercepting feed from Node: <span className="font-bold text-white uppercase">{nodeView.userName}</span></p>
+                  </div>
+                  <button 
+                      onClick={() => setNodeView({ active: false, userName: '', data: null, activeTab: 'inventory' })} 
+                      className="px-6 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded shadow-xl transition-all"
+                  >
+                      🔌 TERMINATE CONNECTION
+                  </button>
+              </div>
+
+              <div className="flex bg-slate-900 border-b border-slate-800">
+                  <button onClick={() => setNodeView({...nodeView, activeTab: 'inventory'})} className={`px-6 py-3 font-bold transition-all ${nodeView.activeTab === 'inventory' ? 'bg-slate-800 text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-400 hover:text-white'}`}>📦 RAW INVENTORY FEED</button>
+                  <button onClick={() => setNodeView({...nodeView, activeTab: 'sales'})} className={`px-6 py-3 font-bold transition-all ${nodeView.activeTab === 'sales' ? 'bg-slate-800 text-cyan-400 border-b-2 border-cyan-400' : 'text-slate-400 hover:text-white'}`}>📓 SALES LEDGER FEED</button>
+              </div>
+
+              <div className="flex-1 overflow-auto p-6 bg-slate-900/50">
+                  {nodeView.activeTab === 'inventory' && (
+                      <div className="bg-slate-900 border border-slate-700 rounded-lg overflow-hidden shadow-2xl">
+                          <table className="w-full text-left">
+                              <thead className="bg-slate-800">
+                                  <tr>
+                                      <th className="p-4 text-emerald-400 font-bold uppercase text-xs">Product Name</th>
+                                      <th className="p-4 text-emerald-400 font-bold uppercase text-xs text-right">Quantity</th>
+                                      <th className="p-4 text-emerald-400 font-bold uppercase text-xs text-right">Cost Price</th>
+                                      <th className="p-4 text-emerald-400 font-bold uppercase text-xs text-right">Sale Price</th>
+                                  </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-800">
+                                  {nodeView.data.inventory.length > 0 ? nodeView.data.inventory.map((item, i) => (
+                                      <tr key={i} className="hover:bg-slate-800/50">
+                                          <td className="p-4 text-slate-200 font-medium">{item.n || item.name || item.product_name}</td>
+                                          <td className="p-4 text-right text-emerald-300 font-bold">{item.q || item.quantity || item.qty || 0}</td>
+                                          <td className="p-4 text-right text-slate-400">₹{item.c || item.cost || item.cost_price || 0}</td>
+                                          <td className="p-4 text-right text-blue-400">₹{item.p || item.price || item.sale_price || 0}</td>
+                                      </tr>
+                                  )) : (
+                                      <tr><td colSpan="4" className="p-8 text-center text-slate-500 italic">No inventory nodes detected in signal.</td></tr>
+                                  )}
+                              </tbody>
+                          </table>
+                      </div>
+                  )}
+
+                  {nodeView.activeTab === 'sales' && (
+                      <div className="bg-slate-900 border border-slate-700 rounded-lg overflow-hidden shadow-2xl">
+                          <table className="w-full text-left">
+                              <thead className="bg-slate-800">
+                                  <tr>
+                                      <th className="p-4 text-cyan-400 font-bold uppercase text-xs">Timestamp</th>
+                                      <th className="p-4 text-cyan-400 font-bold uppercase text-xs">Product</th>
+                                      <th className="p-4 text-cyan-400 font-bold uppercase text-xs text-right">Qty</th>
+                                      <th className="p-4 text-cyan-400 font-bold uppercase text-xs text-right">Total Price</th>
+                                  </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-800">
+                                  {nodeView.data.sales.length > 0 ? nodeView.data.sales.map((sale, i) => {
+                                      const d = new Date(sale.t || sale.timestamp || sale.date || sale.sold_at || Date.now());
+                                      return (
+                                      <tr key={i} className="hover:bg-slate-800/50">
+                                          <td className="p-4 text-slate-400 text-sm">{d.toLocaleString()}</td>
+                                          <td className="p-4 text-slate-200 font-medium">{sale.n || sale.name || sale.product_name}</td>
+                                          <td className="p-4 text-right text-cyan-300 font-bold">{sale.q || sale.quantity || sale.qty || 0}</td>
+                                          <td className="p-4 text-right text-emerald-400 font-bold">₹{sale.pr || (sale.q * sale.p) || sale.price || sale.sale_price || 0}</td>
+                                      </tr>
+                                  )}) : (
+                                      <tr><td colSpan="4" className="p-8 text-center text-slate-500 italic">No transaction nodes detected in signal.</td></tr>
+                                  )}
+                              </tbody>
+                          </table>
+                      </div>
+                  )}
+              </div>
+          </div>
+      );
+  }
 
   const totalRevenue = sales.reduce((acc, curr) => acc + (curr.quantity * curr.sale_price || 0), 0);
   const totalItemsSold = sales.reduce((acc, curr) => acc + (curr.quantity || 0), 0);
@@ -425,6 +570,14 @@ export default function WarehouseAdmin() {
                         </td>
                         <td className="px-4 py-4">
                           <div className="flex flex-wrap gap-2">
+                            {/* NEW: DIRECT RETRIEVAL BUTTON */}
+                            <button
+                              onClick={() => handleRetrieveData(user.user_id, user.name)}
+                              className="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded shadow-lg transition-all animate-pulse"
+                            >
+                              👁️ Retrieve Data
+                            </button>
+                            
                             <button
                               onClick={() => openEditModal(user)}
                               className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-all"
@@ -482,9 +635,7 @@ export default function WarehouseAdmin() {
         {/* TAB: Live Stocks */}
         {activeTab === 'stocks' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Group inventory items by user/store */}
     {(() => {
-      // Group flattened inventory items by user
       const grouped = {};
       stocks.forEach(item => {
         const key = `${item.user_id}_${item.store_name || 'unknown'}`;
@@ -545,56 +696,8 @@ export default function WarehouseAdmin() {
         </div>
       ));
     })()}
-            {stocks.map((node) => {
-            /* OLD CODE - REPLACED BY NEW GROUPING LOGIC ABOVE      let parsedState = {};
-              try {
-                const raw = node.app_state;
-                const temp = typeof raw === 'string' ? JSON.parse(raw) : raw;
-                parsedState = temp || {};
-              } catch(e) {
-                parsedState = {};
-              }
-              
-              let items = [];
-              if (parsedState && typeof parsedState === 'object') {
-                Object.values(parsedState).forEach(val => {
-                  if (Array.isArray(val) && val.length > 0 && (val[0].n || val[0].name)) {
-                    items = val;
-                  }
-                });
-              }
-              
-              return (
-                <div key={node.user_id} className="bg-slate-900/50 border border-slate-800 rounded-lg p-6 shadow-xl">
-                  <h3 className="text-xl font-bold text-white mb-1">{node.store_name || 'Unknown Store'}</h3>
-                  <p className="text-slate-400 text-sm mb-4">{node.distributor_name}</p>
-                  
-                  {items.length > 0 ? (
-                    <table className="w-full">
-                      <thead className="border-b border-slate-700">
-                        <tr>
-                          <th className="text-left py-2 text-xs text-slate-400">Product</th>
-                          <th className="text-right py-2 text-xs text-slate-400">Qty</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800">
-                        {items.map((item, idx) => (
-                          <tr key={idx}>
-                            <td className="py-2 text-sm text-slate-300">{item.n || item.name || 'Unnamed'}</td>
-                            <td className="py-2 text-sm text-right text-emerald-400 font-bold">{item.q || item.quantity || item.qty || 0}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <p className="text-slate-500 text-sm italic">No active inventory found.</p>
-                  )}
-                </div>
-              );
-            })}
           </div>
         )}
-    */
 
         {/* TAB: Ledger */}
         {activeTab === 'ledger' && (
