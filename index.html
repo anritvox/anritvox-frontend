@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-vfvfd
+
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -40,18 +40,4 @@ vfvfd
     />
     <!-- IMPORTANT: Replace 'https://www.yourwebsite.com/pat/to/your-image.jpg' with the actual URL where your image is hosted. -->
     <meta name="twitter:image" content="https://www.anritvox.com/logo.webp" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-        <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('SW registered:', reg.scope))
-            .catch(err => console.log('SW error:', err));
-        });
-      }
-    </script>
-  </body>
-</html>
+  
