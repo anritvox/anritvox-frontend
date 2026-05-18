@@ -111,20 +111,20 @@ export default function ProductDetail() {
       {loading && <SkeletonPDP />}
 
       {!loading && !product && (
-        <div className="min-h-screen flex items-center justify-center text-slate-500 bg-slate-950 font-black uppercase tracking-widest text-2xl">
+        <div className="min-h-screen flex items-center justify-center text-[#808D64] bg-[#151A11] font-black uppercase tracking-widest text-2xl">
           Product Node Offline.
         </div>
       )}
 
       {!loading && product && (
-        <div className="bg-slate-950 text-white min-h-screen selection:bg-[#808D64] selection:text-black pt-24 pb-32 font-sans relative">
+        <div className="bg-[#151A11] text-[#F4F6F0] min-h-screen selection:bg-[#808D64] selection:text-[#151A11] pt-24 pb-32 font-sans relative">
           
-          <div className="max-w-7xl mx-auto px-6 mb-8 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500">
+          <div className="max-w-7xl mx-auto px-6 mb-8 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#A3B18A]">
             <Link to="/" className="hover:text-[#9CA986] transition-colors">Home</Link>
             <ChevronRight size={14} />
             <Link to={`/shop?category=${product.category_id}`} className="hover:text-[#9CA986] transition-colors">{product.category_name || 'Hardware'}</Link>
             <ChevronRight size={14} />
-            <span className="text-white truncate max-w-[200px]">{product.name}</span>
+            <span className="text-[#F4F6F0] truncate max-w-[200px]">{product.name}</span>
           </div>
 
           <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
@@ -137,19 +137,19 @@ export default function ProductDetail() {
                     key={idx} 
                     onClick={() => setActiveMedia(media)}
                     className={`relative w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border-2 transition-all duration-300 shrink-0 ${
-                      activeMedia?.url === media.url ? 'border-[#808D64] ring-4 ring-[#808D64]/20' : 'border-slate-800 hover:border-slate-600'
+                      activeMedia?.url === media.url ? 'border-[#808D64] ring-4 ring-[#808D64]/20' : 'border-[#2C3625] hover:border-[#3A4731]'
                     }`}
                   >
                     {media.type === 'video' ? (
-                      <div className="absolute inset-0 bg-slate-900 flex items-center justify-center"><Play size={24} className="text-[#9CA986]" /></div>
+                      <div className="absolute inset-0 bg-[#1E2519] flex items-center justify-center"><Play size={24} className="text-[#9CA986]" /></div>
                     ) : (
-                      <img src={getImageUrl(media)} alt="Thumbnail" className="w-full h-full object-cover" />
+                      <img src={getImageUrl(media)} alt="Thumbnail" className="w-full h-full object-cover mix-blend-luminosity hover:mix-blend-normal transition-all" />
                     )}
                   </button>
                 ))}
               </div>
 
-              <div className="relative w-full aspect-square md:aspect-auto md:h-[700px] bg-slate-900/40 backdrop-blur-md rounded-[3rem] border border-slate-800/60 overflow-hidden flex items-center justify-center lg:sticky lg:top-32 group">
+              <div className="relative w-full aspect-square md:aspect-auto md:h-[700px] bg-[#1E2519]/40 backdrop-blur-md rounded-[3rem] border border-[#2C3625]/60 overflow-hidden flex items-center justify-center lg:sticky lg:top-32 group">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeMedia?.url}
@@ -168,11 +168,11 @@ export default function ProductDetail() {
                 </AnimatePresence>
 
                 <div className="absolute top-6 left-6 flex flex-col gap-3 z-10">
-                  {product.is_new_arrival === 1 && <span className="bg-[#808D64] text-black px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-[0_0_20px_rgba(128,141,100,0.4)]">New Node</span>}
-                  {product.is_trending === 1 && <span className="bg-[#9CA986] text-black px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">Trending</span>}
+                  {product.is_new_arrival === 1 && <span className="bg-[#808D64] text-[#151A11] px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-[0_0_20px_rgba(128,141,100,0.4)]">New Node</span>}
+                  {product.is_trending === 1 && <span className="bg-[#9CA986] text-[#151A11] px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">Trending</span>}
                 </div>
                 
-                <button className="absolute top-6 right-6 w-14 h-14 bg-slate-950/80 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-red-500 hover:border-red-500 transition-all duration-300 z-10 hover:shadow-[0_0_30px_rgba(239,68,68,0.4)]">
+                <button className="absolute top-6 right-6 w-14 h-14 bg-[#151A11]/80 backdrop-blur-xl border border-[#F4F6F0]/10 rounded-full flex items-center justify-center text-[#F4F6F0] hover:bg-red-900 hover:border-red-500 hover:text-red-400 transition-all duration-300 z-10 hover:shadow-[0_0_30px_rgba(239,68,68,0.2)]">
                   <Heart size={22} />
                 </button>
               </div>
@@ -181,34 +181,34 @@ export default function ProductDetail() {
             {/* PRODUCT DETAILS */}
             <div className="lg:col-span-5 flex flex-col relative">
               <div className="mb-8">
-                <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-[1.1] mb-4 text-white">
+                <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-[1.1] mb-4 text-[#F4F6F0]">
                   {product.name}
                 </h1>
                 
                 <div className="flex items-center gap-6 mb-6">
-                  <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl">
+                  <div className="flex items-center gap-2 bg-[#1E2519] border border-[#2C3625] px-4 py-2 rounded-xl">
                     <div className="flex text-[#808D64]">
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} size={16} fill={i < Math.floor(product.rating || 5) ? "currentColor" : "none"} className={i < Math.floor(product.rating || 5) ? "" : "text-slate-700"} />
+                        <Star key={i} size={16} fill={i < Math.floor(product.rating || 5) ? "currentColor" : "none"} className={i < Math.floor(product.rating || 5) ? "" : "text-[#2C3625]"} />
                       ))}
                     </div>
-                    <span className="text-sm font-black text-white">{product.rating || '5.0'}</span>
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest border-l border-slate-700 pl-2 ml-1">
+                    <span className="text-sm font-black text-[#F4F6F0]">{product.rating || '5.0'}</span>
+                    <span className="text-xs font-bold text-[#A3B18A] uppercase tracking-widest border-l border-[#3A4731] pl-2 ml-1">
                       {product.review_count || 0} Reviews
                     </span>
                   </div>
-                  <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                  <div className="text-xs font-bold text-[#A3B18A] uppercase tracking-widest">
                     SKU: <span className="text-[#9CA986]">{product.sku || 'N/A'}</span>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-1 mb-8">
                   <div className="flex items-end gap-4">
-                    <span className="text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">
+                    <span className="text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-[#F4F6F0] to-[#A3B18A]">
                       ₹{product.discount_price || product.price}
                     </span>
                     {product.discount_price && (
-                      <span className="text-2xl font-bold text-slate-600 line-through mb-1">₹{product.price}</span>
+                      <span className="text-2xl font-bold text-[#5C6647] line-through mb-1">₹{product.price}</span>
                     )}
                   </div>
                   {savings > 0 && (
@@ -218,29 +218,29 @@ export default function ProductDetail() {
                   )}
                 </div>
 
-                <p className="text-slate-400 text-lg leading-relaxed mb-8 font-medium">
+                <p className="text-[#A3B18A] text-lg leading-relaxed mb-8 font-medium">
                   {product.description?.substring(0, 150)}...
                 </p>
               </div>
 
               {/* FITMENT WIDGET */}
-              <div className="bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-6 mb-8 relative overflow-hidden">
+              <div className="bg-gradient-to-b from-[#1E2519] to-[#151A11] border border-[#2C3625] rounded-3xl p-6 mb-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-[#808D64]"><Car size={150} /></div>
                 <h3 className="text-sm font-black uppercase tracking-widest text-[#9CA986] mb-4 flex items-center gap-2">
                   <Zap size={16} /> Fitment Verification Engine
                 </h3>
                 <form onSubmit={handleFitmentCheck} className="grid grid-cols-3 gap-3 mb-4 relative z-10">
-                  <input type="text" placeholder="Make" required onChange={(e) => setFitment({...fitment, make: e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-[#808D64] outline-none w-full" />
-                  <input type="text" placeholder="Model" required onChange={(e) => setFitment({...fitment, model: e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-[#808D64] outline-none w-full" />
-                  <button type="submit" className="bg-slate-800 hover:bg-[#808D64] text-white hover:text-black font-black text-xs uppercase tracking-widest rounded-xl transition-all">Check</button>
+                  <input type="text" placeholder="Make" required onChange={(e) => setFitment({...fitment, make: e.target.value})} className="bg-[#151A11] border border-[#2C3625] rounded-xl px-4 py-3 text-sm focus:border-[#808D64] outline-none w-full text-[#F4F6F0]" />
+                  <input type="text" placeholder="Model" required onChange={(e) => setFitment({...fitment, model: e.target.value})} className="bg-[#151A11] border border-[#2C3625] rounded-xl px-4 py-3 text-sm focus:border-[#808D64] outline-none w-full text-[#F4F6F0]" />
+                  <button type="submit" className="bg-[#2C3625] hover:bg-[#808D64] text-[#F4F6F0] hover:text-[#151A11] font-black text-xs uppercase tracking-widest rounded-xl transition-all">Check</button>
                 </form>
                 
                 <AnimatePresence>
                   {fitmentStatus && (
                     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className={`p-4 rounded-xl flex items-center gap-3 border ${
                       fitmentStatus === 'fits' ? 'bg-[#808D64]/10 border-[#808D64]/30 text-[#9CA986]' :
-                      fitmentStatus === 'nofit' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
-                      'bg-blue-500/10 border-blue-500/20 text-blue-500 animate-pulse'
+                      fitmentStatus === 'nofit' ? 'bg-red-900/20 border-red-800/40 text-red-400' :
+                      'bg-[#A3B18A]/10 border-[#A3B18A]/20 text-[#A3B18A] animate-pulse'
                     }`}>
                       {fitmentStatus === 'fits' && <><CheckCircle2 size={20} /> <span className="text-sm font-black uppercase tracking-widest">Confirmed Fitment for your vehicle.</span></>}
                       {fitmentStatus === 'nofit' && <><AlertCircle size={20} /> <span className="text-sm font-black uppercase tracking-widest">May require modification.</span></>}
@@ -251,21 +251,21 @@ export default function ProductDetail() {
               </div>
 
               {/* ACTION AREA */}
-              <div className="bg-slate-900 border border-slate-800 rounded-[2rem] p-6 mb-8">
+              <div className="bg-[#1E2519] border border-[#2C3625] rounded-[2rem] p-6 mb-8">
                 <div className="flex items-center gap-4 mb-6">
-                  <span className={`flex items-center gap-2 text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-lg ${isOutOfStock ? 'bg-red-500/10 text-red-500' : 'bg-[#808D64]/10 text-[#9CA986]'}`}>
+                  <span className={`flex items-center gap-2 text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-lg ${isOutOfStock ? 'bg-red-900/20 text-red-400' : 'bg-[#808D64]/10 text-[#9CA986]'}`}>
                     <div className={`w-2 h-2 rounded-full ${isOutOfStock ? 'bg-red-500' : 'bg-[#9CA986] animate-pulse'}`}></div>
                     {isOutOfStock ? 'Out of Stock' : 'In Stock & Ready'}
                   </span>
                 </div>
 
                 <div className="flex gap-4">
-                  <div className="flex items-center justify-between bg-slate-950 border border-slate-800 rounded-2xl w-32 p-1">
-                    <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-white rounded-xl hover:bg-slate-900 transition-colors">
+                  <div className="flex items-center justify-between bg-[#151A11] border border-[#2C3625] rounded-2xl w-32 p-1">
+                    <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-12 h-12 flex items-center justify-center text-[#A3B18A] hover:text-[#F4F6F0] rounded-xl hover:bg-[#1E2519] transition-colors">
                       <Minus size={18} />
                     </button>
-                    <span className="font-black text-xl w-8 text-center">{quantity}</span>
-                    <button onClick={() => setQuantity(q => q + 1)} className="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-white rounded-xl hover:bg-slate-900 transition-colors">
+                    <span className="font-black text-xl w-8 text-center text-[#F4F6F0]">{quantity}</span>
+                    <button onClick={() => setQuantity(q => q + 1)} className="w-12 h-12 flex items-center justify-center text-[#A3B18A] hover:text-[#F4F6F0] rounded-xl hover:bg-[#1E2519] transition-colors">
                       <Plus size={18} />
                     </button>
                   </div>
@@ -273,12 +273,12 @@ export default function ProductDetail() {
                   <button 
                     onClick={handleAddToCart} 
                     disabled={isOutOfStock || isAdding}
-                    className="flex-1 bg-gradient-to-r from-emerald-600 to-[#808D64] hover:from-[#9CA986] hover:to-emerald-500 text-black font-black uppercase tracking-[0.2em] text-sm rounded-2xl transition-all shadow-[0_0_30px_rgba(128,141,100,0.3)] hover:shadow-[0_0_40px_rgba(156,169,134,0.5)] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
+                    className="flex-1 bg-gradient-to-r from-[#808D64] to-[#5C6647] hover:from-[#9CA986] hover:to-[#808D64] text-[#F4F6F0] font-black uppercase tracking-[0.2em] text-sm rounded-2xl transition-all shadow-[0_0_30px_rgba(128,141,100,0.2)] hover:shadow-[0_0_40px_rgba(156,169,134,0.4)] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
                   >
                     <span className={`flex items-center gap-2 transition-transform duration-300 ${isAdding ? '-translate-y-12' : ''}`}>
                       <ShoppingBag size={20} /> Add To Cart
                     </span>
-                    <span className={`absolute inset-0 flex items-center justify-center gap-2 bg-[#9CA986] transition-transform duration-300 ${isAdding ? 'translate-y-0' : 'translate-y-12'}`}>
+                    <span className={`absolute inset-0 flex items-center justify-center gap-2 bg-[#9CA986] text-[#151A11] transition-transform duration-300 ${isAdding ? 'translate-y-0' : 'translate-y-12'}`}>
                       <CheckCircle2 size={20} /> Node Secured
                     </span>
                   </button>
@@ -290,11 +290,11 @@ export default function ProductDetail() {
                   { icon: <Shield />, title: "Premium E-Warranty", sub: product.warranty_period || "2 Years Coverage" },
                   { icon: <Truck />, title: "Express Dispatch", sub: "Ships within 24hrs" }
                 ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3 p-4 bg-slate-900/50 rounded-2xl border border-slate-800/50">
+                  <div key={i} className="flex items-center gap-3 p-4 bg-[#1E2519]/50 rounded-2xl border border-[#2C3625]/50">
                     <div className="text-[#9CA986]">{item.icon}</div>
                     <div>
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-white">{item.title}</h4>
-                      <p className="text-[10px] font-bold text-slate-500 uppercase">{item.sub}</p>
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-[#F4F6F0]">{item.title}</h4>
+                      <p className="text-[10px] font-bold text-[#A3B18A] uppercase">{item.sub}</p>
                     </div>
                   </div>
                 ))}
@@ -305,18 +305,18 @@ export default function ProductDetail() {
 
           {/* TABBED INTERFACE */}
           <div className="max-w-7xl mx-auto px-6 mt-32">
-            <div className="flex border-b border-slate-800 mb-12 relative overflow-x-auto no-scrollbar">
+            <div className="flex border-b border-[#2C3625] mb-12 relative overflow-x-auto no-scrollbar">
               {['details', 'specifications', 'reviews'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`pb-6 px-8 text-sm font-black uppercase tracking-[0.2em] transition-colors whitespace-nowrap relative ${
-                    activeTab === tab ? 'text-[#9CA986]' : 'text-slate-500 hover:text-white'
+                    activeTab === tab ? 'text-[#9CA986]' : 'text-[#808D64] hover:text-[#F4F6F0]'
                   }`}
                 >
                   {tab}
                   {activeTab === tab && (
-                    <motion.div layoutId="activeTabIndicator" className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-[#808D64]" />
+                    <motion.div layoutId="activeTabIndicator" className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-[#5C6647] to-[#9CA986]" />
                   )}
                 </button>
               ))}
@@ -325,7 +325,7 @@ export default function ProductDetail() {
             <div className="min-h-[400px]">
               <AnimatePresence mode="wait">
                 {activeTab === 'details' && (
-                  <motion.div key="details" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="text-slate-400 leading-loose text-lg max-w-4xl font-medium whitespace-pre-wrap">
+                  <motion.div key="details" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="text-[#A3B18A] leading-loose text-lg max-w-4xl font-medium whitespace-pre-wrap">
                     {product.description}
                   </motion.div>
                 )}
@@ -339,9 +339,9 @@ export default function ProductDetail() {
                       { label: 'Tags', value: product.tags },
                       { label: '3D Model Support', value: product.model_3d_url ? 'Enabled' : 'N/A' },
                     ].map((spec, i) => (
-                      <div key={i} className="flex justify-between py-4 border-b border-slate-800">
-                        <span className="text-slate-500 font-bold uppercase tracking-widest text-xs">{spec.label}</span>
-                        <span className="text-white font-black">{spec.value || 'N/A'}</span>
+                      <div key={i} className="flex justify-between py-4 border-b border-[#2C3625]">
+                        <span className="text-[#808D64] font-bold uppercase tracking-widest text-xs">{spec.label}</span>
+                        <span className="text-[#F4F6F0] font-black">{spec.value || 'N/A'}</span>
                       </div>
                     ))}
                   </motion.div>
@@ -351,19 +351,19 @@ export default function ProductDetail() {
                   <motion.div key="reviews" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="max-w-4xl">
                     {reviewsData.length > 0 ? (
                       reviewsData.map((review, i) => (
-                        <div key={i} className="p-8 bg-slate-900 border border-slate-800 rounded-[2rem] mb-6">
+                        <div key={i} className="p-8 bg-[#1E2519] border border-[#2C3625] rounded-[2rem] mb-6">
                           <div className="flex items-center gap-2 text-[#808D64] mb-4">
                             {[...Array(5)].map((_, idx) => <Star key={idx} size={16} fill={idx < review.rating ? "currentColor" : "none"} />)}
                           </div>
-                          <h4 className="text-xl font-black text-white mb-2">{review.title}</h4>
-                          <p className="text-slate-400 font-medium mb-4">{review.comment}</p>
-                          <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">{review.user_name} • Verified Buyer</div>
+                          <h4 className="text-xl font-black text-[#F4F6F0] mb-2">{review.title}</h4>
+                          <p className="text-[#A3B18A] font-medium mb-4">{review.comment}</p>
+                          <div className="text-xs font-bold text-[#808D64] uppercase tracking-widest">{review.user_name} • Verified Buyer</div>
                         </div>
                       ))
                     ) : (
-                      <div className="text-center py-20 bg-slate-900/50 rounded-[2rem] border border-slate-800 border-dashed">
-                        <h3 className="text-xl font-black text-slate-500 uppercase tracking-widest">No Field Reports Yet</h3>
-                        <p className="text-slate-600 mt-2">Be the first to test this hardware.</p>
+                      <div className="text-center py-20 bg-[#1E2519]/50 rounded-[2rem] border border-[#2C3625] border-dashed">
+                        <h3 className="text-xl font-black text-[#808D64] uppercase tracking-widest">No Field Reports Yet</h3>
+                        <p className="text-[#A3B18A] mt-2">Be the first to test this hardware.</p>
                       </div>
                     )}
                   </motion.div>
@@ -377,18 +377,18 @@ export default function ProductDetail() {
             style={{ opacity: showStickyBar, y: stickyYOffset }}
             className="fixed bottom-0 left-0 w-full z-50 p-4 pointer-events-none"
           >
-            <div className="max-w-4xl mx-auto bg-slate-900/90 backdrop-blur-2xl border border-slate-800 p-4 rounded-3xl shadow-2xl flex items-center justify-between pointer-events-auto">
+            <div className="max-w-4xl mx-auto bg-[#1E2519]/90 backdrop-blur-2xl border border-[#2C3625] p-4 rounded-3xl shadow-2xl flex items-center justify-between pointer-events-auto">
               <div className="hidden md:flex items-center gap-4">
-                <img src={getImageUrl(activeMedia)} className="w-12 h-12 rounded-xl object-cover" alt="sticky" />
+                <img src={getImageUrl(activeMedia)} className="w-12 h-12 rounded-xl object-cover mix-blend-luminosity" alt="sticky" />
                 <div>
-                  <h4 className="text-sm font-black uppercase tracking-tighter text-white line-clamp-1">{product.name}</h4>
+                  <h4 className="text-sm font-black uppercase tracking-tighter text-[#F4F6F0] line-clamp-1">{product.name}</h4>
                   <p className="text-[#9CA986] font-black tracking-widest">₹{product.discount_price || product.price}</p>
                 </div>
               </div>
               <button 
                 onClick={handleAddToCart}
                 disabled={isOutOfStock}
-                className="w-full md:w-auto px-12 py-4 bg-gradient-to-r from-[#808D64] to-emerald-600 text-black font-black uppercase tracking-widest text-xs rounded-xl shadow-[0_0_20px_rgba(128,141,100,0.4)] hover:from-[#9CA986] hover:to-[#808D64] transition-all disabled:opacity-50"
+                className="w-full md:w-auto px-12 py-4 bg-gradient-to-r from-[#808D64] to-[#5C6647] text-[#F4F6F0] font-black uppercase tracking-widest text-xs rounded-xl shadow-[0_0_20px_rgba(128,141,100,0.3)] hover:from-[#9CA986] hover:to-[#808D64] transition-all disabled:opacity-50"
               >
                 Add To Cart
               </button>
@@ -401,20 +401,20 @@ export default function ProductDetail() {
 }
 
 const SkeletonPDP = () => (
-  <div className="bg-slate-950 min-h-screen pt-24 pb-32 px-6">
+  <div className="bg-[#151A11] min-h-screen pt-24 pb-32 px-6">
     <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 animate-pulse">
       <div className="lg:col-span-7 flex flex-col md:flex-row gap-6">
         <div className="flex md:flex-col gap-4 w-full md:w-24">
-          {[1,2,3,4].map(i => <div key={i} className="w-20 h-20 md:w-24 md:h-24 bg-slate-900 rounded-2xl shrink-0"></div>)}
+          {[1,2,3,4].map(i => <div key={i} className="w-20 h-20 md:w-24 md:h-24 bg-[#1E2519] rounded-2xl shrink-0"></div>)}
         </div>
-        <div className="w-full h-[500px] md:h-[700px] bg-slate-900 rounded-[3rem]"></div>
+        <div className="w-full h-[500px] md:h-[700px] bg-[#1E2519] rounded-[3rem]"></div>
       </div>
       <div className="lg:col-span-5 flex flex-col gap-8 pt-8">
-        <div className="h-16 bg-slate-900 rounded-2xl w-3/4"></div>
-        <div className="h-8 bg-slate-900 rounded-xl w-1/3"></div>
-        <div className="h-24 bg-slate-900 rounded-2xl w-1/2"></div>
-        <div className="h-40 bg-slate-900 rounded-3xl w-full"></div>
-        <div className="h-32 bg-slate-900 rounded-[2rem] w-full"></div>
+        <div className="h-16 bg-[#1E2519] rounded-2xl w-3/4"></div>
+        <div className="h-8 bg-[#1E2519] rounded-xl w-1/3"></div>
+        <div className="h-24 bg-[#1E2519] rounded-2xl w-1/2"></div>
+        <div className="h-40 bg-[#1E2519] rounded-3xl w-full"></div>
+        <div className="h-32 bg-[#1E2519] rounded-[2rem] w-full"></div>
       </div>
     </div>
   </div>
