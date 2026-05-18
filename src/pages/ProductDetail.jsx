@@ -12,7 +12,6 @@ import {
   cart as cartApi
 } from '../services/api';
 
-// --- Safe Image URL Helper ---
 const getImageUrl = (img) => {
   if (!img) return '/logo.webp';
   let path = typeof img === 'object' ? (img.url || img.file_path || img.path) : img;
@@ -26,7 +25,6 @@ export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   
-  // --- STATE HOOKS ---
   const [product, setProduct] = useState(null);
   const [reviewsData, setReviewsData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,13 +35,10 @@ export default function ProductDetail() {
   const [fitment, setFitment] = useState({ make: '', model: '', year: '' });
   const [fitmentStatus, setFitmentStatus] = useState(null);
 
-  // --- ANIMATION HOOKS (MUST BE TOP LEVEL!) ---
   const { scrollY } = useScroll();
   const showStickyBar = useTransform(scrollY, [0, 800], [0, 1]);
-  // FIXED: Extracted useTransform out of the conditional JSX
   const stickyYOffset = useTransform(showStickyBar, [0, 1], [50, 0]);
 
-  // --- EFFECT HOOKS ---
   useEffect(() => {
     const fetchProductData = async () => {
       try {
@@ -122,12 +117,12 @@ export default function ProductDetail() {
       )}
 
       {!loading && product && (
-        <div className="bg-slate-950 text-white min-h-screen selection:bg-emerald-500 selection:text-black pt-24 pb-32 font-sans relative">
+        <div className="bg-slate-950 text-white min-h-screen selection:bg-[#808D64] selection:text-black pt-24 pb-32 font-sans relative">
           
           <div className="max-w-7xl mx-auto px-6 mb-8 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500">
-            <Link to="/" className="hover:text-emerald-500 transition-colors">Home</Link>
+            <Link to="/" className="hover:text-[#9CA986] transition-colors">Home</Link>
             <ChevronRight size={14} />
-            <Link to={`/shop?category=${product.category_id}`} className="hover:text-emerald-500 transition-colors">{product.category_name || 'Hardware'}</Link>
+            <Link to={`/shop?category=${product.category_id}`} className="hover:text-[#9CA986] transition-colors">{product.category_name || 'Hardware'}</Link>
             <ChevronRight size={14} />
             <span className="text-white truncate max-w-[200px]">{product.name}</span>
           </div>
@@ -142,11 +137,11 @@ export default function ProductDetail() {
                     key={idx} 
                     onClick={() => setActiveMedia(media)}
                     className={`relative w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border-2 transition-all duration-300 shrink-0 ${
-                      activeMedia?.url === media.url ? 'border-emerald-500 ring-4 ring-emerald-500/20' : 'border-slate-800 hover:border-slate-600'
+                      activeMedia?.url === media.url ? 'border-[#808D64] ring-4 ring-[#808D64]/20' : 'border-slate-800 hover:border-slate-600'
                     }`}
                   >
                     {media.type === 'video' ? (
-                      <div className="absolute inset-0 bg-slate-900 flex items-center justify-center"><Play size={24} className="text-emerald-500" /></div>
+                      <div className="absolute inset-0 bg-slate-900 flex items-center justify-center"><Play size={24} className="text-[#9CA986]" /></div>
                     ) : (
                       <img src={getImageUrl(media)} alt="Thumbnail" className="w-full h-full object-cover" />
                     )}
@@ -154,7 +149,7 @@ export default function ProductDetail() {
                 ))}
               </div>
 
-              <div className="relative w-full aspect-square md:aspect-auto md:h-[700px] bg-slate-900/50 rounded-[3rem] border border-slate-800/50 overflow-hidden flex items-center justify-center lg:sticky lg:top-32 group">
+              <div className="relative w-full aspect-square md:aspect-auto md:h-[700px] bg-slate-900/40 backdrop-blur-md rounded-[3rem] border border-slate-800/60 overflow-hidden flex items-center justify-center lg:sticky lg:top-32 group">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeMedia?.url}
@@ -173,8 +168,8 @@ export default function ProductDetail() {
                 </AnimatePresence>
 
                 <div className="absolute top-6 left-6 flex flex-col gap-3 z-10">
-                  {product.is_new_arrival === 1 && <span className="bg-emerald-500 text-black px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-[0_0_20px_rgba(16,185,129,0.4)]">New Node</span>}
-                  {product.is_trending === 1 && <span className="bg-cyan-500 text-black px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">Trending</span>}
+                  {product.is_new_arrival === 1 && <span className="bg-[#808D64] text-black px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-[0_0_20px_rgba(128,141,100,0.4)]">New Node</span>}
+                  {product.is_trending === 1 && <span className="bg-[#9CA986] text-black px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">Trending</span>}
                 </div>
                 
                 <button className="absolute top-6 right-6 w-14 h-14 bg-slate-950/80 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-red-500 hover:border-red-500 transition-all duration-300 z-10 hover:shadow-[0_0_30px_rgba(239,68,68,0.4)]">
@@ -192,7 +187,7 @@ export default function ProductDetail() {
                 
                 <div className="flex items-center gap-6 mb-6">
                   <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl">
-                    <div className="flex text-emerald-500">
+                    <div className="flex text-[#808D64]">
                       {[...Array(5)].map((_, i) => (
                         <Star key={i} size={16} fill={i < Math.floor(product.rating || 5) ? "currentColor" : "none"} className={i < Math.floor(product.rating || 5) ? "" : "text-slate-700"} />
                       ))}
@@ -203,7 +198,7 @@ export default function ProductDetail() {
                     </span>
                   </div>
                   <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                    SKU: <span className="text-emerald-500">{product.sku || 'N/A'}</span>
+                    SKU: <span className="text-[#9CA986]">{product.sku || 'N/A'}</span>
                   </div>
                 </div>
 
@@ -217,7 +212,7 @@ export default function ProductDetail() {
                     )}
                   </div>
                   {savings > 0 && (
-                    <span className="text-emerald-500 text-sm font-black uppercase tracking-widest">
+                    <span className="text-[#9CA986] text-sm font-black uppercase tracking-widest">
                       You Save ₹{savings} ({savingsPercent}% Off)
                     </span>
                   )}
@@ -230,20 +225,20 @@ export default function ProductDetail() {
 
               {/* FITMENT WIDGET */}
               <div className="bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-6 mb-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none"><Car size={150} /></div>
-                <h3 className="text-sm font-black uppercase tracking-widest text-emerald-500 mb-4 flex items-center gap-2">
+                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-[#808D64]"><Car size={150} /></div>
+                <h3 className="text-sm font-black uppercase tracking-widest text-[#9CA986] mb-4 flex items-center gap-2">
                   <Zap size={16} /> Fitment Verification Engine
                 </h3>
                 <form onSubmit={handleFitmentCheck} className="grid grid-cols-3 gap-3 mb-4 relative z-10">
-                  <input type="text" placeholder="Make" required onChange={(e) => setFitment({...fitment, make: e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-emerald-500 outline-none w-full" />
-                  <input type="text" placeholder="Model" required onChange={(e) => setFitment({...fitment, model: e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-emerald-500 outline-none w-full" />
-                  <button type="submit" className="bg-slate-800 hover:bg-emerald-500 text-white hover:text-black font-black text-xs uppercase tracking-widest rounded-xl transition-all">Check</button>
+                  <input type="text" placeholder="Make" required onChange={(e) => setFitment({...fitment, make: e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-[#808D64] outline-none w-full" />
+                  <input type="text" placeholder="Model" required onChange={(e) => setFitment({...fitment, model: e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-[#808D64] outline-none w-full" />
+                  <button type="submit" className="bg-slate-800 hover:bg-[#808D64] text-white hover:text-black font-black text-xs uppercase tracking-widest rounded-xl transition-all">Check</button>
                 </form>
                 
                 <AnimatePresence>
                   {fitmentStatus && (
                     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className={`p-4 rounded-xl flex items-center gap-3 border ${
-                      fitmentStatus === 'fits' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
+                      fitmentStatus === 'fits' ? 'bg-[#808D64]/10 border-[#808D64]/30 text-[#9CA986]' :
                       fitmentStatus === 'nofit' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
                       'bg-blue-500/10 border-blue-500/20 text-blue-500 animate-pulse'
                     }`}>
@@ -258,8 +253,8 @@ export default function ProductDetail() {
               {/* ACTION AREA */}
               <div className="bg-slate-900 border border-slate-800 rounded-[2rem] p-6 mb-8">
                 <div className="flex items-center gap-4 mb-6">
-                  <span className={`flex items-center gap-2 text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-lg ${isOutOfStock ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
-                    <div className={`w-2 h-2 rounded-full ${isOutOfStock ? 'bg-red-500' : 'bg-emerald-500 animate-pulse'}`}></div>
+                  <span className={`flex items-center gap-2 text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-lg ${isOutOfStock ? 'bg-red-500/10 text-red-500' : 'bg-[#808D64]/10 text-[#9CA986]'}`}>
+                    <div className={`w-2 h-2 rounded-full ${isOutOfStock ? 'bg-red-500' : 'bg-[#9CA986] animate-pulse'}`}></div>
                     {isOutOfStock ? 'Out of Stock' : 'In Stock & Ready'}
                   </span>
                 </div>
@@ -278,12 +273,12 @@ export default function ProductDetail() {
                   <button 
                     onClick={handleAddToCart} 
                     disabled={isOutOfStock || isAdding}
-                    className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase tracking-[0.2em] text-sm rounded-2xl transition-all shadow-[0_0_30px_rgba(16,185,129,0.2)] hover:shadow-[0_0_40px_rgba(16,185,129,0.4)] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
+                    className="flex-1 bg-gradient-to-r from-emerald-600 to-[#808D64] hover:from-[#9CA986] hover:to-emerald-500 text-black font-black uppercase tracking-[0.2em] text-sm rounded-2xl transition-all shadow-[0_0_30px_rgba(128,141,100,0.3)] hover:shadow-[0_0_40px_rgba(156,169,134,0.5)] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
                   >
                     <span className={`flex items-center gap-2 transition-transform duration-300 ${isAdding ? '-translate-y-12' : ''}`}>
                       <ShoppingBag size={20} /> Add To Cart
                     </span>
-                    <span className={`absolute inset-0 flex items-center justify-center gap-2 bg-emerald-400 transition-transform duration-300 ${isAdding ? 'translate-y-0' : 'translate-y-12'}`}>
+                    <span className={`absolute inset-0 flex items-center justify-center gap-2 bg-[#9CA986] transition-transform duration-300 ${isAdding ? 'translate-y-0' : 'translate-y-12'}`}>
                       <CheckCircle2 size={20} /> Node Secured
                     </span>
                   </button>
@@ -296,7 +291,7 @@ export default function ProductDetail() {
                   { icon: <Truck />, title: "Express Dispatch", sub: "Ships within 24hrs" }
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3 p-4 bg-slate-900/50 rounded-2xl border border-slate-800/50">
-                    <div className="text-emerald-500">{item.icon}</div>
+                    <div className="text-[#9CA986]">{item.icon}</div>
                     <div>
                       <h4 className="text-[10px] font-black uppercase tracking-widest text-white">{item.title}</h4>
                       <p className="text-[10px] font-bold text-slate-500 uppercase">{item.sub}</p>
@@ -316,12 +311,12 @@ export default function ProductDetail() {
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`pb-6 px-8 text-sm font-black uppercase tracking-[0.2em] transition-colors whitespace-nowrap relative ${
-                    activeTab === tab ? 'text-emerald-500' : 'text-slate-500 hover:text-white'
+                    activeTab === tab ? 'text-[#9CA986]' : 'text-slate-500 hover:text-white'
                   }`}
                 >
                   {tab}
                   {activeTab === tab && (
-                    <motion.div layoutId="activeTabIndicator" className="absolute bottom-0 left-0 w-full h-1 bg-emerald-500" />
+                    <motion.div layoutId="activeTabIndicator" className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-[#808D64]" />
                   )}
                 </button>
               ))}
@@ -357,7 +352,7 @@ export default function ProductDetail() {
                     {reviewsData.length > 0 ? (
                       reviewsData.map((review, i) => (
                         <div key={i} className="p-8 bg-slate-900 border border-slate-800 rounded-[2rem] mb-6">
-                          <div className="flex items-center gap-2 text-emerald-500 mb-4">
+                          <div className="flex items-center gap-2 text-[#808D64] mb-4">
                             {[...Array(5)].map((_, idx) => <Star key={idx} size={16} fill={idx < review.rating ? "currentColor" : "none"} />)}
                           </div>
                           <h4 className="text-xl font-black text-white mb-2">{review.title}</h4>
@@ -377,7 +372,7 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          {/* STICKY BAR - FIXED HOOK USAGE */}
+          {/* STICKY BAR */}
           <motion.div 
             style={{ opacity: showStickyBar, y: stickyYOffset }}
             className="fixed bottom-0 left-0 w-full z-50 p-4 pointer-events-none"
@@ -387,13 +382,13 @@ export default function ProductDetail() {
                 <img src={getImageUrl(activeMedia)} className="w-12 h-12 rounded-xl object-cover" alt="sticky" />
                 <div>
                   <h4 className="text-sm font-black uppercase tracking-tighter text-white line-clamp-1">{product.name}</h4>
-                  <p className="text-emerald-500 font-black tracking-widest">₹{product.discount_price || product.price}</p>
+                  <p className="text-[#9CA986] font-black tracking-widest">₹{product.discount_price || product.price}</p>
                 </div>
               </div>
               <button 
                 onClick={handleAddToCart}
                 disabled={isOutOfStock}
-                className="w-full md:w-auto px-12 py-4 bg-emerald-500 text-black font-black uppercase tracking-widest text-xs rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:bg-white transition-colors disabled:opacity-50"
+                className="w-full md:w-auto px-12 py-4 bg-gradient-to-r from-[#808D64] to-emerald-600 text-black font-black uppercase tracking-widest text-xs rounded-xl shadow-[0_0_20px_rgba(128,141,100,0.4)] hover:from-[#9CA986] hover:to-[#808D64] transition-all disabled:opacity-50"
               >
                 Add To Cart
               </button>
