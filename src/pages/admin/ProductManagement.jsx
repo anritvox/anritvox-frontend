@@ -28,31 +28,26 @@ export default function ProductManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
-
   const [isProductModalOpen, setProductModalOpen] = useState(false);
   const [isSerialModalOpen, setSerialModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('basic'); 
   const [serialTab, setSerialTab] = useState('generate');
   
-
   const [currentProduct, setCurrentProduct] = useState(null);
   const [productSerials, setProductSerials] = useState([]);
   const [loadingSerials, setLoadingSerials] = useState(false);
   
-
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadingFileName, setUploadingFileName] = useState('');
   
   const { showToast } = useToast() || {};
 
-
   const [form, setForm] = useState(INITIAL_PRODUCT_STATE);
   const [images, setImages] = useState([]);
   const [specs, setSpecs] = useState([{ key: '', value: '' }]);
   const [fitmentFile, setFitmentFile] = useState(null);
   const [serialForm, setSerialForm] = useState(INITIAL_SERIAL_STATE);
-
 
   useEffect(() => { 
     fetchData(); 
@@ -63,7 +58,6 @@ export default function ProductManagement() {
     try {
       const [prodRes, catRes] = await Promise.all([productsApi.getAllAdmin(), categoriesApi.getAll()]);
       
-
       const pData = prodRes.data?.products || prodRes.data?.data || prodRes.data;
       setProducts(Array.isArray(pData) ? pData : []);
 
@@ -72,13 +66,12 @@ export default function ProductManagement() {
 
     } catch (err) { 
       showToast?.('Failed to fetch products', 'error'); 
-      setProducts([]); // Failsafe fallback
-      setCategories([]); // Failsafe fallback
+      setProducts([]); 
+      setCategories([]); 
     } finally { 
       setLoading(false); 
     }
   };
-
 
   const getImageUrl = (img) => {
     if (!img) return '/logo.webp';
@@ -88,7 +81,6 @@ export default function ProductManagement() {
     const baseUrl = import.meta.env.VITE_R2_PUBLIC_URL || import.meta.env.VITE_IMAGE_BASE_URL || 'https://pub-22cd43cce9bc475680ad496e199706c4.r2.dev';
     return `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
   };
-
 
   const handleToggleStatus = async (id, currentStatus) => {
     try {
@@ -123,7 +115,6 @@ export default function ProductManagement() {
       await api.delete(`/products/${prodId}/images`, { data: payload });
       showToast?.('Image removed successfully', 'success');
       
-
       setCurrentProduct(prev => {
         if (!prev) return null;
         return {
@@ -141,7 +132,6 @@ export default function ProductManagement() {
       showToast?.('Failed to delete image', 'error');
     }
   };
-
 
   const handleAIEnhance = async () => {
     if (!form.name) return showToast?.('Enter a product name first!', 'error');
@@ -165,7 +155,6 @@ export default function ProductManagement() {
       setIsUploading(false);
     }
   };
-
 
   const openProductModal = (product = null) => {
     if (product) {
@@ -266,12 +255,11 @@ export default function ProductManagement() {
       fetchData();
     } catch (err) {
       showToast?.(err.response?.data?.message || 'Error saving product', 'error');
-    } finally {
+    } Electro; finally {
       setIsUploading(false); 
       setUploadProgress(0);
     }
   };
-
 
   const openSerialModal = (product) => {
     setCurrentProduct(product); 
@@ -350,7 +338,6 @@ export default function ProductManagement() {
     }
   };
 
-
   const filteredProducts = useMemo(() => {
     if (!Array.isArray(products)) return [];
     
@@ -376,7 +363,6 @@ export default function ProductManagement() {
   return (
     <div className="p-4 md:p-8 space-y-6 bg-slate-950 min-h-screen text-slate-300 font-sans">
       
-      {}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-800/80">
         <div>
           <h1 className="text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
@@ -395,7 +381,7 @@ export default function ProductManagement() {
               placeholder="Search products or SKU..." 
               value={searchTerm} 
               onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} 
-              className="w-full sm:w-64 bg-slate-900 border border-slate-800 focus:border-emerald-500/50 rounded-xl py-2.5 pl-10 pr-4 text-white font-mono text-xs outline-none transition-all shadow-inner" 
+              className="w-full sm:w-64 bg-slate-900 border border-slate-800 focus:border-emerald-500/50 rounded-xl py-2.5 py-2.5 pl-10 pr-4 text-white font-mono text-xs outline-none transition-all shadow-inner" 
             />
           </div>
           <button onClick={fetchData} className="p-2.5 bg-slate-900 border border-slate-800 text-slate-400 rounded-xl hover:text-emerald-400 hover:border-slate-600 transition-all flex justify-center items-center">
@@ -407,7 +393,6 @@ export default function ProductManagement() {
         </div>
       </div>
 
-      {}
       <div className="bg-slate-900/50 border border-slate-800/80 rounded-[1.5rem] overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -462,7 +447,7 @@ export default function ProductManagement() {
                   </td>
                   <td className="p-4 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => openSerialModal(product)} className="p-2 bg-slate-950 border border-slate-700 rounded-lg text-amber-500 hover:bg-amber-500 hover:text-slate-950 transition-colors tooltip-trigger" title="Serial Numbers"><QrCode size={16} /></button>
+                      <button onClick={() => openSerialModal(product)} className="p-2 bg-slate-950 border border-slate-700 rounded-lg text-amber-500 hover:bg-amber-50 hover:text-slate-950 transition-colors tooltip-trigger" title="Serial Numbers"><QrCode size={16} /></button>
                       <button onClick={() => openProductModal(product)} className="p-2 bg-slate-950 border border-slate-700 rounded-lg text-blue-500 hover:bg-blue-500 hover:text-slate-950 transition-colors" title="Edit Product"><Edit2 size={16} /></button>
                       <button onClick={() => handleDelete(product._id || product.id)} className="p-2 bg-slate-950 border border-slate-700 rounded-lg text-rose-500 hover:bg-rose-500 hover:text-white transition-colors" title="Delete Product"><Trash2 size={16} /></button>
                     </div>
@@ -473,7 +458,6 @@ export default function ProductManagement() {
           </table>
         </div>
         
-        {}
         {totalPages > 1 && (
           <div className="p-4 border-t border-slate-800 flex items-center justify-between bg-slate-950/50">
             <span className="text-xs font-mono text-slate-500">Page {currentPage} of {totalPages}</span>
@@ -485,12 +469,10 @@ export default function ProductManagement() {
         )}
       </div>
 
-      {}
       {isProductModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
           <div className="bg-slate-950 border border-slate-800 w-full max-w-4xl rounded-[2rem] shadow-2xl overflow-hidden relative">
             
-            {}
             {isUploading && (
               <div className="absolute inset-0 bg-slate-950/95 z-50 flex flex-col items-center justify-center backdrop-blur-sm">
                 <UploadCloud className="w-12 h-12 text-emerald-500 animate-bounce mb-6" />
@@ -512,7 +494,6 @@ export default function ProductManagement() {
             </div>
 
             <form onSubmit={handleSaveProduct}>
-              {}
               <div className="flex border-b border-slate-800 px-6 bg-slate-900/20 overflow-x-auto custom-scrollbar">
                 {[
                   {id:'basic', l:'Basic Info', i:BoxSelect}, 
@@ -568,7 +549,6 @@ export default function ProductManagement() {
                   </div>
                 )}
 
-                {}
                 {activeTab === 'seo' && (
                   <div className="grid grid-cols-2 gap-5">
                     <div className="col-span-2 bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl mb-2">
@@ -631,10 +611,20 @@ export default function ProductManagement() {
 
                 {activeTab === 'media' && (
                   <div className="grid grid-cols-2 gap-6">
-                    <div className="p-6 border-2 border-dashed border-emerald-500/30 bg-emerald-500/5 rounded-2xl text-center relative hover:bg-emerald-500/10 transition-colors group cursor-pointer">
-                      <input type="file" multiple accept="image}
+                    <div className="col-span-2 p-6 border-2 border-dashed border-emerald-500/30 bg-emerald-500/5 rounded-2xl text-center relative hover:bg-emerald-500/10 transition-colors group cursor-pointer">
+                      <input 
+                        type="file" 
+                        multiple 
+                        accept="image/*" 
+                        onChange={(e) => setImages(e.target.files)} 
+                        className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                      />
+                      <UploadCloud className="mx-auto w-10 h-10 text-slate-500 group-hover:text-emerald-400 transition-colors mb-2" />
+                      <p className="text-xs font-bold text-slate-400 group-hover:text-slate-200 transition-colors">Click or Drag to Upload Images</p>
+                      <p className="text-[9px] text-slate-600 font-mono mt-1">PNG, JPG, WEBP formats supported</p>
+                    </div>
+
                     <div className="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                      {}
                       <div className="bg-slate-900/40 p-4 border border-slate-800 rounded-xl">
                         <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
                           <ImageIcon size={14} className="text-blue-400" /> Currently Active Images
@@ -672,7 +662,6 @@ export default function ProductManagement() {
                         )}
                       </div>
 
-                      {}
                       <div className="bg-slate-900/40 p-4 border border-slate-800 rounded-xl">
                         <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
                           <UploadCloud size={14} className="text-emerald-400" /> Staged New Upload Previews
@@ -749,7 +738,6 @@ export default function ProductManagement() {
         </div>
       )}
 
-      {}
       {isSerialModalOpen && currentProduct && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
           <div className="bg-[#0a0c10] border border-slate-800 w-full max-w-3xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
@@ -796,7 +784,6 @@ export default function ProductManagement() {
                     </div>
                   </div>
 
-                  {}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
                     <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Audit Target Month (Optional)</label>
