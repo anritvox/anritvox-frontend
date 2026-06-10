@@ -4,23 +4,166 @@
 
 @layer base {
   :root {
+    /* Premium Botanical Design Tokens */
+    --color-olive-50: #f7f8f4;
+    --color-olive-100: #ebedd9;
+    --color-olive-200: #d5dbb5;
+    --color-olive-300: #b4c08b;
+    --color-olive-400: #91a164;
+    --color-olive-500: #73834a;
+    --color-olive-600: #596737;
+    --color-olive-700: #444f2b;
+    --color-olive-800: #343c22;
+    --color-olive-900: #2c331d;
+    --color-olive-950: #171c0e;
+
+    /* Luxury Off-White Surfaces */
+    --alabaster: #fdfdfb;
+    --alabaster-dim: #f9f9f6;
+    --alabaster-dark: #f3f4ee;
+    --ivory: #fefcf7;
     
-    --color-primary: #044332; 
-    --color-primary-hover: #033225;
-    
-    --color-accent: #D4AF37;
-    
-    --color-offwhite-bg: #FBFBFA;
-    --color-offwhite-surface: #F4F4F0;
-    
-    --color-text-main: #1C2321;
-    --color-text-muted: #535C5A;
+    /* Structural & Text Token Defaults */
+    --text-main: #1c2212;
+    --text-muted: #44493a;
+    --olive-stripe: rgba(115, 131, 74, 0.04);
+    --olive-glow: rgba(145, 161, 100, 0.08);
+  }
+
+  /* Optimized Dark Mode Mappings to protect deep-nested components */
+  .dark {
+    --alabaster: #171c0e;
+    --alabaster-dim: #2c331d;
+    --alabaster-dark: #343c22;
+    --text-main: #f7f8f4;
+    --text-muted: #b4c08b;
+    --olive-stripe: rgba(235, 237, 217, 0.02);
+    --olive-glow: rgba(180, 192, 139, 0.04);
   }
 
   body {
-    background-color: var(--color-offwhite-bg);
-    color: var(--color-text-main);
-    font-family: inherit;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    background-color: var(--alabaster);
+    color: var(--text-main);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+    transition: background-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Selection Override */
+  ::selection {
+    background-color: var(--color-olive-200);
+    color: var(--color-olive-950);
+  }
+}
+
+@layer components {
+  /* System-wide Structural Backdrops */
+  .bg-alabaster {
+    background-color: var(--alabaster);
+  }
+  
+  .bg-alabaster-dim {
+    background-color: var(--alabaster-dim);
+  }
+
+  /* Sophisticated Luxury Subtle Stripes */
+  .bg-striped-olive {
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 16px,
+      var(--olive-stripe) 16px,
+      var(--olive-stripe) 32px
+    );
+    background-size: 200% 200%;
+  }
+
+  /* Glassmorphism Configuration with High Contrast Depth */
+  .glass-light {
+    background-color: rgba(253, 253, 251, 0.75);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(145, 161, 100, 0.12);
+    box-shadow: 0 8px 32px 0 rgba(115, 131, 74, 0.03),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+  }
+
+  .dark .glass-light {
+    background-color: rgba(23, 28, 14, 0.75);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    border: 1px solid rgba(180, 192, 139, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  }
+
+  /* Hardware-Accelerated Dynamic Fluid Orb Backgrounds */
+  .fluid-blob {
+    position: absolute;
+    width: 650px;
+    height: 650px;
+    border-radius: 50%;
+    filter: blur(120px);
+    -webkit-filter: blur(120px);
+    pointer-events: none;
+    background: radial-gradient(circle at 50% 50%, var(--olive-glow) 0%, rgba(253, 253, 251, 0) 75%);
+    z-index: 0;
+    transform: translate3d(0, 0, 0);
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+
+  /* Smooth Animation Triggers with Zero Frame-Drop Performance */
+  .animate-fluid-drift {
+    animation: fluid-drift 26s infinite ease-in-out;
+    transform-style: preserve-3d;
+  }
+  
+  .animate-premium-spin {
+    animation: premium-spin 12s linear infinite;
+  }
+
+  /* Custom Clean Minimalist Scrollbar Tokens */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: var(--alabaster-dim);
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--color-olive-200);
+    border-radius: 10px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--color-olive-300);
+  }
+}
+
+/* Keyframes Isolated from Layout Repaint Triggers */
+@keyframes fluid-drift {
+  0%, 100% { 
+    transform: translate3d(0, 0, 0) scale(1); 
+  }
+  33% { 
+    transform: translate3d(35px, -45px, 0) scale(1.08); 
+  }
+  66% { 
+    transform: translate3d(-25px, 25px, 0) scale(0.94); 
+  }
+}
+
+@keyframes premium-spin {
+  from { 
+    transform: rotate(0deg); 
+  }
+  to { 
+    transform: rotate(360deg); 
   }
 }
