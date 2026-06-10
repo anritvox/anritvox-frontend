@@ -10,38 +10,33 @@ export default {
   theme: {
     extend: {
       colors: {
-    
-        white: "#111D15", 
-        
+        white: "#0f1612",
         slate: {
-          50: '#111D15',  // Inverted text color map (Deep Forest Obsidian)
-          100: '#16251A', // Dark emerald-charcoal
-          200: '#1B2E21', // Dark moss contrast
-          300: '#223A2B', // Main text contrast body (Replaces text-slate-300 with readable tone)
-          400: '#2D4B39', // Subheading / descriptive text contrast (Replaces text-slate-400)
-          500: '#3D614A', // Muted metadata context labels (Replaces text-slate-500)
-          600: '#547D63', // Neutral green borders
-          700: '#DDE2D5', // Accent light boundaries
-          800: '#EBEDF3', 
-          900: '#F4F6F0',
-          950: '#FDFDFB', 
+          50: '#0f1612',
+          100: '#141f19',
+          200: '#1a2920',
+          300: '#22362a',
+          400: '#2c4535',
+          500: '#3d5e4a',
+          600: '#527a61',
+          700: '#cfd6c8',
+          800: '#eef1ea',
+          900: '#f4f6f0',
+          950: '#fdfdfb',
         },
-
-        // Premium Branding Color Schemes
         olive: {
           50: '#f7f8f4',
           100: '#ebedd9',
           200: '#d5dbb5',
           300: '#b4c08b',
-          400: '#91a164', 
-          500: '#73834a', // Core luxury brand focus tone
+          400: '#91a164',
+          500: '#73834a',
           600: '#596737',
           700: '#444f2b',
           800: '#343c22',
           900: '#2c331d',
           950: '#171c0e',
         },
-
         emerald: {
           50: '#f7f8f4', 100: '#ebedd9', 200: '#d5dbb5', 300: '#b4c08b', 400: '#73834a',
           500: '#596737', 600: '#444f2b', 700: '#343c22', 800: '#2c331d', 900: '#171c0e', 950: '#0b0f08'
@@ -70,17 +65,16 @@ export default {
           50: '#f7f8f4', 100: '#ebedd9', 200: '#d5dbb5', 300: '#b4c08b', 400: '#73834a',
           500: '#596737', 600: '#444f2b', 700: '#343c22', 800: '#2c331d', 900: '#171c0e', 950: '#0b0f08'
         },
-
         alabaster: {
           DEFAULT: '#fdfdfb',
-          dim: '#f9f9f6',
-          dark: '#f3f4ee'
+          dim: '#f4f6f0',
+          dark: '#ebedf3'
         },
         ivory: '#fefcf7',
       },
       boxShadow: {
         'premium-blur': '0 8px 32px 0 rgba(115, 131, 74, 0.04)',
-        'soft-glow': '0 0 25px -5px rgba(61, 97, 74, 0.1)',
+        'soft-glow': '0 0 25px -5px rgba(34, 54, 42, 0.12)',
       },
       animation: {
         'fluid-drift': 'fluid-drift 26s ease-in-out infinite',
