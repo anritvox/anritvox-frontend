@@ -2,136 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --alabaster: #fdfdfb;
-    --alabaster-dim: #f4f6f0;
-    --alabaster-dark: #ebedf3;
-    --text-main: #0f1612;
-    --text-muted: #2c4535;
-    --olive-stripe: rgba(34, 54, 42, 0.04);
-    --olive-glow: rgba(115, 131, 74, 0.08);
-  }
+:root {
+  /* The deep olive green matched from your image */
+  --army-olive: #4A582D; 
+  /* Adjusted for a clean, highly legible white on the dark green */
+  --alabaster-light: #FDFDFB; 
+}
 
-  body {
-    background-color: var(--alabaster) !important;
-    color: var(--text-main) !important;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    -webkit-font-smoothing: antialiased !important;
-    -moz-osx-font-smoothing: grayscale !important;
-    text-rendering: optimizeLegibility !important;
-    overflow-x: hidden;
-    letter-spacing: -0.01em;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    color: var(--text-main) !important;
-    font-weight: 800 !important;
-    letter-spacing: -0.025em;
-  }
-
-  p, span, td, th, label, input, select, textarea, button {
-    color: inherit;
-    -webkit-font-smoothing: antialiased !important;
-    -moz-osx-font-smoothing: grayscale !important;
-  }
-
-  th {
-    color: var(--text-muted) !important;
-    font-weight: 700 !important;
-  }
-
-  ::selection {
-    background-color: #d5dbb5;
-    color: #171c0e;
-  }
+body {
+  /* Swapped background to the deep olive */
+  background-color: var(--army-olive);
+  /* Flipped text to light color so it's readable against the dark olive */
+  color: var(--alabaster-light);
+  overflow-x: hidden;
 }
 
 @layer components {
   .bg-alabaster {
-    background-color: var(--alabaster) !important;
-  }
-  
-  .bg-alabaster-dim {
-    background-color: var(--alabaster-dim) !important;
+    background-color: var(--alabaster-light);
   }
 
+  /* Modified to render the solid olive color from your image */
   .bg-striped-olive {
-    background-image: repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 16px,
-      var(--olive-stripe) 16px,
-      var(--olive-stripe) 32px
-    ) !important;
-    background-size: 200% 200%;
+    background-color: var(--army-olive);
   }
 
+  /* Adjusted glassmorphism to look sleek over a dark green backdrop */
   .glass-light {
-    background-color: rgba(253, 253, 251, 0.92) !important;
-    backdrop-filter: blur(20px) saturate(190%) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(190%) !important;
-    border: 1px solid rgba(34, 54, 42, 0.18) !important;
-    box-shadow: 0 10px 40px -10px rgba(15, 22, 18, 0.06),
-                inset 0 1px 1px 0 rgba(255, 255, 255, 0.9) !important;
+    @apply bg-black/20 backdrop-blur-xl border border-white/10 text-white;
   }
 
+  /* Updated the decorative ambient blob to glow subtly using a white/light overlay */
   .fluid-blob {
-    position: absolute;
-    width: 700px;
-    height: 700px;
-    border-radius: 50%;
-    filter: blur(140px);
-    -webkit-filter: blur(140px);
-    pointer-events: none;
-    background: radial-gradient(circle at 50% 50%, var(--olive-glow) 0%, rgba(253, 253, 251, 0) 80%);
+    @apply absolute w-[600px] h-[600px] rounded-full blur-[100px] pointer-events-none;
+    background: radial-gradient(circle, rgba(253, 253, 251, 0.08) 0%, transparent 70%);
     z-index: 0;
-    transform: translate3d(0, 0, 0);
-    will-change: transform;
-    backface-visibility: hidden;
   }
 
   .animate-fluid-drift {
-    animation: fluid-drift 28s infinite ease-in-out;
-    transform-style: preserve-3d;
-  }
-  
-  .animate-premium-spin {
-    animation: premium-spin 16s linear infinite;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: var(--alabaster-dim);
-  }
-  
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(34, 54, 42, 0.25);
-    border-radius: 99px;
-  }
-  
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(34, 54, 42, 0.45);
+    animation: fluid-drift 22s infinite ease-in-out;
   }
 }
 
 @keyframes fluid-drift {
   0%, 100% { 
-    transform: translate3d(0, 0, 0) scale(1); 
+    transform: translate(0, 0) scale(1); 
   }
   33% { 
-    transform: translate3d(25px, -30px, 0) scale(1.06); 
+    transform: translate(40px, -60px) scale(1.15); 
   }
   66% { 
-    transform: translate3d(-15px, 20px, 0) scale(0.95); 
+    transform: translate(-30px, 30px) scale(0.9); 
   }
 }
 
-@keyframes premium-spin {
+@keyframes spin {
   from { 
     transform: rotate(0deg); 
   }
