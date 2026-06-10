@@ -4,45 +4,43 @@
 
 @layer base {
   :root {
-    /* Base Luxury Colors */
     --alabaster: #fdfdfb;
     --alabaster-dim: #f4f6f0;
     --alabaster-dark: #ebedf3;
-    
-    /* Solidified Text Contrast Variables to fix visibility issues */
-    --text-main: #111D15;
-    --text-muted: #2D4B39;
-    --olive-stripe: rgba(61, 97, 74, 0.03);
-    --olive-glow: rgba(115, 131, 74, 0.06);
+    --text-main: #0f1612;
+    --text-muted: #2c4535;
+    --olive-stripe: rgba(34, 54, 42, 0.04);
+    --olive-glow: rgba(115, 131, 74, 0.08);
   }
 
   body {
     background-color: var(--alabaster) !important;
     color: var(--text-main) !important;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    
-    /* Advanced Typographic Antialiasing Engines */
     -webkit-font-smoothing: antialiased !important;
     -moz-osx-font-smoothing: grayscale !important;
     text-rendering: optimizeLegibility !important;
-    
     overflow-x: hidden;
     letter-spacing: -0.01em;
   }
 
-  /* Force absolute contrast correction for global inputs, headings, and details */
   h1, h2, h3, h4, h5, h6 {
     color: var(--text-main) !important;
     font-weight: 800 !important;
     letter-spacing: -0.025em;
   }
 
-  p, span, td, th, label, input, select, textarea {
+  p, span, td, th, label, input, select, textarea, button {
+    color: inherit;
     -webkit-font-smoothing: antialiased !important;
     -moz-osx-font-smoothing: grayscale !important;
   }
 
-  /* High contrast tracking selections */
+  th {
+    color: var(--text-muted) !important;
+    font-weight: 700 !important;
+  }
+
   ::selection {
     background-color: #d5dbb5;
     color: #171c0e;
@@ -50,7 +48,6 @@
 }
 
 @layer components {
-  /* Unified Backdrops */
   .bg-alabaster {
     background-color: var(--alabaster) !important;
   }
@@ -59,7 +56,6 @@
     background-color: var(--alabaster-dim) !important;
   }
 
-  /* Sophisticated Luxury Subtle Geometric Stripes */
   .bg-striped-olive {
     background-image: repeating-linear-gradient(
       45deg,
@@ -71,17 +67,15 @@
     background-size: 200% 200%;
   }
 
-  /* Premium High-Contrast Legibility Glassmorphism */
   .glass-light {
-    background-color: rgba(253, 253, 251, 0.85) !important;
+    background-color: rgba(253, 253, 251, 0.92) !important;
     backdrop-filter: blur(20px) saturate(190%) !important;
     -webkit-backdrop-filter: blur(20px) saturate(190%) !important;
-    border: 1px solid rgba(45, 75, 57, 0.15) !important;
-    box-shadow: 0 10px 40px -10px rgba(17, 29, 21, 0.04),
-                inset 0 1px 1px 0 rgba(255, 255, 255, 0.8) !important;
+    border: 1px solid rgba(34, 54, 42, 0.18) !important;
+    box-shadow: 0 10px 40px -10px rgba(15, 22, 18, 0.06),
+                inset 0 1px 1px 0 rgba(255, 255, 255, 0.9) !important;
   }
 
-  /* Hardware-Accelerated Performance Fluid Orbs */
   .fluid-blob {
     position: absolute;
     width: 700px;
@@ -97,7 +91,6 @@
     backface-visibility: hidden;
   }
 
-  /* Accelerated Animation Hooks */
   .animate-fluid-drift {
     animation: fluid-drift 28s infinite ease-in-out;
     transform-style: preserve-3d;
@@ -107,7 +100,6 @@
     animation: premium-spin 16s linear infinite;
   }
 
-  /* Premium Scrollbar Configuration */
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -118,16 +110,15 @@
   }
   
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(45, 75, 57, 0.2);
+    background: rgba(34, 54, 42, 0.25);
     border-radius: 99px;
   }
   
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(45, 75, 57, 0.4);
+    background: rgba(34, 54, 42, 0.45);
   }
 }
 
-/* Fluid Keyframes Utilizing GPU Subpixel Layering */
 @keyframes fluid-drift {
   0%, 100% { 
     transform: translate3d(0, 0, 0) scale(1); 
