@@ -2,65 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --olive-stripe: rgba(128, 128, 0, 0.06);
-  --alabaster: #FDFDFB;
-}
-
-body {
-  background-color: var(--alabaster);
-  color: #1A1C18;
-  overflow-x: hidden;
-}
-
-@layer components {
-  .bg-alabaster {
-    background-color: var(--alabaster);
+@layer base {
+  :root {
+    
+    --color-primary: #044332; 
+    --color-primary-hover: #033225;
+    
+    --color-accent: #D4AF37;
+    
+    --color-offwhite-bg: #FBFBFA;
+    --color-offwhite-surface: #F4F4F0;
+    
+    --color-text-main: #1C2321;
+    --color-text-muted: #535C5A;
   }
 
-  .bg-striped-olive {
-    background-image: repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 20px,
-      var(--olive-stripe) 20px,
-      var(--olive-stripe) 40px
-    );
-    background-size: 100% 100%;
-  }
-
-  .glass-light {
-    @apply bg-white/70 backdrop-blur-xl border border-olive-500/10;
-  }
-
-  .fluid-blob {
-    @apply absolute w-[600px] h-[600px] rounded-full blur-[100px] pointer-events-none;
-    background: radial-gradient(circle, rgba(128, 128, 0, 0.12) 0%, transparent 70%);
-    z-index: 0;
-  }
-
-  .animate-fluid-drift {
-    animation: fluid-drift 22s infinite ease-in-out;
-  }
-}
-
-@keyframes fluid-drift {
-  0%, 100% { 
-    transform: translate(0, 0) scale(1); 
-  }
-  33% { 
-    transform: translate(40px, -60px) scale(1.15); 
-  }
-  66% { 
-    transform: translate(-30px, 30px) scale(0.9); 
-  }
-}
-
-@keyframes spin {
-  from { 
-    transform: rotate(0deg); 
-  }
-  to { 
-    transform: rotate(360deg); 
+  body {
+    background-color: var(--color-offwhite-bg);
+    color: var(--color-text-main);
+    font-family: inherit;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 }
