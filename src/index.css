@@ -3,39 +3,39 @@
 @tailwind utilities;
 
 :root {
-  /* The deep olive green matched from your image */
-  --army-olive: #4A582D; 
-  /* Adjusted for a clean, highly legible white on the dark green */
-  --alabaster-light: #FDFDFB; 
+  --olive-stripe: rgba(74, 91, 46, 0.06);
+  --alabaster: #4A5B2E;
 }
 
 body {
-  /* Swapped background to the deep olive */
-  background-color: var(--army-olive);
-  /* Flipped text to light color so it's readable against the dark olive */
-  color: var(--alabaster-light);
+  background-color: var(--alabaster);
+  color: #FDFDFB;
   overflow-x: hidden;
 }
 
 @layer components {
   .bg-alabaster {
-    background-color: var(--alabaster-light);
+    background-color: var(--alabaster);
   }
 
-  /* Modified to render the solid olive color from your image */
   .bg-striped-olive {
-    background-color: var(--army-olive);
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 20px,
+      var(--olive-stripe) 20px,
+      var(--olive-stripe) 40px
+    );
+    background-size: 100% 100%;
   }
 
-  /* Adjusted glassmorphism to look sleek over a dark green backdrop */
   .glass-light {
-    @apply bg-black/20 backdrop-blur-xl border border-white/10 text-white;
+    @apply bg-white/10 backdrop-blur-xl border border-white/10;
   }
 
-  /* Updated the decorative ambient blob to glow subtly using a white/light overlay */
   .fluid-blob {
     @apply absolute w-[600px] h-[600px] rounded-full blur-[100px] pointer-events-none;
-    background: radial-gradient(circle, rgba(253, 253, 251, 0.08) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
     z-index: 0;
   }
 
