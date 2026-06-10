@@ -1,66 +1,29 @@
+/** @type {import('tailwindcss').Config} */
 export default {
-  darkMode: "class",
-  content: ["./index.html", "./src*.{js,jsx}"],
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
   theme: {
     extend: {
       colors: {
-
-        olive: {
-          50: '#f5f6f2',
-          100: '#e6e9db',
-          200: '#ced4b7',
-          300: '#acb68d',
-          400: '#808d64', // Core signature tone
-          500: '#66724d',
-          600: '#4f593b',
-          700: '#3b432c',
-          800: '#282d1e',
-          900: '#171a12',
-          950: '#0b0d09',
+        brand: {
+          primary: "var(--color-primary)",
+          "primary-hover": "var(--color-primary-hover)",
+          accent: "var(--color-accent)",
+          text: "var(--color-text-main)",
+          muted: "var(--color-text-muted)",
         },
-        alabaster: '#fdfdfb',
-        
-
-        emerald: {
-          50: '#f5f6f2', 100: '#e6e9db', 200: '#ced4b7', 300: '#acb68d', 400: '#808d64',
-          500: '#808d64', 600: '#66724d', 700: '#4f593b', 800: '#3b432c', 900: '#282d1e', 950: '#171a12'
-        },
-        green: {
-          50: '#f5f6f2', 100: '#e6e9db', 200: '#ced4b7', 300: '#acb68d', 400: '#808d64',
-          500: '#808d64', 600: '#66724d', 700: '#4f593b', 800: '#3b432c', 900: '#282d1e', 950: '#171a12'
-        },
-        indigo: {
-          50: '#f5f6f2', 100: '#e6e9db', 200: '#ced4b7', 300: '#acb68d', 400: '#808d64',
-          500: '#808d64', 600: '#66724d', 700: '#4f593b', 800: '#3b432c', 900: '#282d1e', 950: '#171a12'
-        },
-        blue: {
-          50: '#f5f6f2', 100: '#e6e9db', 200: '#ced4b7', 300: '#acb68d', 400: '#808d64',
-          500: '#808d64', 600: '#66724d', 700: '#4f593b', 800: '#3b432c', 900: '#282d1e', 950: '#171a12'
-        },
-        purple: {
-          50: '#f5f6f2', 100: '#e6e9db', 200: '#ced4b7', 300: '#acb68d', 400: '#808d64',
-          500: '#808d64', 600: '#66724d', 700: '#4f593b', 800: '#3b432c', 900: '#282d1e', 950: '#171a12'
-        },
-        cyan: {
-          50: '#f5f6f2', 100: '#e6e9db', 200: '#ced4b7', 300: '#acb68d', 400: '#808d64',
-          500: '#808d64', 600: '#66724d', 700: '#4f593b', 800: '#3b432c', 900: '#282d1e', 950: '#171a12'
-        },
-        teal: {
-          50: '#f5f6f2', 100: '#e6e9db', 200: '#ced4b7', 300: '#acb68d', 400: '#808d64',
-          500: '#808d64', 600: '#66724d', 700: '#4f593b', 800: '#3b432c', 900: '#282d1e', 950: '#171a12'
+        offwhite: {
+          bg: "var(--color-offwhite-bg)",
+          surface: "var(--color-offwhite-surface)",
         }
       },
-      animation: {
-        'fluid-drift': 'fluid-drift 20s ease-in-out infinite',
-      },
-      keyframes: {
-        'fluid-drift': {
-          '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
-          '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
-          '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
-        }
+      backgroundColor: {
+        global: "var(--color-offwhite-bg)",
+        surface: "var(--color-offwhite-surface)",
       }
     },
   },
   plugins: [],
-};
+}
