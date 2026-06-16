@@ -77,21 +77,23 @@ export default function Home() {
     loadHomeData();
   }, []);
 
-  // Dynamic Lookup for Real Uploaded Flagship Hardware Assets
-  const featuredProducts = useMemo(() => {
+  // Rigorous Deep Pattern Matching for Your Real Uploaded Product Graphics
+  const flagshipShowcase = useMemo(() => {
+    // Dynamic scan targeting Anritvox 360 Android Player (SKU: BHU-58)
     const androidUnit = data.products.find(p => 
-      p.name?.toLowerCase().includes('360') || 
-      p.name?.toLowerCase().includes('android') || 
-      p.name?.toLowerCase().includes('player')
-    ) || data.products[0];
+      p.sku?.toUpperCase() === 'BHU-58' || 
+      p.name?.toLowerCase().includes('bhu-58') ||
+      p.name?.toLowerCase().includes('360 degree')
+    ) || data.products.find(p => p.name?.toLowerCase().includes('360')) || data.products[0];
 
-    const basstubeUnit = data.products.find(p => 
-      p.name?.toLowerCase().includes('basstube') || 
-      p.name?.toLowerCase().includes('subwoofer') || 
-      p.name?.toLowerCase().includes('inch')
-    ) || data.products[1] || data.products[0];
+    // Dynamic scan targeting Mid range AV-P2810 (Cleanest sound ever)
+    const audioUnit = data.products.find(p => 
+      p.name?.toLowerCase().includes('p2810') || 
+      p.name?.toLowerCase().includes('av-p2810') ||
+      p.name?.toLowerCase().includes('cleanest sound')
+    ) || data.products.find(p => p.name?.toLowerCase().includes('mid range')) || data.products[1] || data.products[0];
 
-    return { android: androidUnit, basstube: basstubeUnit };
+    return { android: androidUnit, audio: audioUnit };
   }, [data.products]);
 
   // Filter Computation Context
@@ -128,106 +130,125 @@ export default function Home() {
   return (
     <div className="bg-[#fcfcfc] text-neutral-900 selection:bg-[#3a533a] selection:text-white overflow-hidden font-sans">
       
-      {/* 20X ENHANCED INSPIRED HERO OVERHAUL: REMOVED LAPTOP, INSERTED REAL UPLOADED PRODUCTS */}
-      <section className="relative bg-gradient-to-br from-neutral-900 via-[#1e2b1e] to-neutral-950 text-white py-20 lg:py-32 overflow-hidden border-b border-neutral-800">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(58,83,58,0.25),transparent_60%)]" />
+      {/* LUXURIOUS AUTO HERO GRID: INCORPORATING REAL PRODUCT IMAGES IN TOP BANNERS */}
+      <section className="relative bg-gradient-to-br from-neutral-950 via-[#1d2b1d] to-neutral-900 text-white py-20 lg:py-28 overflow-hidden border-b border-neutral-800">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(58,83,58,0.2),transparent_60%)]" />
         <div className="absolute inset-0 opacity-[0.02] bg-[linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)] bg-[size:32px_32px]" />
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
             
-            {/* Left Content Matrix Column */}
-            <div className="lg:col-span-6 space-y-6 text-left">
+            {/* Left Strategic Copy Column */}
+            <div className="lg:col-span-5 space-y-6 text-left">
               <motion.div 
                 initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-black uppercase tracking-widest"
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest"
               >
-                <Sparkles className="h-3.5 w-3.5 animate-spin" style={{ animationDuration: '6s' }} /> Next-Gen Hardware Deployments
+                <Sparkles className="h-3 w-3 animate-pulse" /> Custom Automotive Tuning
               </motion.div>
               
               <motion.h1 
                 initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
-                className="text-4xl sm:text-6xl font-black uppercase tracking-tighter leading-[0.95] text-white"
+                className="text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-[0.95] text-white"
               >
-                Smart Driving <br />
-                <span className="bg-gradient-to-r from-emerald-400 via-[#7ca17c] to-white bg-clip-text text-transparent">Connected Future</span>
+                Elite Performance <br />
+                <span className="bg-gradient-to-r from-emerald-400 via-[#8fae8f] to-white bg-clip-text text-transparent">Audio & Screens</span>
               </motion.h1>
               
               <motion.p 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-                className="text-neutral-400 text-sm sm:text-base font-medium max-w-xl leading-relaxed"
+                className="text-neutral-400 text-xs sm:text-sm font-bold leading-relaxed max-w-md"
               >
-                Seamless integration panel replacements fitted directly with Apple CarPlay and responsive Android configurations. Experience professional sound staging alongside beautiful dynamic panoramic monitoring.
+                Upgrade your drive with premium components designed for absolute accuracy. Zero wire slicing, full steering mapping, and perfect flush integration arrays.
               </motion.p>
               
               <motion.div 
                 initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                className="flex flex-wrap items-center gap-4 pt-4"
+                className="flex flex-wrap items-center gap-4 pt-2"
               >
-                <Link to="/shop" className="px-8 py-4 bg-[#3a533a] hover:bg-[#466746] text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-[#3a533a]/20 flex items-center gap-2 group">
-                  Explore Hardware <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                <Link to="/shop" className="px-7 py-3.5 bg-[#3a533a] hover:bg-[#466746] text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-md flex items-center gap-2 group">
+                  View Catalog <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
-                <a href="#flagship-spotlight" className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all border border-white/10 flex items-center gap-2">
-                  <PlayCircle size={14} /> Live Showcase
+                <a href="#active-catalog" className="px-7 py-3.5 bg-white/5 hover:bg-white/10 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all border border-white/10">
+                  Browse All Upgrades
                 </a>
               </motion.div>
             </div>
 
-            {/* Right Product Grid Matrix Column - Displays Genuine Inventory (Replaced Laptop) */}
-            <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4 relative">
-              <div className="absolute inset-0 bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none" />
+            {/* Right Side Double Spotlight Frame - Displays Real Uploaded Product Graphic Files */}
+            <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6">
               
-              {/* Product Frame A: 360 Android Unit Slot */}
-              {featuredProducts.android && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2, type: "spring" }}
-                  className="bg-neutral-900/80 backdrop-blur-md border border-neutral-800 rounded-3xl p-5 hover:border-[#3a533a]/60 transition-all group flex flex-col justify-between"
-                >
-                  <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-white/5 flex items-center justify-center p-4 mb-4">
-                    <img 
-                      src={getImageUrl(featuredProducts.android.images?.[0] || featuredProducts.android.image_url)} 
-                      alt={featuredProducts.android.name}
-                      className="max-h-[85%] max-w-[85%] object-contain group-hover:scale-105 transition-transform duration-500"
-                      onError={(e) => { e.target.onerror = null; e.target.src = '/logo.jpeg'; }}
-                    />
+              {/* Box 1: Real Anritvox 360 Android Player (SKU: BHU-58) Image */}
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}
+                className="bg-neutral-900/90 backdrop-blur-md border border-neutral-800 rounded-3xl p-5 hover:border-[#3a533a]/80 transition-all group flex flex-col justify-between shadow-xl"
+              >
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-[9px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20">
+                      SKU: BHU-58
+                    </span>
+                    <Cpu className="h-4 w-4 text-emerald-400" />
                   </div>
-                  <div>
-                    <h3 className="text-xs font-black uppercase tracking-wider text-neutral-200 line-clamp-1">{featuredProducts.android.name}</h3>
-                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-neutral-800/60">
-                      <span className="text-xs font-bold text-emerald-400 font-mono">₹{featuredProducts.android.price}</span>
-                      <Link to={`/product/${featuredProducts.android.slug || featuredProducts.android.id || featuredProducts.android._id}`} className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-white flex items-center gap-1">
-                        View Unit <ArrowUpRight size={10} />
-                      </Link>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
+                  <h2 className="text-sm font-black uppercase tracking-tight text-white line-clamp-2">
+                    Anritvox 360° Android Player
+                  </h2>
+                </div>
 
-              {/* Product Frame B: 10 Inch Bass Subwoofer Tube Slot */}
-              {featuredProducts.basstube && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3, type: "spring" }}
-                  className="bg-neutral-900/80 backdrop-blur-md border border-neutral-800 rounded-3xl p-5 hover:border-[#3a533a]/60 transition-all group flex flex-col justify-between sm:translate-y-8"
-                >
-                  <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-white/5 flex items-center justify-center p-4 mb-4">
-                    <img 
-                      src={getImageUrl(featuredProducts.basstube.images?.[0] || featuredProducts.basstube.image_url)} 
-                      alt={featuredProducts.basstube.name}
-                      className="max-h-[85%] max-w-[85%] object-contain group-hover:scale-105 transition-transform duration-500"
-                      onError={(e) => { e.target.onerror = null; e.target.src = '/logo.jpeg'; }}
-                    />
+                <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-white flex items-center justify-center p-3 my-4 border border-neutral-800">
+                  <img 
+                    src={getImageUrl(flagshipShowcase.android?.images?.[0] || flagshipShowcase.android?.image_url)} 
+                    alt="Anritvox 360 Android Player Real Image"
+                    className="max-h-full max-w-full object-contain transform group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => { e.target.onerror = null; e.target.src = '/logo.jpeg'; }}
+                  />
+                </div>
+
+                <div className="flex justify-between items-center pt-2 border-t border-neutral-800/60">
+                  <span className="text-xs font-black text-emerald-400 font-mono">₹{flagshipShowcase.android?.price || 'Market Rate'}</span>
+                  {flagshipShowcase.android?._id && (
+                    <Link to={`/product/${flagshipShowcase.android.slug || flagshipShowcase.android.id || flagshipShowcase.android._id}`} className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-white flex items-center gap-1 transition-colors">
+                      Configure System <ArrowUpRight size={11} />
+                    </Link>
+                  )}
+                </div>
+              </motion.div>
+
+              {/* Box 2: Real Mid range AV-P2810 (Cleanest Sound Ever) Image */}
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 }}
+                className="bg-neutral-900/90 backdrop-blur-md border border-neutral-800 rounded-3xl p-5 hover:border-[#3a533a]/80 transition-all group flex flex-col justify-between shadow-xl sm:translate-y-6"
+              >
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-[9px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20">
+                      Model: AV-P2810
+                    </span>
+                    <Disc3 className="h-4 w-4 text-emerald-400" />
                   </div>
-                  <div>
-                    <h3 className="text-xs font-black uppercase tracking-wider text-neutral-200 line-clamp-1">{featuredProducts.basstube.name}</h3>
-                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-neutral-800/60">
-                      <span className="text-xs font-bold text-emerald-400 font-mono">₹{featuredProducts.basstube.price}</span>
-                      <Link to={`/product/${featuredProducts.basstube.slug || featuredProducts.basstube.id || featuredProducts.basstube._id}`} className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-white flex items-center gap-1">
-                        View Unit <ArrowUpRight size={10} />
-                      </Link>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
+                  <h2 className="text-sm font-black uppercase tracking-tight text-white line-clamp-2">
+                    Mid Range Acoustic System
+                  </h2>
+                </div>
+
+                <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-white flex items-center justify-center p-3 my-4 border border-neutral-800">
+                  <img 
+                    src={getImageUrl(flagshipShowcase.audio?.images?.[0] || flagshipShowcase.audio?.image_url)} 
+                    alt="Mid Range AV-P2810 Cleanest Sound Real Image"
+                    className="max-h-full max-w-full object-contain transform group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => { e.target.onerror = null; e.target.src = '/logo.jpeg'; }}
+                  />
+                </div>
+
+                <div className="flex justify-between items-center pt-2 border-t border-neutral-800/60">
+                  <span className="text-xs font-black text-emerald-400 font-mono">₹{flagshipShowcase.audio?.price || 'Market Rate'}</span>
+                  {flagshipShowcase.audio?._id && (
+                    <Link to={`/product/${flagshipShowcase.audio.slug || flagshipShowcase.audio.id || flagshipShowcase.audio._id}`} className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-white flex items-center gap-1 transition-colors">
+                      Audiodesign <ArrowUpRight size={11} />
+                    </Link>
+                  )}
+                </div>
+              </motion.div>
 
             </div>
 
@@ -235,7 +256,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Trust Parameter Segment */}
+      {/* Corporate Trust Matrix Parameters Segment */}
       <section className="py-16 border-b border-neutral-200/60 bg-gradient-to-b from-[#fcfcfc] to-[#f4f7f4] relative z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
@@ -262,17 +283,17 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Flagship Product Showcase - Mid-Range 360 Android Screen & 10 Inch Basstube */}
-      <section id="flagship-spotlight" className="py-24 bg-white border-b border-neutral-100">
+      {/* Flagship Detailed Spotlight Section */}
+      <section className="py-24 bg-white border-b border-neutral-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="text-center max-w-3xl mx-auto mb-20">
             <span className="text-[#3a533a] text-xs font-black uppercase tracking-[0.4em] block mb-3">Signature Custom Upgrades</span>
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-neutral-950 uppercase">
-              Flagship Hardware <span className="bg-gradient-to-r from-[#3a533a] to-[#253525] bg-clip-text text-transparent">Spotlight</span>
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-neutral-950 uppercase">
+              Premium Hardware <span className="bg-gradient-to-r from-[#3a533a] to-[#253525] bg-clip-text text-transparent">Spotlight</span>
             </h2>
-            <p className="text-neutral-500 text-sm font-semibold mt-2 max-w-xl mx-auto">
-              Explore the pinnacle of automotive integration. Tailored hardware engineered for precise sound staging and crystal clear navigation tracking.
+            <p className="text-neutral-500 text-xs font-bold mt-2 max-w-xl mx-auto uppercase tracking-wide">
+              Engineering pristine audio response metrics and crystal clear multi-camera tracking layers.
             </p>
           </div>
 
@@ -286,14 +307,14 @@ export default function Home() {
               <div>
                 <div className="flex justify-between items-start mb-6">
                   <span className="bg-[#3a533a] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
-                    Best Seller
+                    360° Vision
                   </span>
                   <Cpu className="h-6 w-6 text-[#3a533a]" />
                 </div>
                 <h3 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-neutral-900 mb-2">
-                  Mid-Range 360° Android
+                  Anritvox 360 Player
                 </h3>
-                <p className="text-[#3a533a] text-xs font-black uppercase tracking-widest mb-4">Intelligent IPS Control Matrix</p>
+                <p className="text-[#3a533a] text-xs font-black uppercase tracking-widest mb-4">SKU: BHU-58 Intelligent Control</p>
                 <p className="text-neutral-600 font-medium text-sm leading-relaxed mb-6">
                   Experience full panoramic field tracking. Features real-time multi-camera seamless stitching, fluid dynamic performance processing, wireless smartphone sync, and full high-definition display resolution parameters.
                 </p>
@@ -313,12 +334,11 @@ export default function Home() {
 
               <div className="relative aspect-video rounded-2xl overflow-hidden border border-neutral-200 bg-white p-4 flex items-center justify-center mb-8">
                 <img 
-                  src="/logo.jpeg" 
-                  alt="Mid-Range 360 Android System View" 
+                  src={getImageUrl(flagshipShowcase.android?.images?.[0] || flagshipShowcase.android?.image_url)} 
+                  alt="Anritvox 360 Player Panel Image" 
                   className="max-h-[90%] max-w-[90%] object-contain transform group-hover:scale-105 transition-transform duration-700"
                   onError={(e) => { e.target.onerror = null; e.target.src = '/logo.jpeg'; }}
                 />
-                <div className="absolute inset-0 bg-[#3a533a]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               </div>
 
               <Link to="/shop?search=360" className="w-full bg-neutral-950 hover:bg-[#3a533a] text-white font-black text-xs uppercase tracking-widest py-4 rounded-xl text-center transition-colors shadow-sm">
@@ -326,7 +346,7 @@ export default function Home() {
               </Link>
             </motion.div>
 
-            {/* Spotlight Unit 2: 10 Inch Basstube Subwoofer */}
+            {/* Spotlight Unit 2: Mid Range AV-P2810 Subwoofer/Audio System */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}
               className="bg-[#f4f7f4] rounded-[2.5rem] border border-neutral-200/60 p-8 sm:p-10 flex flex-col justify-between shadow-sm hover:shadow-lg transition-all group relative overflow-hidden"
@@ -334,23 +354,23 @@ export default function Home() {
               <div>
                 <div className="flex justify-between items-start mb-6">
                   <span className="bg-[#3a533a] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
-                    Acoustic Elite
+                    Acoustic Core
                   </span>
                   <Disc3 className="h-6 w-6 text-[#3a533a]" />
                 </div>
                 <h3 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-neutral-900 mb-2">
-                  10-Inch Premium Basstube
+                  AV-P2810 Sound Stage
                 </h3>
-                <p className="text-[#3a533a] text-xs font-black uppercase tracking-widest mb-4">High-Excursion Low Frequency Core</p>
+                <p className="text-[#3a533a] text-xs font-black uppercase tracking-widest mb-4">Cleanest Sound Ever Engineering</p>
                 <p className="text-neutral-600 font-medium text-sm leading-relaxed mb-6">
-                  Engineered to deliver intense low-end response. Built inside a high-density, low-resonance tubular enclosure with custom port venting to output clean deep sub-bass frequencies without audio clip degradation.
+                  Engineered to deliver intense low-end response and unmatched mid-frequency accuracy. Built inside a low-resonance tuned cabinet array to output pristine sound metrics without thermal distortion clips.
                 </p>
                 
                 <ul className="space-y-2.5 mb-8">
                   {[
-                    "Integrated Class-D Performance Audio Power Amplifier Matrix",
-                    "Heavy-Duty Reinforced High-Excursion Cone Conductor Surround",
-                    "Optimized Airflow Venting Port for Reduced Compression Distortion"
+                    "Integrated Premium Performance Component Driver Matrix",
+                    "Heavy-Duty Reinforced High-Excursion Voice Coil Surrounds",
+                    "Optimized Power Distribution Terminals For Crisp Clarity"
                   ].map((f, i) => (
                     <li key={i} className="flex items-center gap-2 text-xs font-bold text-neutral-700">
                       <CheckCircle2 className="h-4 w-4 text-[#3a533a] shrink-0" /> {f}
@@ -361,16 +381,15 @@ export default function Home() {
 
               <div className="relative aspect-video rounded-2xl overflow-hidden border border-neutral-200 bg-white p-4 flex items-center justify-center mb-8">
                 <img 
-                  src="/logo.jpeg" 
-                  alt="10 Inch Basstube Enclosure Profile" 
+                  src={getImageUrl(flagshipShowcase.audio?.images?.[0] || flagshipShowcase.audio?.image_url)} 
+                  alt="AV-P2810 Pure Audio Profile" 
                   className="max-h-[90%] max-w-[90%] object-contain transform group-hover:scale-105 transition-transform duration-700"
                   onError={(e) => { e.target.onerror = null; e.target.src = '/logo.jpeg'; }}
                 />
-                <div className="absolute inset-0 bg-[#3a533a]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               </div>
 
-              <Link to="/shop?search=basstube" className="w-full bg-neutral-950 hover:bg-[#3a533a] text-white font-black text-xs uppercase tracking-widest py-4 rounded-xl text-center transition-colors shadow-sm">
-                Explore Sound Systems
+              <Link to="/shop?search=p2810" className="w-full bg-neutral-950 hover:bg-[#3a533a] text-white font-black text-xs uppercase tracking-widest py-4 rounded-xl text-center transition-colors shadow-sm">
+                Explore Audio Component
               </Link>
             </motion.div>
 
@@ -380,13 +399,13 @@ export default function Home() {
       </section>
 
       {/* Premium Infinite Collection Catalog Showcase Hub */}
-      <section className="py-24 bg-[#fcfcfc] relative">
+      <section id="active-catalog" className="py-24 bg-[#fcfcfc] relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="flex flex-col md:flex-items-end md:flex-row md:justify-between mb-16 gap-6">
             <div className="max-w-xl">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#f4f7f4] text-[#3a533a] mb-4 border border-neutral-200">
-                <Sparkles className="h-3 w-3" /> Matte Complete Hardware
+                <Sparkles className="h-3 w-3" /> Complete Hardware Lines
               </span>
               <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-neutral-950 uppercase">
                 Explore Entire <span className="text-[#3a533a]">Upgrade Catalog</span>
@@ -396,7 +415,7 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Micro-Interaction Interactive Category Filtering Engine */}
+            {/* Category Filter Tabs */}
             <div className="flex flex-wrap gap-2 items-center">
               {['all', 'audio', 'lighting', 'dashboard'].map((tab) => (
                 <button
