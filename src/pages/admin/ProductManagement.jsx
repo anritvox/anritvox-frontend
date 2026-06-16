@@ -12,7 +12,7 @@ import { useToast } from '../../context/ToastContext';
 const INITIAL_PRODUCT_STATE = {
   name: '', slug: '', description: '', price: '', discount_price: '', quantity: '', category_id: '', 
   video_urls: '', model_3d_url: '', warranty_period: 12, status: 'active',
-  meta_title: '', meta_description: '', tags: '', sku: '', brand: 'Bhumivera'
+  meta_title: '', meta_description: '', tags: '', sku: '', brand: 'Anritvox'
 };
 
 const INITIAL_SERIAL_STATE = {
@@ -164,7 +164,7 @@ export default function ProductManagement() {
         quantity: product.quantity || product.stock || '', category_id: product.category_id || '',
         video_urls: product.video_urls || '', model_3d_url: product.model_3d_url || '',
         warranty_period: product.warranty_period || 12, status: product.status || 'active',
-        meta_title: product.meta_title || '', meta_description: product.meta_description || '', tags: product.tags || '', sku: product.sku || '', brand: product.brand || 'Bhumivera'
+        meta_title: product.meta_title || '', meta_description: product.meta_description || '', tags: product.tags || '', sku: product.sku || '', brand: product.brand || 'Anritvox'
       });
       
       let parsedSpecs = [];
@@ -565,7 +565,7 @@ export default function ProductManagement() {
                     </div>
                     <div className="col-span-2 md:col-span-1">
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Brand</label>
-                      <input value={form.brand} onChange={e=>setForm({...form, brand:e.target.value})} className="w-full bg-slate-900 border border-slate-700 focus:border-emerald-500 rounded-xl p-3 text-sm text-white outline-none transition-colors" placeholder="Bhumivera" />
+                      <input value={form.brand} onChange={e=>setForm({...form, brand:e.target.value})} className="w-full bg-slate-900 border border-slate-700 focus:border-emerald-500 rounded-xl p-3 text-sm text-white outline-none transition-colors" placeholder="Anritvox" />
                     </div>
                     <div className="col-span-2 md:col-span-1">
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Search Tags (Comma separated)</label>
@@ -573,7 +573,7 @@ export default function ProductManagement() {
                     </div>
                     <div className="col-span-2">
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Meta Title (Google Search Head)</label>
-                      <input value={form.meta_title} onChange={e=>setForm({...form, meta_title:e.target.value})} className="w-full bg-slate-900 border border-slate-700 focus:border-emerald-500 rounded-xl p-3 text-sm text-white outline-none transition-colors" placeholder="Buy Bhumivera Natural Serum Online" />
+                      <input value={form.meta_title} onChange={e=>setForm({...form, meta_title:e.target.value})} className="w-full bg-slate-900 border border-slate-700 focus:border-emerald-500 rounded-xl p-3 text-sm text-white outline-none transition-colors" placeholder="Buy Anritvox Natural Serum Online" />
                     </div>
                     <div className="col-span-2">
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Meta Description (Snippet)</label>

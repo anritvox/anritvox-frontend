@@ -50,7 +50,7 @@ export default function Navbar() {
             <Link to="/" className="flex items-center gap-2 flex-shrink-0">
               <img 
                 src="/logo.jpeg" 
-                alt="Bhumivera Logo" 
+                alt="Anritvox Logo" 
                 className="h-10 sm:h-12 w-auto object-contain rounded-md block"
                 style={{ display: 'block', visibility: 'visible', opacity: 1 }}
                 onError={(e) => {
@@ -60,7 +60,7 @@ export default function Navbar() {
                 }}
               />
               <span className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 bg-gradient-to-r from-emerald-600 to-teal-700 bg-clip-text text-transparent">
-                Bhumivera
+                Anritvox
               </span>
             </Link>
           </div>
