@@ -6,7 +6,7 @@ import {
   ShoppingBag, Award, Headphones, PlayCircle,
   Sparkles, CheckCircle2, Flame, Heart, Eye,
   ArrowUpRight, Users, ShoppingCart, ShieldCheck,
-  RefreshCw, Layers, Leaf, ChevronDown, HelpCircle
+  RefreshCw, Layers, Sliders, ChevronDown, HelpCircle
 } from 'lucide-react';
 import { 
   products as productsApi, 
@@ -55,7 +55,6 @@ export default function Home() {
   const [data, setData] = useState({ products: [], categories: [] });
   const [selectedTab, setSelectedTab] = useState('all');
   const [activeFaq, setActiveFaq] = useState(null);
-  const [quickViewProduct, setQuickViewProduct] = useState(null);
 
   useEffect(() => {
     const loadHomeData = async () => {
@@ -110,7 +109,7 @@ export default function Home() {
   ); 
 
   return (
-    <div className="bg-white text-slate-900 selection:bg-emerald-600 selection:text-white overflow-hidden font-sans">
+    <div className="bg-white text-slate-900 selection:bg-emerald-700 selection:text-white overflow-hidden font-sans">
       
       {/* Dynamic Immersive Hero Section Layer */}
       <HeroSection />
@@ -123,13 +122,13 @@ export default function Home() {
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12"
           >
             {[
-              { icon: <ShieldCheck className="h-6 w-6 text-emerald-600" />, label: "Guaranteed Fitment", sub: "100% Secure Compatibility Matching" },
-              { icon: <Truck className="h-6 w-6 text-emerald-600" />, label: "Express Distribution", sub: "Fully Insured Tier-1 Logistics Fleet" },
-              { icon: <Award className="h-6 w-6 text-emerald-600" />, label: "Enterprise Warranty", sub: "Direct Zero-Cost RMA Replacements" },
-              { icon: <Headphones className="h-6 w-6 text-emerald-600" />, label: "24/7 Priority Support", sub: "Immediate Technical Assistance Response" }
+              { icon: <ShieldCheck className="h-6 w-6 text-emerald-700" />, label: "Guaranteed Fitment", sub: "100% Secure OEM Compatibility Matching" },
+              { icon: <Truck className="h-6 w-6 text-emerald-700" />, label: "Express Distribution", sub: "Fully Insured Safe Pan India Shipping Support" },
+              { icon: <Award className="h-6 w-6 text-emerald-700" />, label: "Enterprise Warranty", sub: "Direct Simple Replacement Diagnostics" },
+              { icon: <Headphones className="h-6 w-6 text-emerald-700" />, label: "24/7 Priority Hotline", sub: "Direct Technical Configuration Support" }
             ].map((item, i) => (
-              <motion.div variants={fadeUp} key={i} className="flex items-start gap-4 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
-                <div className="p-3 bg-emerald-50 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-300">
+              <motion.div variants={fadeUp} key={i} className="flex items-start gap-4 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
+                <div className="p-3 bg-emerald-50 rounded-xl group-hover:bg-emerald-700 group-hover:text-white transition-colors duration-300">
                   {item.icon}
                 </div>
                 <div>
@@ -148,30 +147,30 @@ export default function Home() {
           
           <div className="flex flex-col md:flex-items-end md:flex-row md:justify-between mb-16 gap-6">
             <div className="max-w-xl">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 mb-4">
-                <Sparkles className="h-3 w-3" /> Curated Luxury Formulas
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 mb-4">
+                <Sparkles className="h-3 w-3" /> Elite Performance Upgrades
               </span>
               <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-gray-900 uppercase">
-                Explore Our <span className="bg-gradient-to-r from-emerald-600 to-teal-700 bg-clip-text text-transparent">Premium Showcase</span>
+                Explore Our <span className="bg-gradient-to-r from-emerald-700 to-emerald-900 bg-clip-text text-transparent">Premium Collection</span>
               </h2>
               <p className="text-gray-500 text-sm mt-3 font-medium leading-relaxed">
-                Scientifically audited, botanical-rich skincare designed to bridge natural cellular hydration with rigorous environmental performance validation.
+                Precision engineered infotainment units, audiophile-grade studio acoustic profiles, high-intensity ambient modules, and complete dashboard electronic custom solutions.
               </p>
             </div>
 
             {/* Micro-Interaction Interactive Category Filtering Engine */}
             <div className="flex flex-wrap gap-2 items-center">
-              {['all', 'soap', 'facewash', 'serum'].map((tab) => (
+              {['all', 'audio', 'lighting', 'dashboard'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setSelectedTab(tab)}
                   className={`px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-300 ${
                     selectedTab === tab 
-                      ? 'bg-gray-900 text-white shadow-lg shadow-gray-900/10' 
+                      ? 'bg-emerald-800 text-white shadow-lg shadow-emerald-800/10' 
                       : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200/60'
                   }`}
                 >
-                  {tab === 'all' ? 'All Formulations' : `${tab}s`}
+                  {tab === 'all' ? 'All Accessories' : `${tab} Upgrades`}
                 </button>
               ))}
             </div>
@@ -190,11 +189,11 @@ export default function Home() {
                   variants={scaleIn}
                   exit={{ opacity: 0, scale: 0.9 }}
                   key={prod.id || prod._id} 
-                  className="group flex flex-col bg-white border border-gray-100 hover:border-emerald-500/30 rounded-[2rem] p-4 shadow-sm hover:shadow-xl transition-all duration-500 relative bg-gradient-to-b from-white to-gray-50/30"
+                  className="group flex flex-col bg-white border border-gray-100 hover:border-emerald-700/30 rounded-[2rem] p-4 shadow-sm hover:shadow-xl transition-all duration-500 relative bg-gradient-to-b from-white to-gray-50/30"
                 >
                   {prod.discount_price && (
                     <span className="absolute top-6 left-6 z-10 bg-rose-600 text-white font-black text-[10px] uppercase tracking-widest px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
-                      <Flame className="h-3 w-3" /> Save Now
+                      <Flame className="h-3 w-3" /> Hot Offer
                     </span>
                   )}
 
@@ -216,7 +215,7 @@ export default function Home() {
                     <div className="mb-4">
                       <div className="flex justify-between items-start gap-2 mb-2">
                         <Link to={`/product/${prod.slug || prod.id || prod._id}`} className="flex-1">
-                          <h4 className="text-sm font-black tracking-tight text-gray-900 group-hover:text-emerald-600 transition-colors line-clamp-2 uppercase min-h-[2.5rem]">
+                          <h4 className="text-sm font-black tracking-tight text-gray-900 group-hover:text-emerald-700 transition-colors line-clamp-2 uppercase min-h-[2.5rem]">
                             {prod.name}
                           </h4>
                         </Link>
@@ -237,9 +236,9 @@ export default function Home() {
                     <div className="flex items-center gap-2 mt-2">
                       <button 
                         onClick={(e) => handleQuickAdd(e, prod.id || prod._id)}
-                        className="flex-1 bg-gray-900 hover:bg-emerald-600 text-white font-black text-[11px] uppercase tracking-widest py-3.5 rounded-xl transition-all duration-300 flex justify-center items-center gap-2 shadow-sm hover:shadow-lg hover:shadow-emerald-600/10 transform active:scale-95"
+                        className="flex-1 bg-gray-900 hover:bg-emerald-700 text-white font-black text-[11px] uppercase tracking-widest py-3.5 rounded-xl transition-all duration-300 flex justify-center items-center gap-2 shadow-sm hover:shadow-lg hover:shadow-emerald-700/10 transform active:scale-95"
                       >
-                        <ShoppingBag size={14} /> Add To Bag
+                        <ShoppingBag size={14} /> Add To Cart
                       </button>
                     </div>
                   </div>
@@ -251,30 +250,30 @@ export default function Home() {
       </section>
 
       {/* Interactive Live Metrics Counter Dashboard */}
-      <section className="py-20 bg-gray-900 text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.12),transparent_50%)]" />
+      <section className="py-20 bg-emerald-950 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.06),transparent_50%)]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 text-center">
             {[
-              { label: "Active Global Users", val: "450K+", sub: "Verified Subscriptions" },
-              { label: "Formulations Completed", val: "120+", sub: "Laboratory Audited" },
-              { label: "Premium Retail Hubs", val: "180+", sub: "Pan India Presence" },
-              { label: "Positive Reviews", val: "99.4%", sub: "Top Customer Satisfaction" }
+              { label: "Satisfied Drivers", val: "45K+", sub: "Verified Installations" },
+              { label: "Premium Hardware Lines", val: "320+", sub: "Direct OEM Sourced" },
+              { label: "Custom Setup Hubs", val: "150+", sub: "Pan India Support Networks" },
+              { label: "Acoustic Accuracy", val: "99.8%", sub: "DTS Digital Tuning Parity" }
             ].map((stat, idx) => (
               <motion.div 
                 key={idx} initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: idx * 0.1 }}
-                className="p-6 border border-gray-800 rounded-2xl bg-gray-950/40 backdrop-blur-sm hover:border-emerald-500/30 transition-colors"
+                className="p-6 border border-emerald-900 rounded-2xl bg-emerald-900/20 backdrop-blur-sm hover:border-emerald-500/30 transition-colors"
               >
                 <div className="text-2xl sm:text-4xl font-black text-emerald-400 font-mono tracking-tight">{stat.val}</div>
                 <div className="text-xs font-bold text-gray-200 mt-2 uppercase tracking-wider">{stat.label}</div>
-                <div className="text-[10px] font-medium text-gray-500 mt-1 uppercase">{stat.sub}</div>
+                <div className="text-[10px] font-medium text-emerald-300 mt-1 uppercase">{stat.sub}</div>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Brand Ethos & Advanced Organic Laboratory Matrix */}
+      {/* Brand Ethos & Advanced Engineering Laboratory Matrix */}
       <section className="py-24 bg-gradient-to-b from-gray-50 to-white relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -283,52 +282,52 @@ export default function Home() {
               initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
               className="space-y-6"
             >
-              <span className="text-emerald-600 text-xs font-black uppercase tracking-[0.3em] block">Sustainably Extracted Formulas</span>
+              <span className="text-emerald-700 text-xs font-black uppercase tracking-[0.3em] block">Automotive Electronics Architecture</span>
               <h3 className="text-3xl sm:text-5xl font-black tracking-tight text-gray-900 uppercase leading-none">
-                Pure Botanicals. <br />
-                <span className="bg-gradient-to-r from-emerald-600 to-teal-700 bg-clip-text text-transparent">Zero Compromises.</span>
+                Pure Acoustics. <br />
+                <span className="bg-gradient-to-r from-emerald-700 to-emerald-900 bg-clip-text text-transparent">Zero Cable Splice.</span>
               </h3>
               <p className="text-gray-600 font-medium text-sm leading-relaxed">
-                Every batch undergoes multi-spectrum high-performance liquid chromatography testing to guarantee chemical stability, antioxidant preservation, and standard compliance.
+                Every audio kit and infotainment configuration features explicit plug-and-play harness integration to retain full factory wire warranty compatibility without risk.
               </p>
               
               <div className="space-y-4 pt-2">
                 {[
-                  "100% Biodegradable Cold-Processed Extraction Methods",
-                  "Free from Synthetic Phthalates, Sulfates, and Parabens",
-                  "Ethically Wildcrafted Local Ingredient Sourcing Pipelines"
+                  "True OEM Socket Match Harness Connections (Zero Splice)",
+                  "High-Intensity Heat Shielding Core Cables & Gold Terminals",
+                  "Perfect Flush Dashboard Trim Panels with Factory Textured Matching"
                 ].map((feature, index) => (
                   <div key={index} className="flex items-center gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+                    <CheckCircle2 className="h-5 w-5 text-emerald-700 shrink-0" />
                     <span className="text-sm font-bold text-gray-800">{feature}</span>
                   </div>
                 ))}
               </div>
 
               <div className="pt-4">
-                <Link to="/shop" className="inline-flex items-center gap-2 text-xs font-black tracking-widest uppercase bg-gray-900 hover:bg-emerald-600 text-white px-8 py-4 rounded-xl transition-all shadow-md">
-                  Browse All Batches <ArrowUpRight size={14} />
+                <Link to="/shop" className="inline-flex items-center gap-2 text-xs font-black tracking-widest uppercase bg-gray-900 hover:bg-emerald-700 text-white px-8 py-4 rounded-xl transition-all shadow-md">
+                  Explore Configurations <ArrowUpRight size={14} />
                 </Link>
               </div>
             </motion.div>
 
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.7 }}
-              className="relative aspect-video lg:aspect-square bg-gradient-to-br from-emerald-800 to-teal-950 rounded-[3rem] p-12 overflow-hidden flex flex-col justify-between shadow-2xl shadow-emerald-950/20 group"
+              className="relative aspect-video lg:aspect-square bg-gradient-to-br from-emerald-900 to-slate-950 rounded-[3rem] p-12 overflow-hidden flex flex-col justify-between shadow-2xl shadow-emerald-950/20 group"
             >
-              <div className="absolute inset-0 bg-cover bg-center opacity-20 mix-blend-overlay transform group-hover:scale-105 transition-transform duration-1000" style={{ backgroundImage: "url('/logo.jpeg')" }} />
+              <div className="absolute inset-0 bg-cover bg-center opacity-15 mix-blend-overlay transform group-hover:scale-105 transition-transform duration-1000" style={{ backgroundImage: "url('/logo.jpeg')" }} />
               <div className="absolute top-12 right-12 bg-white/10 backdrop-blur-md p-4 rounded-full border border-white/20">
-                <Leaf className="h-8 w-8 text-emerald-400 animate-pulse" />
+                <Sliders className="h-8 w-8 text-emerald-400 animate-pulse" />
               </div>
               <div className="relative z-10 text-white mt-auto max-w-sm">
                 <div className="flex items-center gap-1 text-amber-400 mb-2">
                   {[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
                 </div>
                 <blockquote className="text-lg font-bold italic leading-snug">
-                  "The cellular response to Bhumivera's face wash formulation matches clinical synthetic alternatives without lipid barrier stripped degradation."
+                  "The frequency alignment of the signature dashboard staging components outputs pristine resolution across complex acoustic environments."
                 </blockquote>
-                <cite className="block text-xs uppercase tracking-widest font-black text-emerald-300 mt-4 not-italic">
-                  — Dr. Ananya Mehta, Consultant Dermatologist
+                <cite className="block text-xs uppercase tracking-widest font-black text-emerald-400 mt-4 not-italic">
+                  — Custom Audio Installer Federation
                 </cite>
               </div>
             </motion.div>
@@ -343,17 +342,17 @@ export default function Home() {
           
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h3 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-gray-900">
-              Need Formulation Assistance?
+              Need Setup Assistance?
             </h3>
             <p className="text-gray-500 text-sm mt-3 font-medium leading-relaxed">
-              Our lab specialists compile step-by-step documentation, application breakdowns, and temperature parameter guides for maximum cellular integration efficiency.
+              Our support team provides step-by-step video setup instructions for installing premium music panels, routing power cables, and updating custom firmware safely.
             </p>
             <div className="mt-6">
               <a 
                 href="https://youtube.com" target="_blank" rel="noreferrer" 
-                className="inline-flex items-center gap-2.5 px-8 py-4 bg-emerald-600 text-white font-black uppercase tracking-widest text-xs rounded-xl hover:bg-gray-900 transition-all shadow-md shadow-emerald-600/10"
+                className="inline-flex items-center gap-2.5 px-8 py-4 bg-emerald-700 text-white font-black uppercase tracking-widest text-xs rounded-xl hover:bg-gray-900 transition-all shadow-md shadow-emerald-700/10"
               >
-                <PlayCircle size={16} /> View Video Resource Guides
+                <PlayCircle size={16} /> View Video Setup Guides
               </a>
             </div>
           </div>
@@ -361,21 +360,21 @@ export default function Home() {
           {/* Interactive Accordion FAQ Engine */}
           <div className="bg-white rounded-3xl border border-gray-200/80 p-4 sm:p-8 space-y-4 shadow-sm">
             <div className="flex items-center gap-2 mb-6 px-2">
-              <HelpCircle className="h-5 w-5 text-emerald-600" />
+              <HelpCircle className="h-5 w-5 text-emerald-700" />
               <h4 className="text-sm font-black uppercase tracking-wider text-gray-900">Frequently Explored Mechanics</h4>
             </div>
 
             {[
-              { q: "How does cold-process compounding lock in botanical purity?", a: "By entirely bypassing high-heat pasteurization, delicate enzymes, lipids, and plant volatile chemical compounds remain structured without thermal fragmentation." },
-              { q: "Are these active ingredients compatible with sensitive skin frameworks?", a: "Yes, our skin compatibility vectors maintain an isomorphic pH level of 5.5, eliminating standard lipid boundary irritation spikes entirely." },
-              { q: "What is the certified production shelf-life of each formulation batch?", a: "Due to our signature stabilization systems, products maintain complete molecular efficacy profiles for up to 12 months after batch configuration." }
+              { q: "Will installing these stereo panels void my vehicle electrical warranty?", a: "No. All premium kits utilize native plug-and-play coupler harness components, requiring completely zero wire slicing or permanent modifications." },
+              { q: "Are the infotainment systems fully compatible with standard steering controls?", a: "Yes, our systems include pre-mapped physical CANBUS decoding modules to maintain complete steering wheel control wheel integration natively." },
+              { q: "What premium cooling architecture is used to prevent unit overheating?", a: "Each device features a heavy-duty continuous extrusion aluminum heatsink alongside a multi-speed silent internal exhaust fan matrix." }
             ].map((faq, fIdx) => (
               <div key={fIdx} className="border-b border-gray-100 last:border-none pb-4 last:pb-0">
                 <button
                   onClick={() => setActiveFaq(activeFaq === fIdx ? null : fIdx)}
                   className="w-full flex items-center justify-between text-left py-3 group"
                 >
-                  <span className="text-sm font-bold text-gray-800 group-hover:text-emerald-600 transition-colors">{faq.q}</span>
+                  <span className="text-sm font-bold text-gray-800 group-hover:text-emerald-700 transition-colors">{faq.q}</span>
                   <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-300 transform ${activeFaq === fIdx ? 'rotate-180' : ''}`} />
                 </button>
                 <AnimatePresence initial={false}>
