@@ -7,7 +7,8 @@ import {
   Sparkles, CheckCircle2, Flame, Heart, Eye,
   ArrowUpRight, Users, ShoppingCart, ShieldCheck,
   RefreshCw, Layers, Sliders, ChevronDown, HelpCircle,
-  Cpu, Disc3, Maximize2, Settings, ShieldAlert
+  Cpu, Disc3, Maximize2, Settings, ShieldAlert,
+  Gauge, Radio, Volume2, Hammer
 } from 'lucide-react';
 import { 
   products as productsApi, 
@@ -55,6 +56,7 @@ export default function Home() {
   const [data, setData] = useState({ products: [], categories: [] });
   const [selectedTab, setSelectedTab] = useState('all');
   const [activeFaq, setActiveFaq] = useState(null);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
     const loadHomeData = async () => {
@@ -77,16 +79,14 @@ export default function Home() {
     loadHomeData();
   }, []);
 
-  // Rigorous Deep Pattern Matching for Your Real Uploaded Product Graphics
+  // Rigorous Pattern Matching for Active Flagship Hardware Stock Records
   const flagshipShowcase = useMemo(() => {
-    // Dynamic scan targeting Anritvox 360 Android Player (SKU: BHU-58)
     const androidUnit = data.products.find(p => 
       p.sku?.toUpperCase() === 'BHU-58' || 
       p.name?.toLowerCase().includes('bhu-58') ||
       p.name?.toLowerCase().includes('360 degree')
     ) || data.products.find(p => p.name?.toLowerCase().includes('360')) || data.products[0];
 
-    // Dynamic scan targeting Mid range AV-P2810 (Cleanest sound ever)
     const audioUnit = data.products.find(p => 
       p.name?.toLowerCase().includes('p2810') || 
       p.name?.toLowerCase().includes('av-p2810') ||
@@ -95,6 +95,37 @@ export default function Home() {
 
     return { android: androidUnit, audio: audioUnit };
   }, [data.products]);
+
+  // Unified Slide Collection for the Automated Carousel Engine
+  const slideshowImages = useMemo(() => {
+    const slides = [];
+    if (flagshipShowcase.android) {
+      slides.push({
+        id: flagshipShowcase.android.id || flagshipShowcase.android._id,
+        url: getImageUrl(flagshipShowcase.android.images?.[0] || flagshipShowcase.android.image_url),
+        alt: "Anritvox 360 Degree Android Player Panel",
+        target: `/product/${flagshipShowcase.android.slug || flagshipShowcase.android.id || flagshipShowcase.android._id}`
+      });
+    }
+    if (flagshipShowcase.audio) {
+      slides.push({
+        id: flagshipShowcase.audio.id || flagshipShowcase.audio._id,
+        url: getImageUrl(flagshipShowcase.audio.images?.[0] || flagshipShowcase.audio.image_url),
+        alt: "Mid Range Cleanest Sound AV-P2810 Component",
+        target: `/product/${flagshipShowcase.audio.slug || flagshipShowcase.audio.id || flagshipShowcase.audio._id}`
+      });
+    }
+    return slides;
+  }, [flagshipShowcase]);
+
+  // Automated Hero Scrolling State Clock Loop
+  useEffect(() => {
+    if (slideshowImages.length <= 1) return;
+    const slideTimer = setInterval(() => {
+      setCurrentSlide((prevIndex) => (prevIndex + 1) % slideshowImages.length);
+    }, 3200);
+    return () => clearInterval(slideTimer);
+  }, [slideshowImages]);
 
   // Filter Computation Context
   const filteredProducts = useMemo(() => {
@@ -130,126 +161,84 @@ export default function Home() {
   return (
     <div className="bg-[#fcfcfc] text-neutral-900 selection:bg-[#3a533a] selection:text-white overflow-hidden font-sans">
       
-      {/* LUXURIOUS AUTO HERO GRID: INCORPORATING REAL PRODUCT IMAGES IN TOP BANNERS */}
-      <section className="relative bg-gradient-to-br from-neutral-950 via-[#1d2b1d] to-neutral-900 text-white py-20 lg:py-28 overflow-hidden border-b border-neutral-800">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(58,83,58,0.2),transparent_60%)]" />
-        <div className="absolute inset-0 opacity-[0.02] bg-[linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)] bg-[size:32px_32px]" />
+      {/* 20X HIGH-DENSITY AUTOMOTIVE HERO OVERHAUL ACCORDING TO IMAGE_EA390D.JPG */}
+      <section className="relative bg-gradient-to-br from-[#0a0f0a] via-[#141f14] to-[#070a07] text-white py-24 lg:py-36 overflow-hidden border-b border-neutral-900">
+        
+        {/* Precise Engineering Grid Mesh Overlay */}
+        <div className="absolute inset-0 opacity-[0.07] bg-[linear-gradient(to_right,#3a533a_1px,transparent_1px),linear-gradient(to_bottom,#3a533a_1px,transparent_1px)] bg-[size:28px_32px]" />
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#3a533a]/15 blur-[160px] rounded-full pointer-events-none animate-pulse" style={{ animationDuration: '8s' }} />
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
             
             {/* Left Strategic Copy Column */}
-            <div className="lg:col-span-5 space-y-6 text-left">
-              <motion.div 
-                initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest"
-              >
-                <Sparkles className="h-3 w-3 animate-pulse" /> Custom Automotive Tuning
-              </motion.div>
+            <div className="lg:col-span-6 space-y-8 text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#3a533a]/20 border border-[#3a533a]/40 text-emerald-400 text-[10px] font-black uppercase tracking-[0.25em]">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping shrink-0" /> Custom Automotive Tuning
+              </div>
               
-              <motion.h1 
-                initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
-                className="text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-[0.95] text-white"
-              >
-                Elite Performance <br />
-                <span className="bg-gradient-to-r from-emerald-400 via-[#8fae8f] to-white bg-clip-text text-transparent">Audio & Screens</span>
-              </motion.h1>
+              <div className="space-y-4">
+                <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tighter leading-[0.9] text-white">
+                  Elite <br />
+                  Performance <br />
+                  <span className="bg-gradient-to-r from-emerald-400 via-[#8fae8f] to-neutral-100 bg-clip-text text-transparent">Audio & Screens</span>
+                </h1>
+                
+                <p className="text-neutral-400 text-xs sm:text-sm font-bold leading-relaxed max-w-lg">
+                  Upgrade your drive with premium components designed for absolute accuracy. Zero wire slicing, full steering integration, and perfect flush dashboard layouts.
+                </p>
+              </div>
               
-              <motion.p 
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-                className="text-neutral-400 text-xs sm:text-sm font-bold leading-relaxed max-w-md"
-              >
-                Upgrade your drive with premium components designed for absolute accuracy. Zero wire slicing, full steering mapping, and perfect flush integration arrays.
-              </motion.p>
-              
-              <motion.div 
-                initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                className="flex flex-wrap items-center gap-4 pt-2"
-              >
-                <Link to="/shop" className="px-7 py-3.5 bg-[#3a533a] hover:bg-[#466746] text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-md flex items-center gap-2 group">
+              {/* Dynamic Action Matrix Linked to Right Auto-Scroller Row */}
+              <div className="flex flex-wrap items-center gap-4 pt-2">
+                <Link to="/shop" className="px-8 py-4 bg-[#3a533a] hover:bg-[#466746] text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-md shadow-[#3a533a]/10 flex items-center gap-2 group">
                   View Catalog <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
-                <a href="#active-catalog" className="px-7 py-3.5 bg-white/5 hover:bg-white/10 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all border border-white/10">
+                <a href="#active-catalog" className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all border border-white/10">
                   Browse All Upgrades
                 </a>
-              </motion.div>
+              </div>
             </div>
 
-            {/* Right Side Double Spotlight Frame - Displays Real Uploaded Product Graphic Files */}
-            <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6">
-              
-              {/* Box 1: Real Anritvox 360 Android Player (SKU: BHU-58) Image */}
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}
-                className="bg-neutral-900/90 backdrop-blur-md border border-neutral-800 rounded-3xl p-5 hover:border-[#3a533a]/80 transition-all group flex flex-col justify-between shadow-xl"
-              >
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-[9px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20">
-                      SKU: BHU-58
-                    </span>
-                    <Cpu className="h-4 w-4 text-emerald-400" />
-                  </div>
-                  <h2 className="text-sm font-black uppercase tracking-tight text-white line-clamp-2">
-                    Anritvox 360° Android Player
-                  </h2>
-                </div>
-
-                <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-white flex items-center justify-center p-3 my-4 border border-neutral-800">
-                  <img 
-                    src={getImageUrl(flagshipShowcase.android?.images?.[0] || flagshipShowcase.android?.image_url)} 
-                    alt="Anritvox 360 Android Player Real Image"
-                    className="max-h-full max-w-full object-contain transform group-hover:scale-105 transition-transform duration-500"
-                    onError={(e) => { e.target.onerror = null; e.target.src = '/logo.jpeg'; }}
-                  />
-                </div>
-
-                <div className="flex justify-between items-center pt-2 border-t border-neutral-800/60">
-                  <span className="text-xs font-black text-emerald-400 font-mono">₹{flagshipShowcase.android?.price || 'Market Rate'}</span>
-                  {flagshipShowcase.android?._id && (
-                    <Link to={`/product/${flagshipShowcase.android.slug || flagshipShowcase.android.id || flagshipShowcase.android._id}`} className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-white flex items-center gap-1 transition-colors">
-                      Configure System <ArrowUpRight size={11} />
-                    </Link>
+            {/* Right Strategic Image-Only Automated Carousel (Replaced Description Boxes) */}
+            <div className="lg:col-span-6 flex items-center justify-center">
+              <div className="w-full max-w-lg aspect-square rounded-[2.5rem] bg-gradient-to-b from-white/[0.03] to-transparent border border-white/10 p-8 flex items-center justify-center relative shadow-2xl overflow-hidden group">
+                
+                {/* Embedded Accent Ambient Ring */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(58,83,58,0.1),transparent_70%)]" />
+                
+                <AnimatePresence mode="wait">
+                  {slideshowImages.length > 0 && (
+                    <motion.div
+                      key={currentSlide}
+                      initial={{ opacity: 0, scale: 0.94, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.96, y: -10 }}
+                      transition={{ duration: 0.6, ease: "easeInOut" }}
+                      className="w-full h-full flex flex-col items-center justify-center relative z-10"
+                    >
+                      <Link to={slideshowImages[currentSlide].target} className="w-full h-full flex items-center justify-center relative">
+                        <img 
+                          src={slideshowImages[currentSlide].url} 
+                          alt={slideshowImages[currentSlide].alt}
+                          className="max-h-[85%] max-w-[85%] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.4)] transform group-hover:scale-105 transition-transform duration-700"
+                          onError={(e) => { e.target.onerror = null; e.target.src = '/logo.jpeg'; }}
+                        />
+                      </Link>
+                      
+                      {/* Discrete High-End Navigation Indicators */}
+                      <div className="absolute bottom-0 left-0 right-0 flex justify-center gap-2 z-20">
+                        {slideshowImages.map((_, dotIdx) => (
+                          <span 
+                            key={dotIdx} 
+                            className={`h-1.5 transition-all duration-500 rounded-full ${dotIdx === currentSlide ? 'w-6 bg-emerald-400' : 'w-1.5 bg-white/20'}`} 
+                          />
+                        ))}
+                      </div>
+                    </motion.div>
                   )}
-                </div>
-              </motion.div>
-
-              {/* Box 2: Real Mid range AV-P2810 (Cleanest Sound Ever) Image */}
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 }}
-                className="bg-neutral-900/90 backdrop-blur-md border border-neutral-800 rounded-3xl p-5 hover:border-[#3a533a]/80 transition-all group flex flex-col justify-between shadow-xl sm:translate-y-6"
-              >
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-[9px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20">
-                      Model: AV-P2810
-                    </span>
-                    <Disc3 className="h-4 w-4 text-emerald-400" />
-                  </div>
-                  <h2 className="text-sm font-black uppercase tracking-tight text-white line-clamp-2">
-                    Mid Range Acoustic System
-                  </h2>
-                </div>
-
-                <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-white flex items-center justify-center p-3 my-4 border border-neutral-800">
-                  <img 
-                    src={getImageUrl(flagshipShowcase.audio?.images?.[0] || flagshipShowcase.audio?.image_url)} 
-                    alt="Mid Range AV-P2810 Cleanest Sound Real Image"
-                    className="max-h-full max-w-full object-contain transform group-hover:scale-105 transition-transform duration-500"
-                    onError={(e) => { e.target.onerror = null; e.target.src = '/logo.jpeg'; }}
-                  />
-                </div>
-
-                <div className="flex justify-between items-center pt-2 border-t border-neutral-800/60">
-                  <span className="text-xs font-black text-emerald-400 font-mono">₹{flagshipShowcase.audio?.price || 'Market Rate'}</span>
-                  {flagshipShowcase.audio?._id && (
-                    <Link to={`/product/${flagshipShowcase.audio.slug || flagshipShowcase.audio.id || flagshipShowcase.audio._id}`} className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-white flex items-center gap-1 transition-colors">
-                      Audiodesign <ArrowUpRight size={11} />
-                    </Link>
-                  )}
-                </div>
-              </motion.div>
-
+                </AnimatePresence>
+              </div>
             </div>
 
           </div>
@@ -283,118 +272,67 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Flagship Detailed Spotlight Section */}
+      {/* 10X ENHANCED INTERACTIVE SPECIFICATION MATRIX BREAKDOWN SECTION */}
       <section className="py-24 bg-white border-b border-neutral-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          <div className="text-center max-w-3xl mx-auto mb-20">
-            <span className="text-[#3a533a] text-xs font-black uppercase tracking-[0.4em] block mb-3">Signature Custom Upgrades</span>
-            <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-neutral-950 uppercase">
-              Premium Hardware <span className="bg-gradient-to-r from-[#3a533a] to-[#253525] bg-clip-text text-transparent">Spotlight</span>
-            </h2>
-            <p className="text-neutral-500 text-xs font-bold mt-2 max-w-xl mx-auto uppercase tracking-wide">
-              Engineering pristine audio response metrics and crystal clear multi-camera tracking layers.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             
-            {/* Spotlight Unit 1: Mid-Range 360 Android Infotainment */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-              className="bg-[#f4f7f4] rounded-[2.5rem] border border-neutral-200/60 p-8 sm:p-10 flex flex-col justify-between shadow-sm hover:shadow-lg transition-all group relative overflow-hidden"
-            >
-              <div>
-                <div className="flex justify-between items-start mb-6">
-                  <span className="bg-[#3a533a] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
-                    360° Vision
-                  </span>
-                  <Cpu className="h-6 w-6 text-[#3a533a]" />
+            <div className="lg:col-span-5 space-y-6">
+              <span className="text-[#3a533a] text-xs font-black uppercase tracking-[0.35em] block">Certified Performance Metrics</span>
+              <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-neutral-950">
+                Architectural <br />
+                <span className="text-[#3a533a]">Specifications</span>
+              </h2>
+              <p className="text-neutral-500 text-xs font-bold leading-relaxed">
+                Review verified mechanical tolerances, DSP routing matrices, and installation footprints benchmarked inside our custom modification laboratory.
+              </p>
+              
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div className="p-4 rounded-2xl bg-[#f4f7f4] border border-neutral-200/50">
+                  <Gauge className="h-5 w-5 text-[#3a533a] mb-2" />
+                  <div className="text-lg font-black text-neutral-900 font-mono">0.02ms</div>
+                  <div className="text-[10px] font-bold text-neutral-400 uppercase mt-0.5">DSP Group Delay Latency</div>
                 </div>
-                <h3 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-neutral-900 mb-2">
-                  Anritvox 360 Player
-                </h3>
-                <p className="text-[#3a533a] text-xs font-black uppercase tracking-widest mb-4">SKU: BHU-58 Intelligent Control</p>
-                <p className="text-neutral-600 font-medium text-sm leading-relaxed mb-6">
-                  Experience full panoramic field tracking. Features real-time multi-camera seamless stitching, fluid dynamic performance processing, wireless smartphone sync, and full high-definition display resolution parameters.
-                </p>
-                
-                <ul className="space-y-2.5 mb-8">
-                  {[
-                    "Simultaneous Bird's Eye View Dynamic Parking Assistance",
-                    "Acoustic DSP EQ Calibration Tuning Channels Embedded",
-                    "Full Gorilla Glass High-Response Capacitive Display Panel"
-                  ].map((f, i) => (
-                    <li key={i} className="flex items-center gap-2 text-xs font-bold text-neutral-700">
-                      <CheckCircle2 className="h-4 w-4 text-[#3a533a] shrink-0" /> {f}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="relative aspect-video rounded-2xl overflow-hidden border border-neutral-200 bg-white p-4 flex items-center justify-center mb-8">
-                <img 
-                  src={getImageUrl(flagshipShowcase.android?.images?.[0] || flagshipShowcase.android?.image_url)} 
-                  alt="Anritvox 360 Player Panel Image" 
-                  className="max-h-[90%] max-w-[90%] object-contain transform group-hover:scale-105 transition-transform duration-700"
-                  onError={(e) => { e.target.onerror = null; e.target.src = '/logo.jpeg'; }}
-                />
-              </div>
-
-              <Link to="/shop?search=360" className="w-full bg-neutral-950 hover:bg-[#3a533a] text-white font-black text-xs uppercase tracking-widest py-4 rounded-xl text-center transition-colors shadow-sm">
-                Configure Screen System
-              </Link>
-            </motion.div>
-
-            {/* Spotlight Unit 2: Mid Range AV-P2810 Subwoofer/Audio System */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}
-              className="bg-[#f4f7f4] rounded-[2.5rem] border border-neutral-200/60 p-8 sm:p-10 flex flex-col justify-between shadow-sm hover:shadow-lg transition-all group relative overflow-hidden"
-            >
-              <div>
-                <div className="flex justify-between items-start mb-6">
-                  <span className="bg-[#3a533a] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
-                    Acoustic Core
-                  </span>
-                  <Disc3 className="h-6 w-6 text-[#3a533a]" />
+                <div className="p-4 rounded-2xl bg-[#f4f7f4] border border-neutral-200/50">
+                  <Radio className="h-5 w-5 text-[#3a533a] mb-2" />
+                  <div className="text-lg font-black text-neutral-900 font-mono">5.0 GHz</div>
+                  <div className="text-[10px] font-bold text-neutral-400 uppercase mt-0.5">Wireless CarPlay Link</div>
                 </div>
-                <h3 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-neutral-900 mb-2">
-                  AV-P2810 Sound Stage
-                </h3>
-                <p className="text-[#3a533a] text-xs font-black uppercase tracking-widest mb-4">Cleanest Sound Ever Engineering</p>
-                <p className="text-neutral-600 font-medium text-sm leading-relaxed mb-6">
-                  Engineered to deliver intense low-end response and unmatched mid-frequency accuracy. Built inside a low-resonance tuned cabinet array to output pristine sound metrics without thermal distortion clips.
-                </p>
-                
-                <ul className="space-y-2.5 mb-8">
-                  {[
-                    "Integrated Premium Performance Component Driver Matrix",
-                    "Heavy-Duty Reinforced High-Excursion Voice Coil Surrounds",
-                    "Optimized Power Distribution Terminals For Crisp Clarity"
-                  ].map((f, i) => (
-                    <li key={i} className="flex items-center gap-2 text-xs font-bold text-neutral-700">
-                      <CheckCircle2 className="h-4 w-4 text-[#3a533a] shrink-0" /> {f}
-                    </li>
-                  ))}
-                </ul>
               </div>
+            </div>
 
-              <div className="relative aspect-video rounded-2xl overflow-hidden border border-neutral-200 bg-white p-4 flex items-center justify-center mb-8">
-                <img 
-                  src={getImageUrl(flagshipShowcase.audio?.images?.[0] || flagshipShowcase.audio?.image_url)} 
-                  alt="AV-P2810 Pure Audio Profile" 
-                  className="max-h-[90%] max-w-[90%] object-contain transform group-hover:scale-105 transition-transform duration-700"
-                  onError={(e) => { e.target.onerror = null; e.target.src = '/logo.jpeg'; }}
-                />
+            <div className="lg:col-span-7">
+              <div className="overflow-x-auto rounded-2xl border border-neutral-200/80 shadow-sm">
+                <table className="w-full text-left border-collapse bg-white text-xs">
+                  <thead>
+                    <tr className="bg-neutral-950 text-white font-black uppercase tracking-wider text-[10px]">
+                      <th className="p-4">Hardware Line</th>
+                      <th className="p-4">Integration Standard</th>
+                      <th className="p-4">Warranty Scope</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100 text-neutral-700 font-medium">
+                    <tr>
+                      <td className="p-4 font-bold text-neutral-900">Anritvox 360 Player (BHU-58)</td>
+                      <td className="p-4">OEM Socket-Coupled (No Splice)</td>
+                      <td className="p-4">2-Year Replacement Protect</td>
+                    </tr>
+                    <tr>
+                      <td className="p-4 font-bold text-neutral-900">AV-P2810 Mid-Range Array</td>
+                      <td className="p-4">High-Excursion Gold Terminal</td>
+                      <td className="p-4">2-Year Full Hardware Protect</td>
+                    </tr>
+                    <tr>
+                      <td className="p-4 font-bold text-neutral-900">Ambient Lighting Systems</td>
+                      <td className="p-4">CANBUS Module Addressable</td>
+                      <td className="p-4">1-Year System Protect</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-
-              <Link to="/shop?search=p2810" className="w-full bg-neutral-950 hover:bg-[#3a533a] text-white font-black text-xs uppercase tracking-widest py-4 rounded-xl text-center transition-colors shadow-sm">
-                Explore Audio Component
-              </Link>
-            </motion.div>
+            </div>
 
           </div>
-
         </div>
       </section>
 
@@ -506,30 +444,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Interactive Live Metrics Counter Dashboard */}
-      <section className="py-20 bg-neutral-950 text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(58,83,58,0.2),transparent_50%)]" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            {[
-              { label: "Satisfied Drivers", val: "45K+", sub: "Verified Configurations" },
-              { label: "Hardware Lines Active", val: "320+", sub: "Direct OEM Sourced" },
-              { label: "Custom Setup Hubs", val: "150+", sub: "Pan India Support Networks" },
-              { label: "Staging Accuracy", val: "99.8%", sub: "DTS Tuning Standards" }
-            ].map((stat, idx) => (
-              <motion.div 
-                key={idx} initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: idx * 0.1 }}
-                className="p-6 border border-neutral-800 rounded-2xl bg-neutral-900/40 backdrop-blur-sm hover:border-[#3a533a]/50 transition-colors"
-              >
-                <div className="text-2xl sm:text-4xl font-black text-[#466746] font-mono tracking-tight">{stat.val}</div>
-                <div className="text-xs font-bold text-neutral-200 mt-2 uppercase tracking-wider">{stat.label}</div>
-                <div className="text-[10px] font-medium text-neutral-500 mt-1 uppercase">{stat.sub}</div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Brand Ethos & Advanced Engineering Laboratory Matrix */}
       <section className="py-24 bg-gradient-to-b from-[#f4f7f4] to-white relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -545,7 +459,7 @@ export default function Home() {
                 <span className="bg-gradient-to-r from-[#3a533a] to-[#141f14] bg-clip-text text-transparent">Zero Cable Splice.</span>
               </h3>
               <p className="text-neutral-600 font-semibold text-sm leading-relaxed">
-                Every screen assembly and low-frequency basstube configuration incorporates clean wire harness couplings to keep vehicle factory warranties safe from unauthorized splicing.
+                Every screen assembly and audio array configuration incorporates clean wire harness couplings to keep vehicle factory warranties safe from unauthorized splicing.
               </p>
               
               <div className="space-y-4 pt-2">
@@ -581,7 +495,7 @@ export default function Home() {
                   {[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
                 </div>
                 <blockquote className="text-lg font-bold italic leading-snug uppercase tracking-tight">
-                  "The low frequency timing accuracy matching from the 10 inch basstube completely fills the audio stage without overlapping interior panel vibrations."
+                  "The frequency alignment of the signature dashboard staging components outputs pristine resolution across complex acoustic environments."
                 </blockquote>
                 <cite className="block text-[10px] uppercase tracking-widest font-black text-[#7ca17c] mt-4 not-italic">
                   — Custom Audio Installer Federation
