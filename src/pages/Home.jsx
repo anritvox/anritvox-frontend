@@ -7,7 +7,7 @@ import {
   Sparkles, CheckCircle2, Flame, Heart, Eye,
   ArrowUpRight, Users, ShoppingCart, ShieldCheck,
   RefreshCw, Layers, Sliders, ChevronDown, HelpCircle,
-  Cpu, Disc, Radio, Disc3, Maximize2
+  Cpu, Disc3, Maximize2, Settings, ShieldAlert
 } from 'lucide-react';
 import { 
   products as productsApi, 
@@ -17,7 +17,6 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
-import HeroSection from '../components/HeroSection'; 
 import { ProductGridSkeleton, SkeletonBlock } from '../components/SkeletonLoader'; 
 
 // Continuous Edge Case Asset Resolution Engine
@@ -78,6 +77,23 @@ export default function Home() {
     loadHomeData();
   }, []);
 
+  // Dynamic Lookup for Real Uploaded Flagship Hardware Assets
+  const featuredProducts = useMemo(() => {
+    const androidUnit = data.products.find(p => 
+      p.name?.toLowerCase().includes('360') || 
+      p.name?.toLowerCase().includes('android') || 
+      p.name?.toLowerCase().includes('player')
+    ) || data.products[0];
+
+    const basstubeUnit = data.products.find(p => 
+      p.name?.toLowerCase().includes('basstube') || 
+      p.name?.toLowerCase().includes('subwoofer') || 
+      p.name?.toLowerCase().includes('inch')
+    ) || data.products[1] || data.products[0];
+
+    return { android: androidUnit, basstube: basstubeUnit };
+  }, [data.products]);
+
   // Filter Computation Context
   const filteredProducts = useMemo(() => {
     if (selectedTab === 'all') return data.products;
@@ -112,11 +128,115 @@ export default function Home() {
   return (
     <div className="bg-[#fcfcfc] text-neutral-900 selection:bg-[#3a533a] selection:text-white overflow-hidden font-sans">
       
-      {/* Dynamic Immersive Hero Section Layer */}
-      <HeroSection />
+      {/* 20X ENHANCED INSPIRED HERO OVERHAUL: REMOVED LAPTOP, INSERTED REAL UPLOADED PRODUCTS */}
+      <section className="relative bg-gradient-to-br from-neutral-900 via-[#1e2b1e] to-neutral-950 text-white py-20 lg:py-32 overflow-hidden border-b border-neutral-800">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(58,83,58,0.25),transparent_60%)]" />
+        <div className="absolute inset-0 opacity-[0.02] bg-[linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)] bg-[size:32px_32px]" />
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+            
+            {/* Left Content Matrix Column */}
+            <div className="lg:col-span-6 space-y-6 text-left">
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-black uppercase tracking-widest"
+              >
+                <Sparkles className="h-3.5 w-3.5 animate-spin" style={{ animationDuration: '6s' }} /> Next-Gen Hardware Deployments
+              </motion.div>
+              
+              <motion.h1 
+                initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
+                className="text-4xl sm:text-6xl font-black uppercase tracking-tighter leading-[0.95] text-white"
+              >
+                Smart Driving <br />
+                <span className="bg-gradient-to-r from-emerald-400 via-[#7ca17c] to-white bg-clip-text text-transparent">Connected Future</span>
+              </motion.h1>
+              
+              <motion.p 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
+                className="text-neutral-400 text-sm sm:text-base font-medium max-w-xl leading-relaxed"
+              >
+                Seamless integration panel replacements fitted directly with Apple CarPlay and responsive Android configurations. Experience professional sound staging alongside beautiful dynamic panoramic monitoring.
+              </motion.p>
+              
+              <motion.div 
+                initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                className="flex flex-wrap items-center gap-4 pt-4"
+              >
+                <Link to="/shop" className="px-8 py-4 bg-[#3a533a] hover:bg-[#466746] text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-[#3a533a]/20 flex items-center gap-2 group">
+                  Explore Hardware <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <a href="#flagship-spotlight" className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all border border-white/10 flex items-center gap-2">
+                  <PlayCircle size={14} /> Live Showcase
+                </a>
+              </motion.div>
+            </div>
 
-      {/* Corporate Trust Matrix - Matte White Layout */}
-      <section className="py-16 border-y border-neutral-200/60 bg-gradient-to-b from-[#fcfcfc] to-[#f4f7f4] relative z-20">
+            {/* Right Product Grid Matrix Column - Displays Genuine Inventory (Replaced Laptop) */}
+            <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4 relative">
+              <div className="absolute inset-0 bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none" />
+              
+              {/* Product Frame A: 360 Android Unit Slot */}
+              {featuredProducts.android && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2, type: "spring" }}
+                  className="bg-neutral-900/80 backdrop-blur-md border border-neutral-800 rounded-3xl p-5 hover:border-[#3a533a]/60 transition-all group flex flex-col justify-between"
+                >
+                  <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-white/5 flex items-center justify-center p-4 mb-4">
+                    <img 
+                      src={getImageUrl(featuredProducts.android.images?.[0] || featuredProducts.android.image_url)} 
+                      alt={featuredProducts.android.name}
+                      className="max-h-[85%] max-w-[85%] object-contain group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => { e.target.onerror = null; e.target.src = '/logo.jpeg'; }}
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-black uppercase tracking-wider text-neutral-200 line-clamp-1">{featuredProducts.android.name}</h3>
+                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-neutral-800/60">
+                      <span className="text-xs font-bold text-emerald-400 font-mono">₹{featuredProducts.android.price}</span>
+                      <Link to={`/product/${featuredProducts.android.slug || featuredProducts.android.id || featuredProducts.android._id}`} className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-white flex items-center gap-1">
+                        View Unit <ArrowUpRight size={10} />
+                      </Link>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Product Frame B: 10 Inch Bass Subwoofer Tube Slot */}
+              {featuredProducts.basstube && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3, type: "spring" }}
+                  className="bg-neutral-900/80 backdrop-blur-md border border-neutral-800 rounded-3xl p-5 hover:border-[#3a533a]/60 transition-all group flex flex-col justify-between sm:translate-y-8"
+                >
+                  <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-white/5 flex items-center justify-center p-4 mb-4">
+                    <img 
+                      src={getImageUrl(featuredProducts.basstube.images?.[0] || featuredProducts.basstube.image_url)} 
+                      alt={featuredProducts.basstube.name}
+                      className="max-h-[85%] max-w-[85%] object-contain group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => { e.target.onerror = null; e.target.src = '/logo.jpeg'; }}
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-black uppercase tracking-wider text-neutral-200 line-clamp-1">{featuredProducts.basstube.name}</h3>
+                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-neutral-800/60">
+                      <span className="text-xs font-bold text-emerald-400 font-mono">₹{featuredProducts.basstube.price}</span>
+                      <Link to={`/product/${featuredProducts.basstube.slug || featuredProducts.basstube.id || featuredProducts.basstube._id}`} className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-white flex items-center gap-1">
+                        View Unit <ArrowUpRight size={10} />
+                      </Link>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Parameter Segment */}
+      <section className="py-16 border-b border-neutral-200/60 bg-gradient-to-b from-[#fcfcfc] to-[#f4f7f4] relative z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
             variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-100px" }}
@@ -143,7 +263,7 @@ export default function Home() {
       </section>
 
       {/* Flagship Product Showcase - Mid-Range 360 Android Screen & 10 Inch Basstube */}
-      <section className="py-24 bg-white border-b border-neutral-100">
+      <section id="flagship-spotlight" className="py-24 bg-white border-b border-neutral-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="text-center max-w-3xl mx-auto mb-20">
@@ -345,7 +465,7 @@ export default function Home() {
                       <div className="flex items-center gap-2.5 mt-2">
                         <span className="text-base font-black text-neutral-900 font-mono">₹{prod.discount_price || prod.price}</span>
                         {prod.discount_price && (
-                          <span className="text-xs text-neutral-400 line-through font-mono">₹{prod.price}</span>
+                          <span className="text-xs text-gray-400 line-through font-mono">₹{prod.price}</span>
                         )}
                       </div>
                     </div>
@@ -441,7 +561,7 @@ export default function Home() {
                 <div className="flex items-center gap-1 text-amber-400 mb-2">
                   {[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
                 </div>
-                <blockquote className="text-base font-black italic leading-snug uppercase tracking-tight">
+                <blockquote className="text-lg font-bold italic leading-snug uppercase tracking-tight">
                   "The low frequency timing accuracy matching from the 10 inch basstube completely fills the audio stage without overlapping interior panel vibrations."
                 </blockquote>
                 <cite className="block text-[10px] uppercase tracking-widest font-black text-[#7ca17c] mt-4 not-italic">
