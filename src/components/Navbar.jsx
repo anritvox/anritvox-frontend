@@ -12,20 +12,20 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
-import { CartContext } from '../context/CartContext';
+import { useCart } from '../context/CartContext';
 import { WishlistContext } from '../context/WishlistContext';
 import MiniCart from './MiniCart';
 
 export default function Navbar() {
   const { user, logout } = useContext(AuthContext);
-  const { cart, setIsCartOpen } = useContext(CartContext);
+  const { cartItems, setIsCartOpen } = useCart();
   const { wishlist } = useContext(WishlistContext);
   const navigate = useNavigate();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const cartItemsCount = cart?.items?.reduce((acc, item) => acc + item.quantity, 0) || 0;
+  const cartItemsCount = cartItems?.reduce((acc, item) => acc + (item.quantity || 0), 0) || 0;
   const wishlistCount = wishlist?.products?.length || 0;
 
   const handleSearchSubmit = (e) => {
@@ -52,7 +52,7 @@ export default function Navbar() {
               <img 
                 src="/logo.jpeg" 
                 alt="Bhumivera Logo" 
-                className="h-10 sm:h-12 w-auto object-contain rounded-md"
+                className="h-10 sm:h-12 w-auto object-contain rounded-md block"
               />
               <span className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 bg-gradient-to-r from-emerald-600 to-teal-700 bg-clip-text text-transparent">
                 Bhumivera
