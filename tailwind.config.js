@@ -1,66 +1,41 @@
 export default {
-  darkMode: "class",
-  content: ["./index.html", "./src*.{js,jsx}"],
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+    "./src/components/**/*.{js,ts,jsx,tsx}",
+    "./src/pages/**/*.{js,ts,jsx,tsx}",
+    "./src/pages/admin/**/*.{js,ts,jsx,tsx}"
+  ],
   theme: {
     extend: {
       colors: {
-
         olive: {
-          50: '#f5f6f2',
-          100: '#e6e9db',
-          200: '#ced4b7',
-          300: '#acb68d',
-          400: '#808d64', // Core signature tone
-          500: '#66724d',
-          600: '#4f593b',
-          700: '#3b432c',
-          800: '#282d1e',
-          900: '#171a12',
-          950: '#0b0d09',
-        },
-        alabaster: '#fdfdfb',
-        
-
-        emerald: {
-          50: '#f5f6f2', 100: '#e6e9db', 200: '#ced4b7', 300: '#acb68d', 400: '#808d64',
-          500: '#808d64', 600: '#66724d', 700: '#4f593b', 800: '#3b432c', 900: '#282d1e', 950: '#171a12'
-        },
-        green: {
-          50: '#f5f6f2', 100: '#e6e9db', 200: '#ced4b7', 300: '#acb68d', 400: '#808d64',
-          500: '#808d64', 600: '#66724d', 700: '#4f593b', 800: '#3b432c', 900: '#282d1e', 950: '#171a12'
-        },
-        indigo: {
-          50: '#f5f6f2', 100: '#e6e9db', 200: '#ced4b7', 300: '#acb68d', 400: '#808d64',
-          500: '#808d64', 600: '#66724d', 700: '#4f593b', 800: '#3b432c', 900: '#282d1e', 950: '#171a12'
-        },
-        blue: {
-          50: '#f5f6f2', 100: '#e6e9db', 200: '#ced4b7', 300: '#acb68d', 400: '#808d64',
-          500: '#808d64', 600: '#66724d', 700: '#4f593b', 800: '#3b432c', 900: '#282d1e', 950: '#171a12'
-        },
-        purple: {
-          50: '#f5f6f2', 100: '#e6e9db', 200: '#ced4b7', 300: '#acb68d', 400: '#808d64',
-          500: '#808d64', 600: '#66724d', 700: '#4f593b', 800: '#3b432c', 900: '#282d1e', 950: '#171a12'
-        },
-        cyan: {
-          50: '#f5f6f2', 100: '#e6e9db', 200: '#ced4b7', 300: '#acb68d', 400: '#808d64',
-          500: '#808d64', 600: '#66724d', 700: '#4f593b', 800: '#3b432c', 900: '#282d1e', 950: '#171a12'
-        },
-        teal: {
-          50: '#f5f6f2', 100: '#e6e9db', 200: '#ced4b7', 300: '#acb68d', 400: '#808d64',
-          500: '#808d64', 600: '#66724d', 700: '#4f593b', 800: '#3b432c', 900: '#282d1e', 950: '#171a12'
+          50: '#f4f7f4',
+          100: '#e6ede6',
+          200: '#cfddcf',
+          300: '#a9c2a9',
+          400: '#7ca17c',
+          500: '#5b835b',
+          600: '#466746',
+          700: '#3a533a',
+          800: '#304430',
+          900: '#293a29',
+          950: '#141f14',
         }
       },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
       animation: {
-        'fluid-drift': 'fluid-drift 20s ease-in-out infinite',
+        fadeIn: 'fadeIn 0.4s ease-out forwards',
       },
       keyframes: {
-        'fluid-drift': {
-          '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
-          '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
-          '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'translateY(4px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         }
       }
     },
   },
   plugins: [],
-};
+}
