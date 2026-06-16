@@ -123,7 +123,7 @@ export default function Home() {
     if (slideshowImages.length <= 1) return;
     const slideTimer = setInterval(() => {
       setCurrentSlide((prevIndex) => (prevIndex + 1) % slideshowImages.length);
-    }, 3200);
+    }, 3500);
     return () => clearInterval(slideTimer);
   }, [slideshowImages]);
 
@@ -161,37 +161,36 @@ export default function Home() {
   return (
     <div className="bg-[#fcfcfc] text-neutral-900 selection:bg-[#3a533a] selection:text-white overflow-hidden font-sans">
       
-      {/* 20X HIGH-DENSITY AUTOMOTIVE HERO OVERHAUL ACCORDING TO IMAGE_EA390D.JPG */}
-      <section className="relative bg-gradient-to-br from-[#0a0f0a] via-[#141f14] to-[#070a07] text-white py-24 lg:py-36 overflow-hidden border-b border-neutral-900">
+      {/* 20X EXPERT OVERHAUL: REMOVED ALL BOX BOUNDS FOR HALF-SCREEN MAX EXPANSION COMPLIANCE WITH IMAGE_E9DC27.JPG */}
+      <section className="relative bg-gradient-to-br from-[#090e09] via-[#121c14] to-[#060a06] text-white py-20 lg:py-28 overflow-hidden border-b border-neutral-950">
         
-        {/* Precise Engineering Grid Mesh Overlay */}
-        <div className="absolute inset-0 opacity-[0.07] bg-[linear-gradient(to_right,#3a533a_1px,transparent_1px),linear-gradient(to_bottom,#3a533a_1px,transparent_1px)] bg-[size:28px_32px]" />
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#3a533a]/15 blur-[160px] rounded-full pointer-events-none animate-pulse" style={{ animationDuration: '8s' }} />
+        {/* Precise Technical Background Mesh Grid Layout */}
+        <div className="absolute inset-0 opacity-[0.08] bg-[linear-gradient(to_right,#3a533a_1px,transparent_1px),linear-gradient(to_bottom,#3a533a_1px,transparent_1px)] bg-[size:32px_32px]" />
+        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-[#3a533a]/10 blur-[180px] rounded-full pointer-events-none" />
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center min-h-[500px] lg:min-h-[560px]">
             
             {/* Left Strategic Copy Column */}
-            <div className="lg:col-span-6 space-y-8 text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#3a533a]/20 border border-[#3a533a]/40 text-emerald-400 text-[10px] font-black uppercase tracking-[0.25em]">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping shrink-0" /> Custom Automotive Tuning
+            <div className="lg:col-span-5 space-y-8 text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#3a533a]/30 border border-[#3a533a]/50 text-emerald-400 text-[10px] font-black uppercase tracking-[0.25em]">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" /> Custom Automotive Tuning
               </div>
               
               <div className="space-y-4">
                 <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tighter leading-[0.9] text-white">
                   Elite <br />
                   Performance <br />
-                  <span className="bg-gradient-to-r from-emerald-400 via-[#8fae8f] to-neutral-100 bg-clip-text text-transparent">Audio & Screens</span>
+                  <span className="bg-gradient-to-r from-emerald-400 via-[#9bb49b] to-neutral-200 bg-clip-text text-transparent">Audio & Screens</span>
                 </h1>
                 
-                <p className="text-neutral-400 text-xs sm:text-sm font-bold leading-relaxed max-w-lg">
+                <p className="text-neutral-400 text-xs sm:text-sm font-bold leading-relaxed max-w-md">
                   Upgrade your drive with premium components designed for absolute accuracy. Zero wire slicing, full steering integration, and perfect flush dashboard layouts.
                 </p>
               </div>
               
-              {/* Dynamic Action Matrix Linked to Right Auto-Scroller Row */}
               <div className="flex flex-wrap items-center gap-4 pt-2">
-                <Link to="/shop" className="px-8 py-4 bg-[#3a533a] hover:bg-[#466746] text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-md shadow-[#3a533a]/10 flex items-center gap-2 group">
+                <Link to="/shop" className="px-8 py-4 bg-[#3a533a] hover:bg-[#466746] text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-md shadow-[#3a533a]/20 flex items-center gap-2 group">
                   View Catalog <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <a href="#active-catalog" className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all border border-white/10">
@@ -200,44 +199,44 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right Strategic Image-Only Automated Carousel (Replaced Description Boxes) */}
-            <div className="lg:col-span-6 flex items-center justify-center">
-              <div className="w-full max-w-lg aspect-square rounded-[2.5rem] bg-gradient-to-b from-white/[0.03] to-transparent border border-white/10 p-8 flex items-center justify-center relative shadow-2xl overflow-hidden group">
-                
-                {/* Embedded Accent Ambient Ring */}
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(58,83,58,0.1),transparent_70%)]" />
+            {/* Right Strategic Image Column - Unlocked Bounding Containers for Half-Screen Panoramic Impact */}
+            <div className="lg:col-span-7 flex items-center justify-center h-full w-full relative">
+              <div className="w-full h-[400px] sm:h-[460px] lg:h-[520px] flex items-center justify-center relative overflow-visible select-none">
                 
                 <AnimatePresence mode="wait">
                   {slideshowImages.length > 0 && (
                     <motion.div
                       key={currentSlide}
-                      initial={{ opacity: 0, scale: 0.94, y: 10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.96, y: -10 }}
-                      transition={{ duration: 0.6, ease: "easeInOut" }}
-                      className="w-full h-full flex flex-col items-center justify-center relative z-10"
+                      initial={{ opacity: 0, scale: 0.96, x: 15 }}
+                      animate={{ opacity: 1, scale: 1, x: 0 }}
+                      exit={{ opacity: 0, scale: 0.98, x: -15 }}
+                      transition={{ duration: 0.65, ease: "easeOut" }}
+                      className="w-full h-full flex flex-col items-center justify-center absolute inset-0"
                     >
-                      <Link to={slideshowImages[currentSlide].target} className="w-full h-full flex items-center justify-center relative">
+                      <Link to={slideshowImages[currentSlide].target} className="w-full h-full flex items-center justify-center relative group">
                         <img 
                           src={slideshowImages[currentSlide].url} 
                           alt={slideshowImages[currentSlide].alt}
-                          className="max-h-[85%] max-w-[85%] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.4)] transform group-hover:scale-105 transition-transform duration-700"
+                          className="w-full h-full max-h-[380px] sm:max-h-[440px] lg:max-h-[500px] object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.65)] group-hover:scale-[1.03] transition-transform duration-700 ease-out"
                           onError={(e) => { e.target.onerror = null; e.target.src = '/logo.jpeg'; }}
                         />
                       </Link>
-                      
-                      {/* Discrete High-End Navigation Indicators */}
-                      <div className="absolute bottom-0 left-0 right-0 flex justify-center gap-2 z-20">
-                        {slideshowImages.map((_, dotIdx) => (
-                          <span 
-                            key={dotIdx} 
-                            className={`h-1.5 transition-all duration-500 rounded-full ${dotIdx === currentSlide ? 'w-6 bg-emerald-400' : 'w-1.5 bg-white/20'}`} 
-                          />
-                        ))}
-                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
+
+                {/* Minimalist Slide Progress Bars */}
+                <div className="absolute -bottom-6 left-0 right-0 flex justify-center gap-2.5 z-20">
+                  {slideshowImages.map((_, dotIdx) => (
+                    <button
+                      key={dotIdx}
+                      onClick={() => setCurrentSlide(dotIdx)}
+                      className={`h-1 rounded-full transition-all duration-500 ${dotIdx === currentSlide ? 'w-8 bg-emerald-400' : 'w-2 bg-white/20'}`}
+                      aria-label={`Go to slide index ${dotIdx + 1}`}
+                    />
+                  ))}
+                </div>
+
               </div>
             </div>
 
@@ -272,7 +271,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 10X ENHANCED INTERACTIVE SPECIFICATION MATRIX BREAKDOWN SECTION */}
+      {/* Architectural Table Specifications Matrix Breakdown Section */}
       <section className="py-24 bg-white border-b border-neutral-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
