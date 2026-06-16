@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   ShoppingBag, 
@@ -8,25 +8,24 @@ import {
   Menu, 
   X, 
   LogOut, 
-  LayoutDashboard,
-  ShieldCheck
+  LayoutDashboard
 } from 'lucide-react';
-import { AuthContext } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { WishlistContext } from '../context/WishlistContext';
+import { useWishlist } from '../context/WishlistContext';
 import MiniCart from './MiniCart';
 
 export default function Navbar() {
-  const { user, logout } = useContext(AuthContext);
-  const { cartItems, setIsCartOpen } = useCart();
-  const { wishlist } = useContext(WishlistContext);
+  const { user, logout } = useAuth();
+  const { cart, setIsCartOpen } = useCart();
+  const { wishlist } = useWishlist();
   const navigate = useNavigate();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const cartItemsCount = cartItems?.reduce((acc, item) => acc + (item.quantity || 0), 0) || 0;
-  const wishlistCount = wishlist?.products?.length || 0;
+  const cartItemsCount = cart?.items?.reduce((acc, item) => acc + item.quantity, 0) || 0;
+  const wishlistCount = wishlist?.length || 0;
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -53,6 +52,12 @@ export default function Navbar() {
                 src="/logo.jpeg" 
                 alt="Bhumivera Logo" 
                 className="h-10 sm:h-12 w-auto object-contain rounded-md block"
+                style={{ display: 'block', visibility: 'visible', opacity: 1 }}
+                onError={(e) => {
+                  console.error("Navbar logo load failed, ensuring fallback visibility parameters.");
+                  e.target.onerror = null;
+                  e.target.src = "/logo.jpeg";
+                }}
               />
               <span className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 bg-gradient-to-r from-emerald-600 to-teal-700 bg-clip-text text-transparent">
                 Bhumivera
