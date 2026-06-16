@@ -8,8 +8,7 @@ import {
   Menu, 
   X, 
   LogOut, 
-  LayoutDashboard,
-  Sliders
+  LayoutDashboard
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -46,13 +45,13 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           
-          {/* Logo Brand Section */}
-          <div className="flex items-center">
-            <Link to="/" className="flex items-center gap-3 flex-shrink-0">
+          {/* Logo Brand Section - Text Removed, Pure Luxury Logo Only */}
+          <div className="flex items-center flex-shrink-0">
+            <Link to="/" className="flex items-center block transition-opacity hover:opacity-90">
               <img 
                 src="/logo.jpeg" 
                 alt="Anritvox Logo" 
-                className="h-10 sm:h-12 w-auto object-contain rounded-xl block border border-gray-100 shadow-sm"
+                className="h-11 sm:h-14 w-auto object-contain rounded-xl block border border-gray-100 shadow-sm"
                 style={{ display: 'block', visibility: 'visible', opacity: 1 }}
                 onError={(e) => {
                   console.error("Navbar logo load failed, ensuring fallback visibility parameters.");
@@ -60,14 +59,11 @@ export default function Navbar() {
                   e.target.src = "/logo.jpeg";
                 }}
               />
-              <span className="text-xl sm:text-2xl font-black tracking-tighter text-gray-900 uppercase bg-gradient-to-r from-emerald-800 via-emerald-700 to-gray-900 bg-clip-text text-transparent">
-                Anritvox
-              </span>
             </Link>
           </div>
 
-          {/* Desktop Navigation Links - Tailored for Car Accessories */}
-          <nav className="hidden md:flex space-x-8 text-xs font-black uppercase tracking-widest text-gray-600">
+          {/* Desktop Navigation Links */}
+          <nav className="hidden md:flex space-x-8 text-xs font-black uppercase tracking-widest text-gray-600 ml-8">
             <Link to="/shop" className="hover:text-emerald-700 transition-colors">Shop All</Link>
             <Link to="/shop?category=dashboard" className="hover:text-emerald-700 transition-colors">Infotainment Screens</Link>
             <Link to="/shop?category=audio" className="hover:text-emerald-700 transition-colors">Premium Audio</Link>
@@ -75,8 +71,8 @@ export default function Navbar() {
             <Link to="/about" className="hover:text-emerald-700 transition-colors">Our Ethos</Link>
           </nav>
 
-          {/* Search Bar - Premium Desktop Matte */}
-          <div className="hidden lg:block flex-1 max-w-xs mx-4">
+          {/* Search Bar - Premium Matte Field */}
+          <div className="hidden lg:block flex-1 max-w-xs mx-6">
             <form onSubmit={handleSearchSubmit} className="relative">
               <input
                 type="text"
@@ -95,16 +91,16 @@ export default function Navbar() {
           <div className="flex items-center space-x-1 sm:space-x-3">
             {user?.role === 'admin' && (
               <Link to="/admin" className="p-2 text-gray-500 hover:text-emerald-700 transition-colors" title="Admin Control Center">
-                <LayoutDashboard className="h-5 w-5 sm:h-5 sm:w-5" />
+                <LayoutDashboard className="h-5 w-5" />
               </Link>
             )}
 
             <Link to="/profile" className="p-2 text-gray-500 hover:text-emerald-700 transition-colors" title="My Account Profile">
-              <User className="h-5 w-5 sm:h-5 sm:w-5" />
+              <User className="h-5 w-5" />
             </Link>
 
             <Link to="/wishlist" className="p-2 text-gray-500 hover:text-emerald-700 transition-colors relative" title="Saved Upgrades">
-              <Heart className="h-5 w-5 sm:h-5 sm:w-5" />
+              <Heart className="h-5 w-5" />
               {wishlistCount > 0 && (
                 <span className="absolute top-1 right-1 bg-emerald-700 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-black shadow-sm animate-pulse">
                   {wishlistCount}
@@ -117,7 +113,7 @@ export default function Navbar() {
               className="p-2 text-gray-500 hover:text-emerald-700 transition-colors relative"
               title="Shopping Cart Bundle"
             >
-              <ShoppingBag className="h-5 w-5 sm:h-5 sm:w-5" />
+              <ShoppingBag className="h-5 w-5" />
               {cartItemsCount > 0 && (
                 <span className="absolute top-1 right-1 bg-emerald-700 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-black shadow-sm">
                   {cartItemsCount}
