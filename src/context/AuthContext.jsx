@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auth as authApi, users as usersApi } from '../services/api';
 
-const AuthContext = createContext(null);
+// Exported AuthContext for use in other components/modules
+export const AuthContext = createContext(null);
+
 const decodeJWT = t => { try { return JSON.parse(window.atob(t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
 
 export const AuthProvider = ({ children }) => {
