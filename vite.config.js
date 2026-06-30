@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Custom Non-Blocking Production Protection Shield
 function anritvoxSecurityCore() {
   return {
     name: 'anritvox-bundle-protection-lock',
@@ -9,7 +8,6 @@ function anritvoxSecurityCore() {
     renderChunk(code, chunk) {
       if (!chunk.fileName.endsWith('.js')) return null;
 
-      // Declarative destruction shield: handles all private local subnets automatically
       const systemProtectionShield = `
       (function(){
         const _0xCurrentHost = window.location.hostname;
@@ -69,7 +67,6 @@ function anritvoxSecurityCore() {
       })();
       `;
 
-      // Prepend the updated protection script directly ahead of the production code bundle chunk
       const protectedOutputCode = systemProtectionShield + "\n" + code;
       return { code: protectedOutputCode, map: null };
     }
