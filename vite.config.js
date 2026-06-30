@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Custom Compile-Time Protection Engine
+// Custom Non-Blocking Production Protection Shield
 function anritvoxSecurityCore() {
   return {
     name: 'anritvox-bundle-protection-lock',
@@ -9,57 +9,67 @@ function anritvoxSecurityCore() {
     renderChunk(code, chunk) {
       if (!chunk.fileName.endsWith('.js')) return null;
 
-      // Anti-Tamper payload with hard domain restrictions and real-time DevTools crashers
+      // Declarative destruction shield: handles all private local subnets automatically
       const systemProtectionShield = `
       (function(){
-        const _0xAuthDomains = ["anritvox.com", "www.anritvox.com", "localhost"];
         const _0xCurrentHost = window.location.hostname;
-        let _0xIsExecutionSafe = false;
+        
+        // 1. Automatic Safe Mode for Local Host Loopbacks and Private Subnets (192.168.X.X, 10.X.X.X, etc.)
+        const _0xIsLocalNetwork = /^localhost$|^127(?:\\.\\d+){3}$|^(?:10|192\\.168|172\\.(?:1[6-9]|2\\d|3[01]))\\./.test(_0xCurrentHost);
+        
+        // 2. Production Authorized Domains Matrix
+        const _0xAuthDomains = ["anritvox.com", "www.anritvox.com", "vercel.app"];
+        let _0xIsExecutionSafe = _0xIsLocalNetwork;
 
-        for (let i = 0; i < _0xAuthDomains.length; i++) {
-          if (_0xCurrentHost === _0xAuthDomains[i] || _0xCurrentHost.endsWith("." + _0xAuthDomains[i])) {
-            _0xIsExecutionSafe = true;
-            break;
+        if (!_0xIsExecutionSafe) {
+          for (let i = 0; i < _0xAuthDomains.length; i++) {
+            if (_0xCurrentHost === _0xAuthDomains[i] || _0xCurrentHost.endsWith("." + _0xAuthDomains[i])) {
+              _0xIsExecutionSafe = true;
+              break;
+            }
           }
         }
 
+        // 3. Declarative Teardown Execution (Non-blocking Thread Security)
         if (!_0xIsExecutionSafe) {
-          window.stop();
-          try { document.documentElement.innerHTML = "<h1>Application Context Violations Detected. Execution Permanently Halted.</h1>"; } catch(e) {}
-          setInterval(function(){ while(true){ eval("debugger"); } }, 5);
+          try {
+            window.stop();
+            localStorage.clear();
+            sessionStorage.clear();
+          } catch(e) {}
+          
+          try {
+            document.documentElement.innerHTML = "<h1>Application Context Violations Detected. Execution Permanently Halted.</h1>";
+          } catch(e) {}
+          
+          window.location.replace("about:blank");
           throw new Error("Critical Security Fault: Host Domain Not Authorized.");
         }
 
-        // Active Anti-Debugging and Console Profiling Protection Loops
-        const _0xSentry = function() {};
-        _0xSentry.toString = function() {
-          window.stop();
-          document.documentElement.innerHTML = "";
-          setInterval(function(){ while(true){ eval("debugger"); } }, 5);
-          return "";
-        };
-        
-        setInterval(function() {
-          try {
-            console.log("%c", _0xSentry);
-            console.clear();
-          } catch(e) {}
-        }, 250);
-
-        setInterval(function() {
+        // 4. Safe Non-Blocking Anti-Debugging Instrumentation
+        let _0xCounter = 0;
+        const _0xVerifyRuntime = function() {
           const _0xCheckTimeStart = performance.now();
           eval("debugger");
           const _0xCheckTimeEnd = performance.now();
           if ((_0xCheckTimeEnd - _0xCheckTimeStart) > 100) {
-            window.stop();
-            document.documentElement.innerHTML = "";
-            window.location.replace("about:blank");
+            _0xCounter++;
+            if (_0xCounter > 2) {
+              try {
+                window.stop();
+                document.documentElement.innerHTML = "";
+                window.location.replace("about:blank");
+              } catch(e) {}
+            }
           }
-        }, 500);
+        };
+
+        // Regulate profiling verifications smoothly without over-allocating internal event loops
+        setInterval(_0xVerifyRuntime, 2000);
       })();
       `;
 
-      // Prepend the protection code directly ahead of the production code bundle chunk
+      // Prepend the updated protection script directly ahead of the production code bundle chunk
       const protectedOutputCode = systemProtectionShield + "\n" + code;
       return { code: protectedOutputCode, map: null };
     }
