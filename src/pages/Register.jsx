@@ -25,6 +25,7 @@ export default function Register() {
   const otpRefs = useRef([]);
 
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
@@ -78,6 +79,22 @@ export default function Register() {
       setError(err.message || 'Registration failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setResendLoading(true);
+    setError('');
+    setSuccessMsg(''); // Clear previous messages
+    
+    try {
+      // Re-triggering registration leverages the backend's ON DUPLICATE KEY UPDATE
+      await register({ ...formData }); 
+      setSuccessMsg(`A new verification code was sent to ${formData.email}`);
+    } catch (err) {
+      setError(err.message || 'Failed to resend OTP');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -160,7 +177,6 @@ export default function Register() {
                     <InputField icon={<Key size={16}/>} type="text" name="securityAnswer" value={formData.securityAnswer} onChange={handleInputChange} placeholder="Your Answer String" disabled={loading} />
                   </div>
                   
-                  {/* The disabled prop restricting the strength check has been removed. */}
                   <SubmitButton loading={loading} text="Create Account" />
                 </form>
               </motion.div>
@@ -191,7 +207,19 @@ export default function Register() {
                       />
                     ))}
                   </div>
+                  
                   <SubmitButton loading={loading} text="Verify & Activate" />
+                  
+                  <div className="mt-5 text-center">
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={loading || resendLoading}
+                      className="text-xs font-bold text-slate-500 hover:text-olive-600 transition-colors underline decoration-2 underline-offset-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {resendLoading ? 'Resending Code...' : "Didn't receive the code? Resend OTP"}
+                    </button>
+                  </div>
                 </form>
               </motion.div>
             )}
