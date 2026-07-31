@@ -64,7 +64,7 @@ export default function Register() {
   const handleRegisterInit = async (e) => {
     e.preventDefault();
 
-    if (strength < 2) return setError("Please choose a stronger password.");
+    if (strength < 2) return setError("Please choose a stronger password. (Use at least 8 characters and a mix of letters/numbers)");
     if (!formData.securityAnswer) return setError("Security answer is required.");
 
     setLoading(true); 
@@ -160,7 +160,8 @@ export default function Register() {
                     <InputField icon={<Key size={16}/>} type="text" name="securityAnswer" value={formData.securityAnswer} onChange={handleInputChange} placeholder="Your Answer String" disabled={loading} />
                   </div>
                   
-                  <SubmitButton loading={loading} text="Create Account" disabled={strength < 2} />
+                  {/* The disabled prop restricting the strength check has been removed. */}
+                  <SubmitButton loading={loading} text="Create Account" />
                 </form>
               </motion.div>
             )}
