@@ -23,7 +23,11 @@ export const CartProvider = ({ children }) => {
       try {
         const res = await cartApi.get();
 
-        setCart(res.data?.items || res.data || []);
+  console.log("===== CART RESPONSE =====");
+  console.log(res.data);
+  console.log(JSON.stringify(res.data, null, 2));
+
+  setCart(res.data?.items || res.data || []);
       } catch (err) {
         console.error("Cart sync failed:", err);
         setCart([]);
