@@ -54,13 +54,13 @@ export default function MiniCart() {
 <img
   src={
     item.image
-      ? `${IMAGE_BASE}/${item.image}`
+      ? `${IMAGE_BASE}/${item.image.replace(/^\//, "")}`
       : "/logo.webp"
   }
   className="w-full h-full object-cover"
   alt={item.name}
   onError={(e) => {
-    console.log("Image Error:", e.target.src);
+    console.log("Failed:", e.target.src);
     e.target.src = "/logo.webp";
   }}
 />
