@@ -45,8 +45,13 @@ export const CartProvider = ({ children }) => {
     loadCart();
   }, [loadCart]);
 
-  const addToCart = async (product, qty = 1) => {
-    const prodId = product._id || product.id;
+const addToCart = async (product, qty = 1) => {
+
+  console.log("===== ADD TO CART =====");
+  console.log(product);
+  console.log(JSON.stringify(product, null, 2));
+
+  const prodId = product._id || product.id;
     if (isAuthenticated) {
       await cartApi.add({ productId: prodId, quantity: qty });
     } else {
