@@ -90,13 +90,9 @@ export default function Checkout() {
       setNewAddress({ full_name: '', phone: '', address_line1: '', city: '', state: '', pincode: '' });
       setShowAddForm(false);
     } catch (err) {
-  console.error("===== ADDRESS ERROR =====");
-  console.log("STATUS:", err.response?.status);
-  console.log("DATA:", err.response?.data);
-  console.log("FULL:", err);
-
-  alert(JSON.stringify(err.response?.data || err.message, null, 2));
-} finally {
+      console.error("Address registration failure:", err);
+      alert(err.response?.data?.message || "Could not save address. Verify all fields are correctly formatted.");
+    } finally {
       setAddressLoading(false);
     }
   };
