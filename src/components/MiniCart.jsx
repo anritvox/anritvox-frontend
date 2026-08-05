@@ -48,17 +48,23 @@ export default function MiniCart() {
               cartItems.map((item, idx) => (
                 <div key={idx} className="flex space-x-4 group">
                    <div className="w-20 h-20 bg-slate-900 rounded-2xl overflow-hidden flex-shrink-0">
-                      <img src={item.product?.images?.[0]} className="w-full h-full object-cover" alt={item.product?.name} />
+                     <img
+  src={item.image ? `/${item.image}` : "/logo.webp"}
+  className="w-full h-full object-cover"
+  alt={item.name}
+/>
                    </div>
                    <div className="flex-1 space-y-1">
                       <div className="flex justify-between items-start">
-                         <h3 className="text-xs font-black uppercase text-white leading-tight">{item.product?.name}</h3>
+                        <h3 className="text-xs font-black uppercase text-white leading-tight">
+  {item.name}
+</h3>
                          <button onClick={() => removeFromCart(item.product_id)} className="text-slate-700 hover:text-rose-500 transition-colors">
                             <Trash2 size={14} />
                          </button>
                       </div>
                       <div className="text-[10px] font-bold text-slate-500">Qty: {item.quantity}</div>
-                      <div className="text-xs font-black text-emerald-500 font-mono italic">₹{item.product?.price * item.quantity}</div>
+                      <div className="text-xs font-black text-emerald-500 font-mono italic">₹{(Number(item.unit_price || item.price) * item.quantity).toLocaleString("en-IN")}</div>
                    </div>
                 </div>
               ))
