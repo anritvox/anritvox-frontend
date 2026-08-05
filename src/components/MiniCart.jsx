@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { X, ShoppingBag, Trash2, ArrowRight, Zap, Truck, Plus, Check } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { BASE_URL } from "../services/api";
 
 export default function MiniCart() {
   const { cartItems, isCartOpen, setIsCartOpen, removeFromCart, getSubtotal, upsells, shippingProgress, freeShippingThreshold } = useCart();
@@ -48,8 +49,12 @@ export default function MiniCart() {
               cartItems.map((item, idx) => (
                 <div key={idx} className="flex space-x-4 group">
                    <div className="w-20 h-20 bg-slate-900 rounded-2xl overflow-hidden flex-shrink-0">
-                     <img
-  src={item.image ? `/${item.image}` : "/logo.webp"}
+ <img
+  src={
+    item.image
+      ? `${BASE_URL}/${item.image}`
+      : "/logo.webp"
+  }
   className="w-full h-full object-cover"
   alt={item.name}
 />
