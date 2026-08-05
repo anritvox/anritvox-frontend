@@ -49,15 +49,20 @@ export default function Login() {
       await login({ email: formData.email, password: formData.password, turnstileToken });
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err.message || 'Invalid email or password');
-      
+  console.log("Login Error:", err.response?.data);
 
-      setTurnstileToken(''); 
-      if (turnstileRef.current) {
-        turnstileRef.current.reset();
-      }
-      
-    } finally {
+  setError(
+    err.response?.data?.message ||
+    err.response?.data?.error ||
+    err.message ||
+    "Login failed"
+  );
+
+  setTurnstileToken('');
+  if (turnstileRef.current) {
+    turnstileRef.current.reset();
+  }
+} finally {
       setLoading(false);
     }
   };
