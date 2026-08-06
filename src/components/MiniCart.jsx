@@ -54,7 +54,9 @@ export default function MiniCart() {
 <img
   src={
     item.image
-      ? `${IMAGE_BASE}/${item.image.replace(/^\//, "")}`
+      ? (item.image.startsWith("http")
+          ? item.image
+          : `${IMAGE_BASE}/${item.image.replace(/^\//, "")}`)
       : "/logo.webp"
   }
   className="w-full h-full object-cover"
