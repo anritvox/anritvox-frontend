@@ -57,13 +57,13 @@ export default function MiniCart() {
       ? (item.image.startsWith("http")
           ? item.image
           : `${IMAGE_BASE}/${item.image.replace(/^\//, "")}`)
-      : "/logo.webp"
+      : "/logo.jpeg"
   }
   className="w-full h-full object-cover"
   alt={item.name}
   onError={(e) => {
     console.log("Failed:", e.target.src);
-    e.target.src = "/logo.webp";
+    e.target.src = "/logo.jpeg";
   }}
 />
                    </div>
