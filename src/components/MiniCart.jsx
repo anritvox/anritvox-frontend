@@ -4,7 +4,7 @@ import { X, ShoppingBag, Trash2, ArrowRight, Zap, Truck, Plus, Check } from 'luc
 import { useCart } from '../context/CartContext';
 import { BASE_URL } from "../services/api";
 const IMAGE_BASE =
-  "https://pub-7587fa2215914d2ebdd1ec8b70ed9ff0.r2.dev";
+  "https://pub-22cd43cce9bc475680ad496e199706c4.r2.dev";
 
 export default function MiniCart() {
   const { cartItems, isCartOpen, setIsCartOpen, removeFromCart, getSubtotal, upsells, shippingProgress, freeShippingThreshold } = useCart();
