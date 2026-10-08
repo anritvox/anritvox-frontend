@@ -244,96 +244,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Corporate Trust Matrix Parameters Segment */}
-      <section className="py-16 border-b border-neutral-200/60 bg-gradient-to-b from-[#fcfcfc] to-[#f4f7f4] relative z-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div 
-            variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-100px" }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
-          >
-            {[
-              { icon: <ShieldCheck className="h-6 w-6 text-[#3a533a]" />, label: "Guaranteed Fitment", sub: "100% Secure OEM Compatibility Matching" },
-              { icon: <Truck className="h-6 w-6 text-[#3a533a]" />, label: "Express Distribution", sub: "Fully Insured Safe Pan India Shipping Support" },
-              { icon: <Award className="h-6 w-6 text-[#3a533a]" />, label: "Enterprise Warranty", sub: "Direct Simple Replacement Diagnostics" },
-              { icon: <Headphones className="h-6 w-6 text-[#3a533a]" />, label: "24/7 Priority Hotline", sub: "Direct Technical Configuration Support" }
-            ].map((item, i) => (
-              <motion.div variants={fadeUp} key={i} className="flex items-start gap-4 p-6 bg-white rounded-2xl border border-neutral-200/80 shadow-sm hover:shadow-md transition-all group">
-                <div className="p-3 bg-[#f4f7f4] rounded-xl group-hover:bg-[#3a533a] group-hover:text-white transition-colors duration-300">
-                  {item.icon}
-                </div>
-                <div>
-                  <h4 className="text-xs font-black uppercase tracking-wider text-neutral-900">{item.label}</h4>
-                  <p className="text-xs text-neutral-500 font-semibold mt-1 leading-relaxed">{item.sub}</p>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
 
-      {/* Architectural Table Specifications Matrix Breakdown Section */}
-      <section className="py-24 bg-white border-b border-neutral-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            
-            <div className="lg:col-span-5 space-y-6">
-              <span className="text-[#3a533a] text-xs font-black uppercase tracking-[0.35em] block">Certified Performance Metrics</span>
-              <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-neutral-950">
-                Architectural <br />
-                <span className="text-[#3a533a]">Specifications</span>
-              </h2>
-              <p className="text-neutral-500 text-xs font-bold leading-relaxed">
-                Review verified mechanical tolerances, DSP routing matrices, and installation footprints benchmarked inside our custom modification laboratory.
-              </p>
-              
-              <div className="grid grid-cols-2 gap-4 pt-2">
-                <div className="p-4 rounded-2xl bg-[#f4f7f4] border border-neutral-200/50">
-                  <Gauge className="h-5 w-5 text-[#3a533a] mb-2" />
-                  <div className="text-lg font-black text-neutral-900 font-mono">0.02ms</div>
-                  <div className="text-[10px] font-bold text-neutral-400 uppercase mt-0.5">DSP Group Delay Latency</div>
-                </div>
-                <div className="p-4 rounded-2xl bg-[#f4f7f4] border border-neutral-200/50">
-                  <Radio className="h-5 w-5 text-[#3a533a] mb-2" />
-                  <div className="text-lg font-black text-neutral-900 font-mono">5.0 GHz</div>
-                  <div className="text-[10px] font-bold text-neutral-400 uppercase mt-0.5">Wireless CarPlay Link</div>
-                </div>
-              </div>
-            </div>
 
-            <div className="lg:col-span-7">
-              <div className="overflow-x-auto rounded-2xl border border-neutral-200/80 shadow-sm">
-                <table className="w-full text-left border-collapse bg-white text-xs">
-                  <thead>
-                    <tr className="bg-neutral-950 text-white font-black uppercase tracking-wider text-[10px]">
-                      <th className="p-4">Hardware Line</th>
-                      <th className="p-4">Integration Standard</th>
-                      <th className="p-4">Warranty Scope</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-100 text-neutral-700 font-medium">
-                    <tr>
-                      <td className="p-4 font-bold text-neutral-900">Anritvox 360 Player (BHU-58)</td>
-                      <td className="p-4">OEM Socket-Coupled (No Splice)</td>
-                      <td className="p-4">2-Year Replacement Protect</td>
-                    </tr>
-                    <tr>
-                      <td className="p-4 font-bold text-neutral-900">AV-P2810 Mid-Range Array</td>
-                      <td className="p-4">High-Excursion Gold Terminal</td>
-                      <td className="p-4">2-Year Full Hardware Protect</td>
-                    </tr>
-                    <tr>
-                      <td className="p-4 font-bold text-neutral-900">Ambient Lighting Systems</td>
-                      <td className="p-4">CANBUS Module Addressable</td>
-                      <td className="p-4">1-Year System Protect</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
 
-          </div>
-        </div>
-      </section>
 
       {/* Premium Infinite Collection Catalog Showcase Hub */}
       <section id="active-catalog" className="py-24 bg-[#fcfcfc] relative">
@@ -408,63 +321,35 @@ export default function Home() {
 
       {/* Brand Ethos & Advanced Engineering Laboratory Matrix */}
       
-      {/* Immersive Video Guide Stream & Technical FAQ Integration */}
-      <section className="py-24 bg-neutral-50 border-t border-neutral-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h3 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-neutral-950">
-              Need Verification Guides?
-            </h3>
-            <p className="text-neutral-500 text-xs font-semibold mt-2 leading-relaxed">
-              Our support engineers provide step-by-step video setup instructions for mounting music panels, routing power lines, and managing active CANBUS steering mappings safely.
-            </p>
-            <div className="mt-6">
-              <a 
-                href="https://youtube.com" target="_blank" rel="noreferrer" 
-                className="inline-flex items-center gap-2.5 px-8 py-4 bg-[#3a533a] text-white font-black uppercase tracking-widest text-xs rounded-xl hover:bg-neutral-950 transition-all shadow-md"
-              >
-                <PlayCircle size={16} /> View Video Guides
-              </a>
-            </div>
-          </div>
 
-          {/* Interactive Accordion FAQ Engine */}
-          <div className="bg-white rounded-3xl border border-neutral-200 p-4 sm:p-8 space-y-4 shadow-sm">
-            <div className="flex items-center gap-2 mb-6 px-2">
-              <HelpCircle className="h-5 w-5 text-[#3a533a]" />
-              <h4 className="text-xs font-black uppercase tracking-wider text-neutral-950">Frequently Explored Mechanics</h4>
-            </div>
 
+      {/* Architectural Table Specifications Matrix Breakdown Section */} 
+      <section className="py-24 bg-white border-b border-neutral-100"> <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"> <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center"> <div className="lg:col-span-5 space-y-6"> <span className="text-[#3a533a] text-xs font-black uppercase tracking-[0.35em] block">Certified Performance Metrics</span> <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-neutral-950"> Architectural <br /> <span className="text-[#3a533a]">Specifications</span> </h2> <p className="text-neutral-500 text-xs font-bold leading-relaxed"> Review verified mechanical tolerances, DSP routing matrices, and installation footprints benchmarked inside our custom modification laboratory. </p> <div className="grid grid-cols-2 gap-4 pt-2"> <div className="p-4 rounded-2xl bg-[#f4f7f4] border border-neutral-200/50"> <Gauge className="h-5 w-5 text-[#3a533a] mb-2" /> <div className="text-lg font-black text-neutral-900 font-mono">0.02ms</div> <div className="text-[10px] font-bold text-neutral-400 uppercase mt-0.5">DSP Group Delay Latency</div> </div> <div className="p-4 rounded-2xl bg-[#f4f7f4] border border-neutral-200/50"> <Radio className="h-5 w-5 text-[#3a533a] mb-2" /> <div className="text-lg font-black text-neutral-900 font-mono">5.0 GHz</div> <div className="text-[10px] font-bold text-neutral-400 uppercase mt-0.5">Wireless CarPlay Link</div> </div> </div> </div> <div className="lg:col-span-7"> <div className="overflow-x-auto rounded-2xl border border-neutral-200/80 shadow-sm"> <table className="w-full text-left border-collapse bg-white text-xs"> <thead> <tr className="bg-neutral-950 text-white font-black uppercase tracking-wider text-[10px]"> <th className="p-4">Hardware Line</th> <th className="p-4">Integration Standard</th> <th className="p-4">Warranty Scope</th> </tr> </thead> <tbody className="divide-y divide-neutral-100 text-neutral-700 font-medium"> <tr> <td className="p-4 font-bold text-neutral-900">Anritvox 360 Player (BHU-58)</td> <td className="p-4">OEM Socket-Coupled (No Splice)</td> <td className="p-4">2-Year Replacement Protect</td> </tr> <tr> <td className="p-4 font-bold text-neutral-900">AV-P2810 Mid-Range Array</td> <td className="p-4">High-Excursion Gold Terminal</td> <td className="p-4">2-Year Full Hardware Protect</td> </tr> <tr> <td className="p-4 font-bold text-neutral-900">Ambient Lighting Systems</td> <td className="p-4">CANBUS Module Addressable</td> <td className="p-4">1-Year System Protect</td> </tr> </tbody> </table> </div> </div> </div> </div> </section>
+
+            {/* Corporate Trust Matrix Parameters Segment */}
+      <section className="py-16 border-b border-neutral-200/60 bg-gradient-to-b from-[#fcfcfc] to-[#f4f7f4] relative z-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div 
+            variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-100px" }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+          >
             {[
-              { q: "Will installing these stereo panels void my vehicle electrical warranty?", a: "No. All premium kits utilize native plug-and-play coupler harness components, requiring completely zero wire slicing or permanent modifications." },
-              { q: "Are the infotainment systems fully compatible with standard steering controls?", a: "Yes, our systems include pre-mapped physical CANBUS decoding modules to maintain complete steering wheel control wheel integration natively." },
-              { q: "What premium cooling architecture is used to prevent unit overheating?", a: "Each device features a heavy-duty continuous extrusion aluminum heatsink alongside a multi-speed silent internal exhaust fan matrix." }
-            ].map((faq, fIdx) => (
-              <div key={fIdx} className="border-b border-neutral-100 last:border-none pb-4 last:pb-0">
-                <button
-                  onClick={() => setActiveFaq(activeFaq === fIdx ? null : fIdx)}
-                  className="w-full flex items-center justify-between text-left py-3 group"
-                >
-                  <span className="text-xs font-black uppercase tracking-wide text-neutral-800 group-hover:text-[#3a533a] transition-colors">{faq.q}</span>
-                  <ChevronDown className={`h-4 w-4 text-neutral-400 transition-transform duration-300 transform ${activeFaq === fIdx ? 'rotate-180' : ''}`} />
-                </button>
-                <AnimatePresence initial={false}>
-                  {activeFaq === fIdx && (
-                    <motion.div 
-                      initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }}
-                      className="overflow-hidden"
-                    >
-                      <p className="text-xs text-neutral-500 font-semibold leading-relaxed pt-1 pb-3 px-2 bg-[#f4f7f4] rounded-xl mt-1">
-                        {faq.a}
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              { icon: <ShieldCheck className="h-6 w-6 text-[#3a533a]" />, label: "Guaranteed Fitment", sub: "100% Secure OEM Compatibility Matching" },
+              { icon: <Truck className="h-6 w-6 text-[#3a533a]" />, label: "Express Distribution", sub: "Fully Insured Safe Pan India Shipping Support" },
+              { icon: <Award className="h-6 w-6 text-[#3a533a]" />, label: "Enterprise Warranty", sub: "Direct Simple Replacement Diagnostics" },
+              { icon: <Headphones className="h-6 w-6 text-[#3a533a]" />, label: "24/7 Priority Hotline", sub: "Direct Technical Configuration Support" }
+            ].map((item, i) => (
+              <motion.div variants={fadeUp} key={i} className="flex items-start gap-4 p-6 bg-white rounded-2xl border border-neutral-200/80 shadow-sm hover:shadow-md transition-all group">
+                <div className="p-3 bg-[#f4f7f4] rounded-xl group-hover:bg-[#3a533a] group-hover:text-white transition-colors duration-300">
+                  {item.icon}
+                </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-neutral-900">{item.label}</h4>
+                  <p className="text-xs text-neutral-500 font-semibold mt-1 leading-relaxed">{item.sub}</p>
+                </div>
+              </motion.div>
             ))}
-          </div>
-
+          </motion.div>
         </div>
       </section>
 
