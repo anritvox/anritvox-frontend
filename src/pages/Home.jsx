@@ -376,69 +376,32 @@ export default function Home() {
             variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true }}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
           >
-            <AnimatePresence mode="popLayout">
-              {filteredProducts.map((prod) => (
-                <motion.div 
-                  layout
-                  variants={scaleIn}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  key={prod.id || prod._id} 
-                  className="group flex flex-col bg-white border border-neutral-200/80 rounded-[2rem] p-4 shadow-sm hover:shadow-xl transition-all duration-500 relative"
-                >
-                  {prod.discount_price && (
-                    <span className="absolute top-6 left-6 z-10 bg-rose-600 text-white font-black text-[10px] uppercase tracking-widest px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
-                      <Flame className="h-3 w-3" /> Offer Active
-                    </span>
-                  )}
-
-                  {/* High Fidelity Media Frame */}
-                  <div className="relative aspect-[1/1] overflow-hidden mb-5 bg-gradient-to-b from-neutral-50 to-white rounded-2xl flex items-center justify-center p-6 border border-neutral-100 group-hover:bg-white transition-colors duration-500">
-                    <Link to={`/product/${prod.slug || prod.id || prod._id}`} className="w-full h-full flex items-center justify-center relative z-10">
-                      <img 
-                        src={getImageUrl(prod.images?.[0] || prod.image_url)} 
-                        className="max-h-[85%] max-w-[85%] object-contain group-hover:scale-105 transition-transform duration-700 ease-out" 
-                        alt={prod.name} 
-                        onError={(e) => { e.target.onerror = null; e.target.src = '/logo.jpeg'; }}
-                      />
-                    </Link>
-                    <div className="absolute inset-0 bg-neutral-950/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-                  </div>
-
-                  {/* Informational Context Frame */}
-                  <div className="flex-1 flex flex-col justify-between px-1">
-                    <div className="mb-4">
-                      <div className="flex justify-between items-start gap-2 mb-2">
-                        <Link to={`/product/${prod.slug || prod.id || prod._id}`} className="flex-1">
-                          <h4 className="text-xs font-black tracking-tight text-neutral-950 group-hover:text-[#3a533a] transition-colors line-clamp-2 uppercase min-h-[2.5rem]">
-                            {prod.name}
-                          </h4>
-                        </Link>
-                        <div className="flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md text-[11px] font-black shrink-0 border border-amber-200/50">
-                          <Star size={11} fill="currentColor" /> {prod.rating || '5.0'}
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2.5 mt-2">
-                        <span className="text-base font-black text-neutral-900 font-mono">₹{prod.discount_price || prod.price}</span>
-                        {prod.discount_price && (
-                          <span className="text-xs text-gray-400 line-through font-mono">₹{prod.price}</span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Transaction Execution Action Matrix */}
-                    <div className="flex items-center gap-2 mt-2">
-                      <button 
-                        onClick={(e) => handleQuickAdd(e, prod.id || prod._id)}
-                        className="w-full bg-neutral-950 hover:bg-[#3a533a] text-white font-black text-[11px] uppercase tracking-widest py-3.5 rounded-xl transition-all duration-300 flex justify-center items-center gap-2 shadow-sm hover:shadow-lg hover:shadow-[#3a533a]/10 transform active:scale-95"
-                      >
-                        <ShoppingBag size={14} /> Secure Add
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+<AnimatePresence mode="popLayout">
+  {filteredProducts.map((prod) => (
+    <motion.div
+      layout
+      variants={scaleIn}
+      exit={{ opacity: 0, scale: 0.95 }}
+      key={prod.id || prod._id}
+      className="group flex items-center justify-center"
+    >
+      <Link
+        to={`/product/${prod.slug || prod.id || prod._id}`}
+        className="w-full aspect-square flex items-center justify-center"
+      >
+        <img
+          src={getImageUrl(prod.images?.[0] || prod.image_url)}
+          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700 ease-out"
+          alt={prod.name}
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = '/logo.jpeg';
+          }}
+        />
+      </Link>
+    </motion.div>
+  ))}
+</AnimatePresence>
           </motion.div>
         </div>
       </section>
