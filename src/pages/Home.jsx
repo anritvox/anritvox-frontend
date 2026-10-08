@@ -162,10 +162,178 @@ export default function Home() {
     <div className="bg-[#fcfcfc] text-neutral-900 selection:bg-[#3a533a] selection:text-white overflow-hidden font-sans">
       
       {/* 20X EXPERT OVERHAUL: REMOVED ALL BOX BOUNDS FOR HALF-SCREEN MAX EXPANSION COMPLIANCE WITH IMAGE_E9DC27.JPG */}
+      <section className="relative bg-gradient-to-br from-[#090e09] via-[#121c14] to-[#060a06] text-white py-20 lg:py-28 overflow-hidden border-b border-neutral-950">
+        
+        {/* Precise Technical Background Mesh Grid Layout */}
+        <div className="absolute inset-0 opacity-[0.08] bg-[linear-gradient(to_right,#3a533a_1px,transparent_1px),linear-gradient(to_bottom,#3a533a_1px,transparent_1px)] bg-[size:32px_32px]" />
+        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-[#3a533a]/10 blur-[180px] rounded-full pointer-events-none" />
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center min-h-[500px] lg:min-h-[560px]">
+            
+            {/* Left Strategic Copy Column */}
+            <div className="lg:col-span-5 space-y-8 text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#3a533a]/30 border border-[#3a533a]/50 text-emerald-400 text-[10px] font-black uppercase tracking-[0.25em]">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" /> Custom Automotive Tuning
+              </div>
+              
+              <div className="space-y-4">
+                <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tighter leading-[0.9] text-white">
+                  Elite <br />
+                  Performance <br />
+                  <span className="bg-gradient-to-r from-emerald-400 via-[#9bb49b] to-neutral-200 bg-clip-text text-transparent">Audio & Screens</span>
+                </h1>
+                
+                <p className="text-neutral-400 text-xs sm:text-sm font-bold leading-relaxed max-w-md">
+                  Upgrade your drive with premium components designed for absolute accuracy. Zero wire slicing, full steering integration, and perfect flush dashboard layouts.
+                </p>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-4 pt-2">
+                <Link to="/shop" className="px-8 py-4 bg-[#3a533a] hover:bg-[#466746] text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-md shadow-[#3a533a]/20 flex items-center gap-2 group">
+                  View Catalog <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <a href="#active-catalog" className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all border border-white/10">
+                  Browse All Upgrades
+                </a>
+              </div>
+            </div>
 
+            {/* Right Strategic Image Column - Unlocked Bounding Containers for Half-Screen Panoramic Impact */}
+            <div className="lg:col-span-7 flex items-center justify-center h-full w-full relative">
+              <div className="w-full h-[400px] sm:h-[460px] lg:h-[520px] flex items-center justify-center relative overflow-visible select-none">
+                
+                <AnimatePresence mode="wait">
+                  {slideshowImages.length > 0 && (
+                    <motion.div
+                      key={currentSlide}
+                      initial={{ opacity: 0, scale: 0.96, x: 15 }}
+                      animate={{ opacity: 1, scale: 1, x: 0 }}
+                      exit={{ opacity: 0, scale: 0.98, x: -15 }}
+                      transition={{ duration: 0.65, ease: "easeOut" }}
+                      className="w-full h-full flex flex-col items-center justify-center absolute inset-0"
+                    >
+                      <Link to={slideshowImages[currentSlide].target} className="w-full h-full flex items-center justify-center relative group">
+                        <img 
+                          src={slideshowImages[currentSlide].url} 
+                          alt={slideshowImages[currentSlide].alt}
+                          className="w-full h-full max-h-[380px] sm:max-h-[440px] lg:max-h-[500px] object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.65)] group-hover:scale-[1.03] transition-transform duration-700 ease-out"
+                          onError={(e) => { e.target.onerror = null; e.target.src = '/logo.jpeg'; }}
+                        />
+                      </Link>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
+                {/* Minimalist Slide Progress Bars */}
+                <div className="absolute -bottom-6 left-0 right-0 flex justify-center gap-2.5 z-20">
+                  {slideshowImages.map((_, dotIdx) => (
+                    <button
+                      key={dotIdx}
+                      onClick={() => setCurrentSlide(dotIdx)}
+                      className={`h-1 rounded-full transition-all duration-500 ${dotIdx === currentSlide ? 'w-8 bg-emerald-400' : 'w-2 bg-white/20'}`}
+                      aria-label={`Go to slide index ${dotIdx + 1}`}
+                    />
+                  ))}
+                </div>
 
+              </div>
+            </div>
 
+          </div>
+        </div>
+      </section>
+
+      {/* Corporate Trust Matrix Parameters Segment */}
+      <section className="py-16 border-b border-neutral-200/60 bg-gradient-to-b from-[#fcfcfc] to-[#f4f7f4] relative z-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div 
+            variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-100px" }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+          >
+            {[
+              { icon: <ShieldCheck className="h-6 w-6 text-[#3a533a]" />, label: "Guaranteed Fitment", sub: "100% Secure OEM Compatibility Matching" },
+              { icon: <Truck className="h-6 w-6 text-[#3a533a]" />, label: "Express Distribution", sub: "Fully Insured Safe Pan India Shipping Support" },
+              { icon: <Award className="h-6 w-6 text-[#3a533a]" />, label: "Enterprise Warranty", sub: "Direct Simple Replacement Diagnostics" },
+              { icon: <Headphones className="h-6 w-6 text-[#3a533a]" />, label: "24/7 Priority Hotline", sub: "Direct Technical Configuration Support" }
+            ].map((item, i) => (
+              <motion.div variants={fadeUp} key={i} className="flex items-start gap-4 p-6 bg-white rounded-2xl border border-neutral-200/80 shadow-sm hover:shadow-md transition-all group">
+                <div className="p-3 bg-[#f4f7f4] rounded-xl group-hover:bg-[#3a533a] group-hover:text-white transition-colors duration-300">
+                  {item.icon}
+                </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-neutral-900">{item.label}</h4>
+                  <p className="text-xs text-neutral-500 font-semibold mt-1 leading-relaxed">{item.sub}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Architectural Table Specifications Matrix Breakdown Section */}
+      <section className="py-24 bg-white border-b border-neutral-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            
+            <div className="lg:col-span-5 space-y-6">
+              <span className="text-[#3a533a] text-xs font-black uppercase tracking-[0.35em] block">Certified Performance Metrics</span>
+              <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-neutral-950">
+                Architectural <br />
+                <span className="text-[#3a533a]">Specifications</span>
+              </h2>
+              <p className="text-neutral-500 text-xs font-bold leading-relaxed">
+                Review verified mechanical tolerances, DSP routing matrices, and installation footprints benchmarked inside our custom modification laboratory.
+              </p>
+              
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div className="p-4 rounded-2xl bg-[#f4f7f4] border border-neutral-200/50">
+                  <Gauge className="h-5 w-5 text-[#3a533a] mb-2" />
+                  <div className="text-lg font-black text-neutral-900 font-mono">0.02ms</div>
+                  <div className="text-[10px] font-bold text-neutral-400 uppercase mt-0.5">DSP Group Delay Latency</div>
+                </div>
+                <div className="p-4 rounded-2xl bg-[#f4f7f4] border border-neutral-200/50">
+                  <Radio className="h-5 w-5 text-[#3a533a] mb-2" />
+                  <div className="text-lg font-black text-neutral-900 font-mono">5.0 GHz</div>
+                  <div className="text-[10px] font-bold text-neutral-400 uppercase mt-0.5">Wireless CarPlay Link</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-7">
+              <div className="overflow-x-auto rounded-2xl border border-neutral-200/80 shadow-sm">
+                <table className="w-full text-left border-collapse bg-white text-xs">
+                  <thead>
+                    <tr className="bg-neutral-950 text-white font-black uppercase tracking-wider text-[10px]">
+                      <th className="p-4">Hardware Line</th>
+                      <th className="p-4">Integration Standard</th>
+                      <th className="p-4">Warranty Scope</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100 text-neutral-700 font-medium">
+                    <tr>
+                      <td className="p-4 font-bold text-neutral-900">Anritvox 360 Player (BHU-58)</td>
+                      <td className="p-4">OEM Socket-Coupled (No Splice)</td>
+                      <td className="p-4">2-Year Replacement Protect</td>
+                    </tr>
+                    <tr>
+                      <td className="p-4 font-bold text-neutral-900">AV-P2810 Mid-Range Array</td>
+                      <td className="p-4">High-Excursion Gold Terminal</td>
+                      <td className="p-4">2-Year Full Hardware Protect</td>
+                    </tr>
+                    <tr>
+                      <td className="p-4 font-bold text-neutral-900">Ambient Lighting Systems</td>
+                      <td className="p-4">CANBUS Module Addressable</td>
+                      <td className="p-4">1-Year System Protect</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
 
       {/* Premium Infinite Collection Catalog Showcase Hub */}
       <section id="active-catalog" className="py-24 bg-[#fcfcfc] relative">
@@ -240,35 +408,63 @@ export default function Home() {
 
       {/* Brand Ethos & Advanced Engineering Laboratory Matrix */}
       
+      {/* Immersive Video Guide Stream & Technical FAQ Integration */}
+      <section className="py-24 bg-neutral-50 border-t border-neutral-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h3 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-neutral-950">
+              Need Verification Guides?
+            </h3>
+            <p className="text-neutral-500 text-xs font-semibold mt-2 leading-relaxed">
+              Our support engineers provide step-by-step video setup instructions for mounting music panels, routing power lines, and managing active CANBUS steering mappings safely.
+            </p>
+            <div className="mt-6">
+              <a 
+                href="https://youtube.com" target="_blank" rel="noreferrer" 
+                className="inline-flex items-center gap-2.5 px-8 py-4 bg-[#3a533a] text-white font-black uppercase tracking-widest text-xs rounded-xl hover:bg-neutral-950 transition-all shadow-md"
+              >
+                <PlayCircle size={16} /> View Video Guides
+              </a>
+            </div>
+          </div>
 
+          {/* Interactive Accordion FAQ Engine */}
+          <div className="bg-white rounded-3xl border border-neutral-200 p-4 sm:p-8 space-y-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-6 px-2">
+              <HelpCircle className="h-5 w-5 text-[#3a533a]" />
+              <h4 className="text-xs font-black uppercase tracking-wider text-neutral-950">Frequently Explored Mechanics</h4>
+            </div>
 
-      {/* Architectural Table Specifications Matrix Breakdown Section */} 
-      <section className="py-24 bg-white border-b border-neutral-100"> <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"> <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center"> <div className="lg:col-span-5 space-y-6"> <span className="text-[#3a533a] text-xs font-black uppercase tracking-[0.35em] block">Certified Performance Metrics</span> <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-neutral-950"> Architectural <br /> <span className="text-[#3a533a]">Specifications</span> </h2> <p className="text-neutral-500 text-xs font-bold leading-relaxed"> Review verified mechanical tolerances, DSP routing matrices, and installation footprints benchmarked inside our custom modification laboratory. </p> <div className="grid grid-cols-2 gap-4 pt-2"> <div className="p-4 rounded-2xl bg-[#f4f7f4] border border-neutral-200/50"> <Gauge className="h-5 w-5 text-[#3a533a] mb-2" /> <div className="text-lg font-black text-neutral-900 font-mono">0.02ms</div> <div className="text-[10px] font-bold text-neutral-400 uppercase mt-0.5">DSP Group Delay Latency</div> </div> <div className="p-4 rounded-2xl bg-[#f4f7f4] border border-neutral-200/50"> <Radio className="h-5 w-5 text-[#3a533a] mb-2" /> <div className="text-lg font-black text-neutral-900 font-mono">5.0 GHz</div> <div className="text-[10px] font-bold text-neutral-400 uppercase mt-0.5">Wireless CarPlay Link</div> </div> </div> </div> <div className="lg:col-span-7"> <div className="overflow-x-auto rounded-2xl border border-neutral-200/80 shadow-sm"> <table className="w-full text-left border-collapse bg-white text-xs"> <thead> <tr className="bg-neutral-950 text-white font-black uppercase tracking-wider text-[10px]"> <th className="p-4">Hardware Line</th> <th className="p-4">Integration Standard</th> <th className="p-4">Warranty Scope</th> </tr> </thead> <tbody className="divide-y divide-neutral-100 text-neutral-700 font-medium"> <tr> <td className="p-4 font-bold text-neutral-900">Anritvox 360 Player (BHU-58)</td> <td className="p-4">OEM Socket-Coupled (No Splice)</td> <td className="p-4">2-Year Replacement Protect</td> </tr> <tr> <td className="p-4 font-bold text-neutral-900">AV-P2810 Mid-Range Array</td> <td className="p-4">High-Excursion Gold Terminal</td> <td className="p-4">2-Year Full Hardware Protect</td> </tr> <tr> <td className="p-4 font-bold text-neutral-900">Ambient Lighting Systems</td> <td className="p-4">CANBUS Module Addressable</td> <td className="p-4">1-Year System Protect</td> </tr> </tbody> </table> </div> </div> </div> </div> </section>
-
-            {/* Corporate Trust Matrix Parameters Segment */}
-      <section className="py-16 border-b border-neutral-200/60 bg-gradient-to-b from-[#fcfcfc] to-[#f4f7f4] relative z-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div 
-            variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-100px" }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
-          >
             {[
-              { icon: <ShieldCheck className="h-6 w-6 text-[#3a533a]" />, label: "Guaranteed Fitment", sub: "100% Secure OEM Compatibility Matching" },
-              { icon: <Truck className="h-6 w-6 text-[#3a533a]" />, label: "Express Distribution", sub: "Fully Insured Safe Pan India Shipping Support" },
-              { icon: <Award className="h-6 w-6 text-[#3a533a]" />, label: "Enterprise Warranty", sub: "Direct Simple Replacement Diagnostics" },
-              { icon: <Headphones className="h-6 w-6 text-[#3a533a]" />, label: "24/7 Priority Hotline", sub: "Direct Technical Configuration Support" }
-            ].map((item, i) => (
-              <motion.div variants={fadeUp} key={i} className="flex items-start gap-4 p-6 bg-white rounded-2xl border border-neutral-200/80 shadow-sm hover:shadow-md transition-all group">
-                <div className="p-3 bg-[#f4f7f4] rounded-xl group-hover:bg-[#3a533a] group-hover:text-white transition-colors duration-300">
-                  {item.icon}
-                </div>
-                <div>
-                  <h4 className="text-xs font-black uppercase tracking-wider text-neutral-900">{item.label}</h4>
-                  <p className="text-xs text-neutral-500 font-semibold mt-1 leading-relaxed">{item.sub}</p>
-                </div>
-              </motion.div>
+              { q: "Will installing these stereo panels void my vehicle electrical warranty?", a: "No. All premium kits utilize native plug-and-play coupler harness components, requiring completely zero wire slicing or permanent modifications." },
+              { q: "Are the infotainment systems fully compatible with standard steering controls?", a: "Yes, our systems include pre-mapped physical CANBUS decoding modules to maintain complete steering wheel control wheel integration natively." },
+              { q: "What premium cooling architecture is used to prevent unit overheating?", a: "Each device features a heavy-duty continuous extrusion aluminum heatsink alongside a multi-speed silent internal exhaust fan matrix." }
+            ].map((faq, fIdx) => (
+              <div key={fIdx} className="border-b border-neutral-100 last:border-none pb-4 last:pb-0">
+                <button
+                  onClick={() => setActiveFaq(activeFaq === fIdx ? null : fIdx)}
+                  className="w-full flex items-center justify-between text-left py-3 group"
+                >
+                  <span className="text-xs font-black uppercase tracking-wide text-neutral-800 group-hover:text-[#3a533a] transition-colors">{faq.q}</span>
+                  <ChevronDown className={`h-4 w-4 text-neutral-400 transition-transform duration-300 transform ${activeFaq === fIdx ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence initial={false}>
+                  {activeFaq === fIdx && (
+                    <motion.div 
+                      initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }}
+                      className="overflow-hidden"
+                    >
+                      <p className="text-xs text-neutral-500 font-semibold leading-relaxed pt-1 pb-3 px-2 bg-[#f4f7f4] rounded-xl mt-1">
+                        {faq.a}
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             ))}
-          </motion.div>
+          </div>
+
         </div>
       </section>
 
