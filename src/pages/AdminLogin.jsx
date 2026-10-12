@@ -1,5 +1,5 @@
 
-
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './AdminLogin.css';
@@ -17,7 +17,7 @@ const AdminLogin = () => {
   const handleRequestOtp = async (e) => {
     e.preventDefault();
     setStatus({ type: '', message: '' });
-    if (!turnstileToken) { setStatus({ type: 'error', message: 'Bot verification required.' }); return; }
+   
     setLoading(true);
     try {
       const res = await fetch(`${API}/api/auth/admin/request-otp`, {
