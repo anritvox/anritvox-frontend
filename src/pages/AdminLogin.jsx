@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Turnstile } from '@marsidev/react-turnstile';
+
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './AdminLogin.css';
@@ -8,7 +8,7 @@ const AdminLogin = () => {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
-  const [turnstileToken, setTurnstileToken] = useState(null);
+ 
   const [status, setStatus] = useState({ type: '', message: '' });
   const [loading, setLoading] = useState(false);
   const turnstileRef = useRef();
