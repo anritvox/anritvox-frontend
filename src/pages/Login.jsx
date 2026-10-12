@@ -24,7 +24,9 @@ const viewVariants = {
 
 // Cloudflare Turnstile ki Site Key
 // Ye tumhari nayi widget ki public Site Key honi chahiye.
-const TURNSTILE_SITE_KEY = '0x4AAAAAAFUWsoixoAFhL8ps';
+
+const TURNSTILE_SITE_KEY = '0x4AAAAAAFUWsjOf_FrNoDqip52H-I5gzS8';
+
 
 export default function Login() {
   const { login } = useAuth();
